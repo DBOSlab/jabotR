@@ -16,8 +16,8 @@ Downloads](https://cranlogs.r-pkg.org/badges/grand-total/jabotR)](https://cran.r
 MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 <!-- badges: end -->
 
-***jabotR*** is an R package for accessing and analyzing plant specimen
-data from the [JABOT online herbarium
+`jabotR` is an R package for accessing and analyzing plant specimen data
+from the [JABOT online herbarium
 collections](https://jabot.jbrj.gov.br/v3/consulta.php), hosted by the
 [Rio de Janeiro Botanical Garden](https://www.gov.br/jbrj/pt-br). It
 provides tools for downloading, summarizing, and filtering herbarium
@@ -26,7 +26,7 @@ IPT](https://ipt.jbrj.gov.br/jabot).
 
 ## Installation
 
-You can install the development version of ***jabotR*** from
+You can install the development version of `jabotR` from
 [GitHub](https://github.com/DBOSlab/jabotR) with:
 
 ``` r
@@ -104,8 +104,8 @@ jabot_download(herbarium = c("ALCB", "HUEFS", "RB", "US", "K"),
 
 ## Documentation
 
-Full function documentation and articles are available at the
-***jabotR*** [website](https://dboslab.github.io/jabotR-website/).  
+Full function documentation and articles are available at the `jabotR`
+[website](https://dboslab.github.io/jabotR-website/).  
   
 
 ## Citation
