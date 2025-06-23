@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# jabotR <img src="inst/figures/jabotR_hex_sticker.png" align="right" alt="" width="120" />
+# jabotR <img src="inst/figures/jabotr_hex_sticker.png" align="right" alt="" width="120" />
 
 <!-- badges: start -->
 
