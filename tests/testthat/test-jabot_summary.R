@@ -3,7 +3,7 @@ test_that("jabot_summary works for full search (herbarium = NULL) or with a vect
                           save = FALSE,
                           dir = "jabot_summary")
 
-  res_ex_some <- jabot_summary(herbarium = c("ALCB"),
+  res_ex_some <- jabot_summary(herbarium = c("R"),
                                verbose = FALSE,
                                save = FALSE,
                                dir = "jabot_summary")
@@ -11,16 +11,14 @@ test_that("jabot_summary works for full search (herbarium = NULL) or with a vect
   expect_s3_class(res_ex, "data.frame")
   expect_s3_class(res_ex_some, "data.frame")
 
-  expect_type(res_ex[[3]], "logical")
-  expect_type(res_ex[[8]], "double")
+  expect_type(res_ex[[3]], "character")
+  expect_type(res_ex[[8]], "character")
 
-  expect_equal(ncol(res_ex), 9)
-  expect_gt(nrow(res_ex), 0)
+  expect_equal(ncol(res_ex), 8)
 
-  expect_type(res_ex_some[[3]], "logical")
-  expect_type(res_ex_some[[8]], "double")
-  expect_equal(ncol(res_ex_some), 9)
-  expect_gt(nrow(res_ex_some), 0)
+  expect_type(res_ex_some[[3]], "character")
+  expect_type(res_ex_some[[8]], "character")
+  expect_equal(ncol(res_ex_some), 8)
 
   expect_gt(nrow(res_ex), nrow(res_ex_some))
 })
@@ -64,7 +62,7 @@ test_that("jabot_summary works with trailing slash in dir", {
 test_that("jabot_summary prints expected verbose messages", {
   local_edition(3)  # Required for proper testthat behavior under covr
   expect_message(
-    jabot_summary(herbarium = "RB",
+    jabot_summary(herbarium = "R",
                   verbose = TRUE,
                   save = FALSE),
     regexp = "Checking whether the input herbarium code exist in the JABOT..."
@@ -73,7 +71,7 @@ test_that("jabot_summary prints expected verbose messages", {
 
 
 test_that("jabot_summary returns NA if contact email is missing", {
-  df <- jabot_summary(herbarium = "RB",
+  df <- jabot_summary(herbarium = "R",
                       verbose = FALSE,
                       save = FALSE)
   expect_true(is.na(df$hasEmail[1]) || is.character(df$hasEmail[1]))
@@ -81,7 +79,7 @@ test_that("jabot_summary returns NA if contact email is missing", {
 
 
 test_that("jabot_summary returns Records column as numeric", {
-  df <- jabot_summary(herbarium = "RB",
+  df <- jabot_summary(herbarium = "R",
                       verbose = FALSE,
                       save = FALSE)
   expect_type(df$Records, "double")

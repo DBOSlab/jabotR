@@ -116,7 +116,7 @@
 #' }
 #'
 #' @importFrom stringr str_split
-#' @importFrom utils write.csv
+#' @importFrom utils write.csv capture.output
 #' @importFrom dplyr bind_rows filter
 #' @importFrom magrittr "%>%"
 #'
@@ -218,21 +218,22 @@ jabot_indets <- function(level = NULL,
   if (is.null(level)) {
     # Keep only higher-rank indeterminate taxa
     indets <- c("family", "genus", "FAMILY", "GENERO", "FAMILIA", "SUB_FAMILIA",
-                "TRIBO", "DIVISAO", "ORDEM", "CLASSE")
+                "TRIBO", "DIVISAO", "ORDEM", "CLASSE", "fam.", "gen.")
+
     tf <- occur_df$taxonRank %in% indets
     if (any(tf)) {
       occur_df <- occur_df[tf, ]
     }
   } else {
     if (level == "FAMILY") {
-      indets <- c("family", "FAMILY", "FAMILIA")
+      indets <- c("family", "FAMILY", "FAMILIA", "fam.")
       tf <- occur_df$taxonRank %in% indets
       if (any(tf)) {
         occur_df <- occur_df[tf, ]
       }
     }
     if (level == "GENUS") {
-      indets <- c("genus", "GENERO")
+      indets <- c("genus", "GENERO", "gen.")
       tf <- occur_df$taxonRank %in% indets
       if (any(tf)) {
         occur_df <- occur_df[tf, ]

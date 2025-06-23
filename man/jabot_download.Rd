@@ -31,7 +31,7 @@ hosted by the \href{https://www.gov.br/jbrj/pt-br}{Rio de Janeiro Botanical Gard
 \examples{
 \dontrun{
 
-jabot_download(herbarium = c("ALCB", "HUEFS", "K", "RB"),
+jabot_download(herbarium = c("AFR", "RB"),
                verbose = TRUE,
                dir = "jabot_download")
 }

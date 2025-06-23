@@ -101,7 +101,7 @@
 #' \dontrun{
 #'
 #' fam_taxa <- c("Fabaceae", "Ochnaceae")
-#' jabot_records(herbarium = c("ALCB", "HUEFS", "K", "RB"),
+#' jabot_records(herbarium = c("AFR", "R", "RB"),
 #'               taxon = fam_taxa,
 #'               verbose = TRUE,
 #'               save = TRUE,
@@ -110,7 +110,7 @@
 #'}
 #'
 #' @importFrom stringr str_split
-#' @importFrom utils write.csv
+#' @importFrom utils write.csv capture.output
 #' @importFrom dplyr bind_rows arrange across
 #' @importFrom tidyselect all_of
 #' @importFrom magrittr "%>%"

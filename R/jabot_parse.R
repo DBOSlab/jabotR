@@ -56,6 +56,7 @@ jabot_parse <- function(path = NULL,
   if (!is.null(herbarium)) {
     current_herbarium <- toupper(stringr::str_extract(dwca_folders,
                                                       "(?<=dwca[-_])[^-_]+"))
+    current_herbarium <- gsub("JBRJ", "RB", current_herbarium)
     dwca_folders <- dwca_folders[current_herbarium %in% herbarium]
     dwca_filenames <- dwca_filenames[current_herbarium %in% herbarium]
   }

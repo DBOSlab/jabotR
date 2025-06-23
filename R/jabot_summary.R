@@ -94,14 +94,19 @@ jabot_summary <- function(herbarium = NULL,
 
     summary_df$Version[tf] <- herb_info[[1]][1]
     summary_df$Published.on[tf] <- herb_info[[1]][2]
-    summary_df$Records[tf] <- herb_info[[1]][3]
+    summary_df$Records[tf] <- as.numeric(gsub(",", "", herb_info[[1]][3]))
     summary_df$Jabot_URL[tf] <- herb_info[[5]]
 
   }
 
-  summary_df$Records <- as.numeric(gsub(",", "", summary_df$Records))
   summary_df <- summary_df[order(summary_df$collectionCode), ]
   row.names(summary_df) <- 1:length(row.names(summary_df))
+
+  # Remove any collection with no records yet
+  tf <- summary_df$Records == 0
+  if (any(tf)) {
+    summary_df <- summary_df[!tf, ]
+  }
 
   # Save the search results if param save is TRUE
   if (save) {

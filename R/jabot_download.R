@@ -31,7 +31,7 @@
 #' @examples
 #' \dontrun{
 #'
-#' jabot_download(herbarium = c("ALCB", "HUEFS", "K", "RB"),
+#' jabot_download(herbarium = c("AFR", "RB"),
 #'                verbose = TRUE,
 #'                dir = "jabot_download")
 #'}
@@ -76,13 +76,18 @@ jabot_download <- function(herbarium = NULL,
 
     herb_info <- .get_herb_info(herb_URLs, ipt_metadata, i)
 
+    n <- as.numeric(gsub(",", "", herb_info[[1]][3]))
+    if (n == 0) {
+      next
+    }
+
     summary_df <- data.frame(collectionCode = herb_code[i],
                              rightsHolder = herb_info[[4]][1],
                              contactPoint = herb_info[[2]][1],
                              hasEmail = herb_info[[3]][1],
                              Version = herb_info[[1]][1],
                              Published.on = herb_info[[1]][2],
-                             Records = herb_info[[1]][3],
+                             Records = n,
                              Jabot_URL = herb_info[[5]])
 
     vdest = gsub("[.].*", "", summary_df$Version)
@@ -101,7 +106,9 @@ jabot_download <- function(herbarium = NULL,
         unlink(paste0(dir,"/", list.files(dir)[tf]), recursive = TRUE)
       }
 
-      dwca_file = paste0("https://ipt.jbrj.gov.br/jabot/archive.do?r=",
+      dwca_file = paste0(ifelse(herb_URLs[i] %in% "jbrj_rb",
+                                "https://ipt.jbrj.gov.br/jbrj/archive.do?r=",
+                                "https://ipt.jbrj.gov.br/jabot/archive.do?r="),
                          herb_URLs[i],
                          "&v=",
                          summary_df$Version)

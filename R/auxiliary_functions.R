@@ -26,12 +26,46 @@
 
   ipt_metadata <- lapply(ipt_metadata, function(x) strsplit(x, "\\s[|]\\s")[[1]])
 
+  rb <- .get_ipt_info_rb()
+
+  ipt_metadata <- append(ipt_metadata, rb[[1]])
+  herb_URLs <- append(herb_URLs, rb[[2]])
+  herb_code <- append(herb_code, rb[[3]])
+
   if (!is.null(herbarium)) {
     ipt_metadata <- ipt_metadata[herb_code %in% herbarium]
-    #URLs <- URLs[herb_code %in% herbarium]
     herb_URLs <- herb_URLs[herb_code %in% herbarium]
     herb_code <- herb_code[herb_code %in% herbarium]
   }
+  return(list(ipt_metadata, herb_URLs, herb_code))
+}
+
+
+.get_ipt_info_rb <- function() {
+
+  ipt_metadata <- readLines("https://ipt.jbrj.gov.br/jbrj/dcat",
+                            encoding = "UTF-8",
+                            warn = F)
+
+  pos = which(grepl("dcat[:]downloadURL\\s", ipt_metadata))
+  URLs <- gsub(".*\\s[<]|[>]\\s;$", "", ipt_metadata[pos])
+  herb_URLs <- gsub(".*r[=]|[>]\\s;$", "", URLs)
+  herb_code <- toupper(gsub("_.*", "", herb_URLs))
+
+  ini = which(grepl("a dcat:Dataset ;", ipt_metadata))
+  end = which(grepl("dcat:mediaType \"application/zip\" ;", ipt_metadata))
+  temp <- list()
+  for (i in seq_along(ini)) {
+    temp[[i]] = paste0(ipt_metadata[ini[i]:end[i]], collapse = " | ")
+  }
+  ipt_metadata = temp
+
+  ipt_metadata <- lapply(ipt_metadata, function(x) strsplit(x, "\\s[|]\\s")[[1]])
+  tf <- herb_URLs %in% "jbrj_rb"
+  ipt_metadata <- ipt_metadata[tf]
+  herb_URLs <- herb_URLs[tf]
+  herb_code <- "RB"
+
   return(list(ipt_metadata, herb_URLs, herb_code))
 }
 
@@ -41,7 +75,12 @@
 
 .get_herb_info <- function(herb_URLs, ipt_metadata, i) {
 
-  herb_url <- paste0("https://ipt.jbrj.gov.br/jabot/resource?r=", herb_URLs[i])
+  if (herb_URLs[i] %in% "jbrj_rb") {
+    herb_url <- paste0("https://ipt.jbrj.gov.br/jbrj/resource?r=", herb_URLs[i])
+  } else {
+    herb_url <- paste0("https://ipt.jbrj.gov.br/jabot/resource?r=", herb_URLs[i])
+  }
+
   version <- readLines(herb_url,
                        encoding = "UTF-8",
                        warn = F)
@@ -56,20 +95,16 @@
 
   contact <- ipt_metadata[[i]][which(grepl("dcat:contactPoint", ipt_metadata[[i]]))[1]]
   # Regular expression for extracting the name
-  name_pattern <- 'vcard:fn "([^"]+)"'
-  name <- regmatches(contact, gregexpr(name_pattern, contact, perl = TRUE))[[1]]
+  name <- regmatches(contact, gregexpr('vcard:fn "([^"]+)"', contact, perl = TRUE))[[1]]
   name <- gsub('vcard:fn "|\"', "", name)  # Remove the 'vcard:fn "' part
 
   # Regular expression for extracting the email
-  email_pattern <- '<mailto:([^>]+)>'
-  email <- regmatches(contact, gregexpr(email_pattern, contact, perl = TRUE))[[1]]
+  email <- regmatches(contact, gregexpr('<mailto:([^>]+)>', contact, perl = TRUE))[[1]]
   email <- gsub('<mailto:|>', "", email)  # Remove the '<mailto:' part
 
-  rights_holder <- gsub("^dct:title\\s\"|\\s-\\sHerb\u00E1rio Virtual.*",
-                        "", ipt_metadata[[i]][2])
-  rights_holder <- gsub("-\\sAmostras\\sBrasileiras.*",
-                        "", rights_holder)
-  rights_holder <- gsub(".*\\s-\\s|^\\s|\\s$|.*(H|h)erbarium-\\s|.*Herb\u00E1rio\\s(da|do)\\s|[.]\\sHerb\u00E1rio\\sVirtual\\s.*",
+  rights_holder <- gsub("Flores\\s-\\s\\s|Plantulas\\s-\\s", "", ipt_metadata[[i]][2])
+  rights_holder <- sub('^[^\\-]+ - ([^\\-]+?)\\s*-.*$', '\\1', rights_holder)
+  rights_holder <- gsub(".*\\s-\\s|[.]\\sJabot.*|[.]\\sJABOT.*|\"\\s;$|^\\s|\\sHerbarium\\sCollection$",
                         "", rights_holder)
 
   return(list(version, name, email, rights_holder, herb_url))
@@ -140,10 +175,8 @@
 
 #_______________________________________________________________________________
 ### Extract each "occurrence.txt" data frame and merge them ###
-
 .merge_occur_txt <- function(dwca_files) {
-  occur_df <- dplyr::bind_rows(lapply(dwca_files, function(x) {
-
+  dfs <- lapply(dwca_files, function(x) {
     df <- x[["data"]][["occurrence.txt"]]
 
     df$recordNumber <- suppressWarnings(as.character(df$recordNumber))
@@ -151,7 +184,6 @@
     df$decimalLatitude <- suppressWarnings(as.numeric(df$decimalLatitude))
 
     df$occurrenceID <- as.character(df$occurrenceID)
-    df$recordNumber <- as.character(df$recordNumber)
     df$minimumElevationInMeters <- as.character(df$minimumElevationInMeters)
     df$maximumElevationInMeters <- as.character(df$maximumElevationInMeters)
     df$eventDate <- as.character(df$eventDate)
@@ -167,7 +199,10 @@
     df$scientificNameAuthorship <- as.character(df$scientificNameAuthorship)
     df$scientificName <- as.character(df$scientificName)
 
-  }))
+    return(as.data.frame(df))  # Ensure it's a proper data frame
+  })
+
+  occur_df <- dplyr::bind_rows(dfs)  # Handles different columns by filling NA
   return(occur_df)
 }
 
@@ -188,9 +223,14 @@
       message("\nFiltering taxon names... ")
     }
 
+    tf <- grepl("aceae$", taxon)
+    if (any(tf)) {
+      taxon <- append(taxon, toupper(taxon[tf]))
+    }
+
     .check_taxon_match(occur_df, taxon, verbose)
 
-    tf_fam <- grepl("aceae$", taxon)
+    tf_fam <- grepl("aceae$|ACEAE$", taxon)
     if (any(tf_fam)) {
       taxon_fam <- taxon[tf_fam]
       tf <- occur_df$family %in% taxon_fam

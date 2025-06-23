@@ -99,7 +99,7 @@ specified directory.
 \dontrun{
 
 fam_taxa <- c("Fabaceae", "Ochnaceae")
-jabot_records(herbarium = c("ALCB", "HUEFS", "K", "RB"),
+jabot_records(herbarium = c("AFR", "R", "RB"),
               taxon = fam_taxa,
               verbose = TRUE,
               save = TRUE,

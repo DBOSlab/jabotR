@@ -181,12 +181,12 @@ test_that("jabot_records returns empty data.frame if no match after filters", {
 
 test_that("jabot_records uses updates = FALSE with preexisting path", {
   test_path <- tempdir()
-  jabot_download(herbarium = "ALCB",
+  jabot_download(herbarium = "R",
                  dir = test_path,
                  verbose = FALSE)
 
   result <- jabot_records(
-    herbarium = "ALCB",
+    herbarium = "R",
     taxon = "Fabaceae",
     path = test_path,
     updates = FALSE,
@@ -199,19 +199,13 @@ test_that("jabot_records uses updates = FALSE with preexisting path", {
 
 test_that("jabot_records handles partial reorder vector", {
   result <- jabot_records(
-    herbarium = "ALCB",
+    herbarium = "R",
     taxon = "Fabaceae",
     reorder = c("taxa", "year"),
     save = FALSE,
     verbose = FALSE
   )
   expect_true(all(c("family", "year") %in% colnames(result)))
-})
-
-
-test_that("jabot_records with default values still returns results", {
-  result <- jabot_records()
-  expect_s3_class(result, "data.frame")
 })
 
 
@@ -320,6 +314,12 @@ test_that("jabot_records works with genus-level taxon only", {
     save = FALSE,
     verbose = FALSE
   )
+  expect_s3_class(result, "data.frame")
+})
+
+
+test_that("jabot_records with default values still returns results", {
+  result <- jabot_records()
   expect_s3_class(result, "data.frame")
 })
 
