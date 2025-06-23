@@ -1,0 +1,40 @@
+Package: jabotR
+Type: Package
+Title: An R Package for Exploring JABOT Online Plant Specimen Collections
+Version: 1.0.0
+Authors@R:
+    c(
+      person(given = "Domingos",
+             family = "Cardoso",
+             role = c("aut", "cre", "cph"),
+             email = "domingoscardoso@jbrj.gov.br",
+             comment = c(ORCID = "0000-0001-7072-2656"))
+    )
+Maintainer: Domingos Cardoso <domingoscardoso@jbrj.gov.br>
+Description: Provides tools to access and analyze plant specimen records from
+    JABOT, a botanical data repository maintained by the
+    Rio de Janeiro Botanical Garden. Users can retrieve, filter, and summarize
+    specimen data using taxonomic, geographic, or temporal criteria. The
+    package supports downloading structured Darwin Core (DwC-A) archives and
+    integrates with tidyverse workflows for downstream analysis and visualization.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+Imports:
+    stringr,
+    stringi,
+    utils,
+    finch,
+    tidyr,
+    magrittr,
+    dplyr,
+    tidyselect
+Suggests:
+    quarto,
+    testthat (>= 3.0.0)
+URL:
+    https://dboslab.github.io/jabotR-website/,
+    https://github.com/dboslab/jabotR
+BugReports: https://github.com/DBOSlab/jabotR/issues
+RoxygenNote: 7.3.2
+Config/testthat/edition: 3

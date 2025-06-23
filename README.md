@@ -1,0 +1,114 @@
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+# jabotR <img src="inst/figures/jabotR_hex_sticker.png" align="right" alt="" width="120" />
+
+<!-- badges: start -->
+
+[![Codecov test
+coverage](https://codecov.io/gh/DBOSlab/jabotR/graph/badge.svg)](https://app.codecov.io/gh/DBOSlab/jabotR)
+[![Test
+Coverage](https://github.com/DBOSlab/jabotR/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/DBOSlab/jabotR/actions/workflows/test-coverage.yaml)
+[![CRAN
+Downloads](https://cranlogs.r-pkg.org/badges/grand-total/jabotR)](https://cran.r-project.org/package=jabotR)
+[![R-CMD-check](https://github.com/DBOSlab/jabotR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/DBOSlab/jabotR/actions/workflows/R-CMD-check.yaml)
+[![License:
+MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+<!-- badges: end -->
+
+***jabotR*** is an R package for accessing and analyzing plant specimen
+data from the [JABOT online herbarium
+collections](https://jabot.jbrj.gov.br/v3/consulta.php), hosted by the
+[Rio de Janeiro Botanical Garden](https://www.gov.br/jbrj/pt-br). It
+provides tools for downloading, summarizing, and filtering herbarium
+records in Darwin Core Archive (DwC-A) format via the [JABOT
+IPT](https://ipt.jbrj.gov.br/jabot).
+
+## Installation
+
+You can install the development version of ***jabotR*** from
+[GitHub](https://github.com/DBOSlab/jabotR) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("DBOSlab/jabotR")
+```
+
+``` r
+library(jabotR)
+```
+
+  
+  
+
+## Usage
+
+A general description of the available main functions (`jabot_download`
+and `jabot_summary`) that extract original JABOT collections are
+provided below.  
+  
+
+#### *1. `jabot_summary`: Summarizing JABOT collections*
+
+The following code can be used to extract a summary of all
+JABOT-associated collections, including herbarium acronym, curator’s
+email contact, number of records and a direct link to the original JABOT
+Integrated Publishing Toolkit ([IPT](https://ipt.jbrj.gov.br/jabot)).  
+
+``` r
+library(jabotR)
+
+summary_df <- jabot_summary(verbose = TRUE,
+                            save = TRUE,
+                            dir = "jabot_summary")
+```
+
+  
+By specifying a vector of herbarium acronyms, the user can extract a
+summary for just the specific herbarium collection.  
+
+``` r
+summary_some_df <- jabot_summary(herbarium = c("ALCB", "RB", "HUEFS", "US", "K"),
+                                 verbose = TRUE,
+                                 save = TRUE,
+                                 dir = "jabot_summary")
+```
+
+  
+  
+
+#### *2. `jabot_download`: Downloading JABOT specimen records*
+
+The following code can be used to download original specimen records in
+DwC-A format and associated metada for all JABOT collections.  
+
+``` r
+library(jabotR)
+
+jabot_download(verbose = TRUE,
+               dir = "jabot_download")
+```
+
+  
+By specifying a vector of herbarium acronyms, the user can download
+specimens records for just the specific herbarium collection.  
+
+``` r
+jabot_download(herbarium = c("ALCB", "HUEFS", "RB", "US", "K"),
+               verbose = TRUE,
+               dir = "jabot_download")
+```
+
+  
+  
+
+## Documentation
+
+Full function documentation and articles are available at the
+***jabotR*** [website](https://dboslab.github.io/jabotR-website/).  
+  
+
+## Citation
+
+Cardoso, D. *jabotR*: An R Package for Exploring JABOT Online Plant
+Specimen Collections. <https://github.com/dboslab/jabotR>
