@@ -68,7 +68,7 @@ By specifying a vector of herbarium acronyms, the user can extract a
 summary for just the specific herbarium collection.  
 
 ``` r
-summary_some_df <- jabot_summary(herbarium = c("ALCB", "RB", "HUEFS", "US", "K"),
+summary_some_df <- jabot_summary(herbarium = c("AFR", "R", "RB"),
                                  verbose = TRUE,
                                  save = TRUE,
                                  dir = "jabot_summary")
@@ -94,7 +94,7 @@ By specifying a vector of herbarium acronyms, the user can download
 specimens records for just the specific herbarium collection.  
 
 ``` r
-jabot_download(herbarium = c("ALCB", "HUEFS", "RB", "US", "K"),
+jabot_download(herbarium = c("AFR", "RB", "R"),
                verbose = TRUE,
                dir = "jabot_download")
 ```
@@ -110,5 +110,6 @@ Full function documentation and articles are available at the `jabotR`
 
 ## Citation
 
-Cardoso, D. *jabotR*: An R Package for Exploring JABOT Online Plant
-Specimen Collections. <https://github.com/dboslab/jabotR>
+Cardoso, D. & Silva, L.A.E. 2025. *jabotR*: An R Package for Exploring
+JABOT Online Plant Specimen Collections.
+<https://github.com/dboslab/jabotR>
