@@ -172,10 +172,14 @@ test_that("jabot_indets returns empty for unknown taxon", {
 
 
 test_that("jabot_indets works with no filters (all default args)", {
-  df <- jabot_indets(
-    save = FALSE,
-    verbose = FALSE
-  )
-  expect_s3_class(df, "data.frame")
+  tmpdir <- file.path(tempdir(), "new_test_indets_dir")
+  if (dir.exists(tmpdir)) unlink(tmpdir, recursive = TRUE)
+jabot_indets(
+  save = FALSE,
+  verbose = FALSE,
+  dir = tmpdir,
+)
+  expect_true(length(list.files(tmpdir)) > 0)
+  unlink(tmpdir, recursive = TRUE)
 })
 

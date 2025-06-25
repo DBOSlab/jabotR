@@ -63,7 +63,7 @@ key statistics (total records, breakdowns by herbarium, family, genus, country,
 and state).
 }
 \description{
-Retrieves occurrence records for indeterminate specimens (e.g., identified
+Retrieve occurrence records for indeterminate specimens (e.g., identified
 only to family or genus level) from the \href{https://ipt.jbrj.gov.br/jabot}{JABOT}
 hosted by the \href{https://www.gov.br/jbrj/pt-br}{Rio de Janeiro Botanical Garden}.
 The function automatically downloads and parses Darwin Core Archive (DwC-A)
