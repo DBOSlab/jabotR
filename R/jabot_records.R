@@ -1,7 +1,7 @@
 #' Retrieve taxon records from JABOT
 #'
 #' @author
-#' Domingos Cardoso
+#' Domingos Cardoso & Carlos Calderón
 #'
 #' @description
 #' Retrieve occurrence records for specific taxa from the

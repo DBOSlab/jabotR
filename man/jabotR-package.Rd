@@ -20,5 +20,11 @@ Useful links:
 \author{
 \strong{Maintainer}: Domingos Cardoso \email{domingoscardoso@jbrj.gov.br} (\href{https://orcid.org/0000-0001-7072-2656}{ORCID}) [copyright holder]
 
+Authors:
+\itemize{
+  \item Carlos Calderón \email{caldecid@gmail.com} (\href{https://orcid.org/0000-0002-3897-4615}{ORCID}) [copyright holder]
+  \item Luís Alexandre Estevão da Silva \email{estevao@jbrj.gov.br} (\href{https://orcid.org/0000-0002-7464-922X}{ORCID}) [copyright holder]
+}
+
 }
 \keyword{internal}
