@@ -110,6 +110,6 @@ Full function documentation and articles are available at the `jabotR`
 
 ## Citation
 
-Cardoso, D. & Silva, L.A.E. 2025. *jabotR*: An R Package for Exploring
-JABOT Online Plant Specimen Collections.
+Cardoso, D., Calderón, C. & Silva, L.A.E. 2025. *jabotR*: An R Package
+for Exploring JABOT Online Plant Specimen Collections.
 <https://github.com/dboslab/jabotR>

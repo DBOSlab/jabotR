@@ -9,6 +9,16 @@ Authors@R:
              role = c("aut", "cre", "cph"),
              email = "domingoscardoso@jbrj.gov.br",
              comment = c(ORCID = "0000-0001-7072-2656"))
+      person(given = "Carlos",
+             family = "Calderón",
+             role = c("aut", "cph"),
+             email = "caldecid@gmail.com",
+             comment = c(ORCID = "0000-0002-3897-4615"))
+      person(given = "Luís Alexandre",
+             family = "Estevão da Silva",
+             role = c("aut", "cph"),
+             email = "estevao@jbrj.gov.br",
+             comment = c(ORCID = "0000-0002-7464-922X"))
     )
 Maintainer: Domingos Cardoso <domingoscardoso@jbrj.gov.br>
 Description: Provides tools to access and analyze plant specimen records from
