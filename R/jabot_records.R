@@ -120,17 +120,17 @@
 #'
 
 jabot_records <- function(herbarium = NULL,
-                            taxon = NULL,
-                            state = NULL,
-                            recordYear = NULL,
-                            indets = TRUE,
-                            reorder = c("herbarium", "taxa", "collector", "area", "year"),
-                            path = NULL,
-                            updates = TRUE,
-                            verbose = TRUE,
-                            save = TRUE,
-                            dir = "jabot_records",
-                            filename = "jabot_records_search") {
+                          taxon = NULL,
+                          state = NULL,
+                          recordYear = NULL,
+                          indets = TRUE,
+                          reorder = c("herbarium", "taxa", "collector", "area", "year"),
+                          path = NULL,
+                          updates = TRUE,
+                          verbose = TRUE,
+                          save = TRUE,
+                          dir = "jabot_records",
+                          filename = "jabot_records_search") {
 
   # herbarium check
   if (!is.null(herbarium)) {
@@ -178,26 +178,26 @@ jabot_records <- function(herbarium = NULL,
       # The jabot_download will get updated dwca files only if any of the current
       # versions differ from the JABOT IPT
       jabot_download(herbarium = herbarium,
-                       verbose = verbose,
-                       dir = path)
+                     verbose = verbose,
+                     dir = path)
     }
 
     # Parse JABOT dwca files
     dwca_files <- jabot_parse(path = path,
-                                herbarium = herbarium,
-                                verbose = verbose)
+                              herbarium = herbarium,
+                              verbose = verbose)
   } else {
 
     # The jabot_download will get updated dwca files only if any of the current
     # versions differ from the JABOT IPT
     jabot_download(herbarium = herbarium,
-                     verbose = verbose,
-                     dir = "jabot_download")
+                   verbose = verbose,
+                   dir = "jabot_download")
 
     # Parse JABOT dwca files
     dwca_files <- jabot_parse(path = "jabot_download",
-                                herbarium = herbarium,
-                                verbose = verbose)
+                              herbarium = herbarium,
+                              verbose = verbose)
   }
 
   # Extract each "occurrence.txt" data frame and merge them

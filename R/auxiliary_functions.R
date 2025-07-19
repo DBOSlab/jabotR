@@ -86,7 +86,7 @@
                        warn = F)
 
   ini = which(grepl("latestVersion", version))[1]
-  end = which(grepl("None provided", version))[1]
+  end = which(grepl("\\d{4}-\\d{2}-\\d{2}", version))[1]+1
 
   version = version[ini:end]
 
