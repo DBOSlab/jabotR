@@ -203,6 +203,125 @@
   })
 
   occur_df <- dplyr::bind_rows(dfs)  # Handles different columns by filling NA
+
+  occur_df <- .std_inside_columns(occur_df)
+
+  return(occur_df)
+}
+
+.std_inside_columns <- function(occur_df) {
+
+  # Standardize and clean taxonRank column
+  taxonrank_infr <- c("Infr.", "infr.", "infraspecific")
+  taxonrank_form <- c("f.", "form", "forma", "FORM")
+  taxonrank_var <- c("var.", "VAR.", "variedade", "VARIEDADE", "VARIETY", "variety")
+  taxonrank_subsp <- c("subsp.", "ssp.", "SUBSP.", "SUBSP")
+  taxonrank_species <- c("sp", "sp.", "especie", "ESPECIE", "espécie", "ESPÊCIE", "species", "specie", "SPECIES", "SPECIE")
+  taxonrank_genus <- c("genero", "GENERO", "gênero", "GÊNERO", "gen.", "genus", "GENUS")
+  taxonrank_tribe <- c("tribo", "TRIBO", "tribe","TRIBE")
+  taxonrank_subfam <- c("sub_familia", "SUB_FAMILIA", "subfamily", "SUBFAMILY")
+  taxonrank_family <- c("fam.", "família","FAMÍLIA", "familia", "FAMILIA", "family", "FAMILY")
+  taxonrank_order <- c("ordem", "ORDEM","order", "ORDER")
+  taxonrank_class <- c("classe", "CLASSE", "class", "CLASS")
+  taxonrank_division <- c("divisao", "DIVISAO", "divisão", "DIVISÃO", "division", "DIVISION")
+
+  occur_df <- .replace_taxonrank(occur_df, taxonrank_infr, "infraspecific")
+  occur_df <- .replace_taxonrank(occur_df, taxonrank_form, "forma")
+  occur_df <- .replace_taxonrank(occur_df, taxonrank_subsp, "subspecies")
+  occur_df <- .replace_taxonrank(occur_df, taxonrank_var, "varietas")
+  occur_df <- .replace_taxonrank(occur_df, taxonrank_species, "species")
+  occur_df <- .replace_taxonrank(occur_df, taxonrank_genus, "genus")
+  occur_df <- .replace_taxonrank(occur_df, taxonrank_tribe, "tribe")
+  occur_df <- .replace_taxonrank(occur_df, taxonrank_subfam, "subfamily")
+  occur_df <- .replace_taxonrank(occur_df, taxonrank_family, "family")
+  occur_df <- .replace_taxonrank(occur_df, taxonrank_order, "order")
+  occur_df <- .replace_taxonrank(occur_df, taxonrank_class, "class")
+  occur_df <- .replace_taxonrank(occur_df, taxonrank_division, "division")
+
+  # Remove scientific names erroneously added into the taxonRank column
+  taxonranks <- c("infraspecific", "forma", "subspecies", "varietas",
+                  "species", "genus", "tribe", "subfamily",
+                  "family", "order", "class", "division")
+  n_diff <- setdiff(occur_df$taxonRank, taxonranks)
+  if (length(n_diff > 0)) {
+    tf <- grepl("aceae$|ACEAE", n_diff)
+    if (any(tf)) {
+      occur_df$taxonRank[occur_df$taxonRank %in% n_diff[tf]] <- "family"
+    }
+    tf <- grepl("[[:lower:]]\\s[[:lower:]]", n_diff)
+    if (any(tf)) {
+      occur_df$taxonRank[occur_df$taxonRank %in% n_diff[tf]] <- "species"
+    }
+    occur_df$taxonRank[occur_df$taxonRank %in% n_diff] <- "genus"
+  }
+
+  #_____________________________________________________________________________
+  # Finding errors within family column ####
+  # tf <- grepl("aceae$|Leguminosae|Compositae|Palmae|Cruciferae|Labiatae|Umbeliferae|Guttiferae",
+  #             occur_df$family)
+  # sort(unique(occur_df$family[!tf]))
+
+  tf <- grepl("acaeae$|aceaeae$", occur_df$family)
+  if(any(tf)) {
+    occur_df$family[tf] <- gsub("acaeae$|aceaeae$", "aceae", occur_df$family[tf])
+    occur_df$family[tf] <- gsub("Olaceae", "Olacaceae", occur_df$family[tf])
+  }
+  tf <- grepl("acae$|ace$|acea$|adeae$|aeae$|acedae$|eceae$|aceaea$|aceac$|acieae$|aceea$|arceae$|acee$|acaee$|acese$|acaea$|acceae$|sceae$",
+              occur_df$family)
+  if(any(tf)) {
+    occur_df$family[tf] <- gsub("acae$|ace$|acea$|adeae$|aeae$|acedae$|eceae$|aceaea$|aceac$|acieae$|aceea$|arceae$|acee$|acaee$|acese$|acaea$|acceae$|sceae$",
+                          "aceae", occur_df$family[tf])
+  }
+  tf <- grepl("aaceae$", occur_df$family)
+  if(any(tf)) {
+    occur_df$family[tf] <- gsub("aa", "a", occur_df$family[tf])
+    occur_df$family[tf] <- gsub("Lindsaceae", "Lindsaeaceae", occur_df$family[tf])
+  }
+  tf <- occur_df$family %in% c("Leg", "Fab.", "Papi.", "Papi", "Papilionoideae",
+                         "Caes.", "Caesalpinioideae", "Caesalpinoideae",
+                         "Mim.", "Mim", "Mimosoideae", "Dial.", "Dialioideae",
+                         "Cerci.", "Cerc.", "Cercidoideae")
+  if(any(tf)) {
+    occur_df$family[tf] <- "Fabaceae"
+  }
+  tf <- occur_df$family %in% c("Incertae", "Incertaesedes", "Ignotae", "Incertae Sedis",
+                         "L", "Jes", "Sem", "X", "Dicot", "Cf",
+                         "Indet", "Indet.", "Indt", "Em Branco", "Det.",
+                         "Indeterminada", "Indeterminado", "Angiosperma",
+                         "Ordem", "Classe")
+  if(any(tf)) {
+    occur_df$family[tf] <- NA
+    occur_df$taxonRank[tf] <- NA
+  }
+  tf <- grepl("lceae$|siceae$|nceae$", occur_df$family)
+  if(any(tf)) {
+    occur_df$family[tf] <- gsub("lceae$", "laceae", occur_df$family[tf])
+    occur_df$family[tf] <- gsub("siceae$", "siaceae", occur_df$family[tf])
+    occur_df$family[tf] <- gsub("nceae$", "naceae", occur_df$family[tf])
+  }
+
+  tf <- grepl("sp$|sp[.]$", occur_df$specificEpithet[occur_df$taxonRank %in% "species"])
+  #sort(unique(occur_df$specificEpithet[occur_df$taxonRank %in% "species"][tf]))
+  if(any(tf)) {
+    occur_df$specificEpithet[occur_df$taxonRank %in% "species"][tf] <- NA
+    occur_df$taxonRank[occur_df$taxonRank %in% "species"][tf] <- "genus"
+  }
+
+  tf <- grepl("aceae$", occur_df$genus[occur_df$taxonRank %in% "genus"])
+  #sort(unique(occur_df$genus[occur_df$taxonRank %in% "genus"][tf]))
+  if(any(tf)) {
+    occur_df$genus[occur_df$taxonRank %in% "genus"][tf] <- NA
+    occur_df$taxonRank[occur_df$taxonRank %in% "genus"][tf] <- "family"
+  }
+
+  return(occur_df)
+}
+
+.replace_taxonrank <- function(occur_df, taxonrank, rank) {
+  tf <- occur_df$taxonRank %in% taxonrank
+  if (any(tf)) {
+    occur_df$taxonRank[tf] <- rank
+  }
   return(occur_df)
 }
 
