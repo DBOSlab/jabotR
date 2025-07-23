@@ -111,7 +111,7 @@
 #'
 #' @importFrom stringr str_split
 #' @importFrom utils write.csv capture.output
-#' @importFrom dplyr bind_rows arrange across mutate recode
+#' @importFrom dplyr bind_rows arrange across
 #' @importFrom tidyselect all_of
 #' @importFrom magrittr "%>%"
 #' @importFrom stringi stri_trans_general
@@ -201,8 +201,7 @@ jabot_records <- function(herbarium = NULL,
   }
 
   # Extract each "occurrence.txt" data frame and merge them
-  occur_df <- .merge_occur_txt(dwca_files,
-                               verbose = verbose)
+  occur_df <- .merge_occur_txt(dwca_files)
 
   # Filter occurrence data
   occur_df <- .filter_occur_df(occur_df, taxon, state, recordYear, verbose)

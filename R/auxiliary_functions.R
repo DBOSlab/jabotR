@@ -174,37 +174,9 @@
 
 
 #_______________________________________________________________________________
-# Extract each "occurrence.txt" data frame and merge them ####
+# Function for standardizing taxonRank and taxonomic columns ####
 
-.merge_occur_txt <- function(dwca_files,
-                             verbose = verbose) {
-  occur_df <- dplyr::bind_rows(lapply(dwca_files, function(x) {
-
-    df <- x[["data"]][["occurrence.txt"]]
-
-    df$recordNumber <- suppressWarnings(as.character(df$recordNumber))
-    df$decimalLongitude <- suppressWarnings(as.numeric(df$decimalLongitude))
-    df$decimalLatitude <- suppressWarnings(as.numeric(df$decimalLatitude))
-
-    df$occurrenceID <- as.character(df$occurrenceID)
-    df$recordNumber <- as.character(df$recordNumber)
-    df$minimumElevationInMeters <- as.character(df$minimumElevationInMeters)
-    df$maximumElevationInMeters <- as.character(df$maximumElevationInMeters)
-    df$eventDate <- as.character(df$eventDate)
-    df$year <- as.character(df$year)
-    df$month <- as.character(df$month)
-    df$day <- as.character(df$day)
-
-    return(df)
-  }))
-
-  occur_df <- .std_inside_columns(occur_df,
-                                  verbose = verbose)
-
-  return(occur_df)
-}
-
-.std_inside_columns <- function(occur_df,
+.std_inside_columns <- function(df,
                                 verbose = verbose) {
 
   if (verbose) {
@@ -240,7 +212,7 @@
   )
 
   # Normalize taxonRank values
-  occur_df <- occur_df %>%
+  df <- df %>%
     dplyr::mutate(
       taxonRank = dplyr::recode(taxonRank, !!!taxonrank_map)
     )
@@ -249,35 +221,35 @@
   taxonranks <- c("infraspecific", "forma", "subspecies", "varietas",
                   "species", "genus", "tribe", "subfamily",
                   "family", "order", "class", "division")
-  n_diff <- setdiff(occur_df$taxonRank, taxonranks)
+  n_diff <- setdiff(df$taxonRank, taxonranks)
   if (length(n_diff > 0)) {
     tf <- grepl("aceae$|ACEAE", n_diff)
     if (any(tf)) {
-      occur_df$taxonRank[occur_df$taxonRank %in% n_diff[tf]] <- "family"
+      df$taxonRank[df$taxonRank %in% n_diff[tf]] <- "family"
     }
     tf <- grepl("[[:lower:]]\\s[[:lower:]]", n_diff)
     if (any(tf)) {
-      occur_df$taxonRank[occur_df$taxonRank %in% n_diff[tf]] <- "species"
+      df$taxonRank[df$taxonRank %in% n_diff[tf]] <- "species"
     }
-    occur_df$taxonRank[occur_df$taxonRank %in% n_diff] <- "genus"
+    df$taxonRank[df$taxonRank %in% n_diff] <- "genus"
   }
 
   #_____________________________________________________________________________
-  # Finding errors within family column ####
+  # Errors within family column ####
   # tf <- grepl("aceae$|Leguminosae|Compositae|Palmae|Cruciferae|Labiatae|Umbeliferae|Guttiferae",
-  #             occur_df$family)
-  # sort(unique(occur_df$family[!tf]))
+  #             df$family)
+  # sort(unique(df$family[!tf]))
 
   # Clean examples like "Amaranthaceae Alternanthera Maritima Mart"
-  tf <- grepl("aceae\\s([[:upper:]]|[[:lower:]]|[(][[:upper:]])|Leguminosae\\sSubfam", occur_df$family)
+  tf <- grepl("aceae\\s([[:upper:]]|[[:lower:]]|[(][[:upper:]])|Leguminosae\\sSubfam", df$family)
   if (any(tf)) {
-    occur_df$family[tf] <- gsub("\\s.*", "", occur_df$family[tf])
+    df$family[tf] <- gsub("\\s.*", "", df$family[tf])
   }
 
-  tf <- grepl("acaeae$|aceaeae$", occur_df$family)
+  tf <- grepl("acaeae$|aceaeae$", df$family)
   if (any(tf)) {
-    occur_df$family[tf] <- gsub("acaeae$|aceaeae$", "aceae", occur_df$family[tf])
-    occur_df$family[tf] <- gsub("Olaceae", "Olacaceae", occur_df$family[tf])
+    df$family[tf] <- gsub("acaeae$|aceaeae$", "aceae", df$family[tf])
+    df$family[tf] <- gsub("Olaceae", "Olacaceae", df$family[tf])
   }
 
   suffixes <- c("acae", "ace", "acea", "adeae", "aeae", "acedae", "eceae", "aceaea",
@@ -285,209 +257,209 @@
                 "acaea", "acceae", "sceae", "acieae", "ac Eae", "acia", "aecae",
                 "aceaae")
   pattern <- paste0("(", paste0(suffixes, collapse = "|"), ")$")
-  tf <- tidyr::replace_na(stringi::stri_detect_regex(occur_df$family, pattern), FALSE)
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$family, pattern), FALSE)
   if (any(tf)) {
-    occur_df$family[tf] <- gsub(paste(paste0(suffixes, "$"), collapse = "|"),
-                                "aceae", occur_df$family[tf])
+    df$family[tf] <- gsub(paste(paste0(suffixes, "$"), collapse = "|"),
+                          "aceae", df$family[tf])
   }
 
-  tf <- grepl("aaceae$", occur_df$family)
+  tf <- grepl("aaceae$", df$family)
   if (any(tf)) {
-    occur_df$family[tf] <- gsub("aa", "a", occur_df$family[tf])
-    occur_df$family[tf] <- gsub("Lindsaceae", "Lindsaeaceae", occur_df$family[tf])
+    df$family[tf] <- gsub("aa", "a", df$family[tf])
+    df$family[tf] <- gsub("Lindsaceae", "Lindsaeaceae", df$family[tf])
   }
 
-  tf <- occur_df$family %in% c("Leg", "Leguminosa", "Leguminoseae", "Leguminosa",
-                               "Leg Caesalpinioideae", "Fabaceae Caesalp.",
-                               "Fabaceae Caesalpinioideae",
-                               "Leg Papilionoideae", "Flaboideae", "Fabace",
-                               "Fab.", "Papi.", "Papi", "Papilionoideae", "Leguminosae Papilio",
-                               "Fabaceae Cercideae", "Fabaceae Faboideae",
-                               "Fabaceae Mimosoideae", "Fabaceae/Mimosoideae",
-                               "Fabaceaemimosoideae", "Leguminosae Mimos",
-                               "Caes.", "Caesalpinioideae", "Caesalpinoideae",
-                               "Mim.", "Mim", "Mimosoideae", "Dial.", "Dialioideae",
-                               "Cerci.", "Cerc.", "Cercidoideae")
+  tf <- df$family %in% c("Leg", "Leguminosa", "Leguminoseae", "Leguminosa",
+                         "Leg Caesalpinioideae", "Fabaceae Caesalp.",
+                         "Fabaceae Caesalpinioideae",
+                         "Leg Papilionoideae", "Flaboideae", "Fabace",
+                         "Fab.", "Papi.", "Papi", "Papilionoideae", "Leguminosae Papilio",
+                         "Fabaceae Cercideae", "Fabaceae Faboideae",
+                         "Fabaceae Mimosoideae", "Fabaceae/Mimosoideae",
+                         "Fabaceaemimosoideae", "Leguminosae Mimos",
+                         "Caes.", "Caesalpinioideae", "Caesalpinoideae",
+                         "Mim.", "Mim", "Mimosoideae", "Dial.", "Dialioideae",
+                         "Cerci.", "Cerc.", "Cercidoideae")
   if (any(tf)) {
-    occur_df$family[tf] <- "Fabaceae"
+    df$family[tf] <- "Fabaceae"
   }
 
-  tf <- occur_df$family %in% c("L", "Jes", "Sem", "X", "Dicot", "Cf",
-                               "Indet", "Indet.", "Indt", "Em Branco", "Det.",
-                               "Indeterminada", "Indeterminado", "Indetermindada",
-                               "Ordem", "Classe", "Número Cancelado", "Número Não Encontrado",
-                               "Número Não Localizado", "Plantae", "Sp.", "sp.",
-                               "Sem Informação", "Angiosperma", "Angiospermae",
-                               "Ignorada", "Undesignated", "Zzoutras", "Unknown",
-                               "unknown")
+  tf <- df$family %in% c("L", "Jes", "Sem", "X", "Dicot", "Cf",
+                         "Indet", "Indet.", "Indt", "Em Branco", "Det.",
+                         "Indeterminada", "Indeterminado", "Indetermindada",
+                         "Ordem", "Classe", "Número Cancelado", "Número Não Encontrado",
+                         "Número Não Localizado", "Plantae", "Sp.", "sp.",
+                         "Sem Informação", "Angiosperma", "Angiospermae",
+                         "Ignorada", "Undesignated", "Zzoutras", "Unknown",
+                         "unknown")
   if (any(tf)) {
-    occur_df$family[tf] <- NA
-    occur_df$taxonRank[tf] <- NA
+    df$family[tf] <- NA
+    df$taxonRank[tf] <- NA
   }
 
-  tf <- occur_df$family %in% c("Incertae", "Incertaesedes", "Incertae Sedis")
+  tf <- df$family %in% c("Incertae", "Incertaesedes", "Incertae Sedis")
   if (any(tf)) {
-    occur_df$family[tf] <- "incertae sedis"
+    df$family[tf] <- "incertae sedis"
   }
 
   suffixes <- c("lceae", "siceae", "nceae", "iceae")
   pattern <- paste0("(", paste0(suffixes, collapse = "|"), ")$")
-  tf <- tidyr::replace_na(stringi::stri_detect_regex(occur_df$family, pattern), FALSE)
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$family, pattern), FALSE)
   if (any(tf)) {
-    occur_df$family[tf] <- gsub("lceae$", "laceae", occur_df$family[tf])
-    occur_df$family[tf] <- gsub("siceae$", "siaceae", occur_df$family[tf])
-    occur_df$family[tf] <- gsub("nceae$", "naceae", occur_df$family[tf])
-    occur_df$family[tf] <- gsub("iceae$", "iaceae", occur_df$family[tf])
+    df$family[tf] <- gsub("lceae$", "laceae", df$family[tf])
+    df$family[tf] <- gsub("siceae$", "siaceae", df$family[tf])
+    df$family[tf] <- gsub("nceae$", "naceae", df$family[tf])
+    df$family[tf] <- gsub("iceae$", "iaceae", df$family[tf])
   }
 
   suffixes <- c("[?]", "[.]", "\\s", "\\s[[:upper:]]", "\\sCf[.]", "\\scf[.]")
   pattern <- paste0("(", paste0(suffixes, collapse = "|"), ")$")
-  tf <- tidyr::replace_na(stringi::stri_detect_regex(occur_df$family, pattern), FALSE)
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$family, pattern), FALSE)
   if (any(tf)) {
-    occur_df$family[tf] <- gsub(paste(paste0(suffixes, "$"), collapse = "|"),
-                                "", occur_df$family[tf])
+    df$family[tf] <- gsub(paste(paste0(suffixes, "$"), collapse = "|"),
+                          "", df$family[tf])
   }
 
-  tf <- grepl("sp$|sp[.]$", occur_df$specificEpithet[occur_df$taxonRank %in% "species"])
-  #sort(unique(occur_df$specificEpithet[occur_df$taxonRank %in% "species"][tf]))
+  tf <- grepl("sp$|sp[.]$", df$specificEpithet[df$taxonRank %in% "species"])
+  #sort(unique(df$specificEpithet[df$taxonRank %in% "species"][tf]))
   if(any(tf)) {
-    occur_df$specificEpithet[occur_df$taxonRank %in% "species"][tf] <- NA
-    occur_df$taxonRank[occur_df$taxonRank %in% "species"][tf] <- "genus"
+    df$specificEpithet[df$taxonRank %in% "species"][tf] <- NA
+    df$taxonRank[df$taxonRank %in% "species"][tf] <- "genus"
   }
 
-  tf <- grepl("aceae$", occur_df$genus[occur_df$taxonRank %in% "genus"])
-  #sort(unique(occur_df$genus[occur_df$taxonRank %in% "genus"][tf]))
+  tf <- grepl("aceae$", df$genus[df$taxonRank %in% "genus"])
+  #sort(unique(df$genus[df$taxonRank %in% "genus"][tf]))
   if (any(tf)) {
-    occur_df$genus[occur_df$taxonRank %in% "genus"][tf] <- NA
-    occur_df$taxonRank[occur_df$taxonRank %in% "genus"][tf] <- "family"
+    df$genus[df$taxonRank %in% "genus"][tf] <- NA
+    df$taxonRank[df$taxonRank %in% "genus"][tf] <- "family"
   }
 
-  index <- which(occur_df$taxonRank == "family" & is.na(occur_df$specificEpithet))
-  tf <- grepl("aceae$", occur_df$genus[index])
+  index <- which(df$taxonRank == "family" & is.na(df$specificEpithet))
+  tf <- grepl("aceae$", df$genus[index])
   if (any(tf)) {
-    occur_df$family[index[tf]] <- occur_df$genus[index[tf]]
-    occur_df$genus[index[tf]] <- NA
+    df$family[index[tf]] <- df$genus[index[tf]]
+    df$genus[index[tf]] <- NA
   }
 
-  temp <- occur_df %>%
+  temp <- df %>%
     filter(
       taxonRank != "family",
       grepl("aceae$", genus),
       is.na(scientificNameAuthorship) | scientificNameAuthorship %in% names(taxonrank_map)
     )
   if (nrow(temp) > 0) {
-    tf <- occur_df$occurrenceID %in% temp$occurrenceID
-    occur_df$family[tf] <- temp$genus
-    occur_df$genus[tf] <- temp$specificEpithet
-    occur_df$specificEpithet[tf] <- temp$infraspecificEpithet
-    occur_df$infraspecificEpithet[tf] <- NA
-    occur_df$scientificNameAuthorship[tf] <- NA
-    occur_df$scientificName[tf] <- NA
-    occur_df$taxonName[tf] <- NA
-    occur_df$genus[tf] <- .firstUp(occur_df$genus[tf])
+    tf <- df$occurrenceID %in% temp$occurrenceID
+    df$family[tf] <- temp$genus
+    df$genus[tf] <- temp$specificEpithet
+    df$specificEpithet[tf] <- temp$infraspecificEpithet
+    df$infraspecificEpithet[tf] <- NA
+    df$scientificNameAuthorship[tf] <- NA
+    df$scientificName[tf] <- NA
+    df$taxonName[tf] <- NA
+    df$genus[tf] <- .firstUp(df$genus[tf])
 
-    occur_df$taxonRank[tf][is.na(occur_df$genus[tf])] <- "family"
-    occur_df$taxonRank[tf][occur_df$taxonRank[tf] %in% "species"] <- "genus"
-    occur_df$taxonRank[tf][!is.na(occur_df$specificEpithet[tf])] <- "species"
+    df$taxonRank[tf][is.na(df$genus[tf])] <- "family"
+    df$taxonRank[tf][df$taxonRank[tf] %in% "species"] <- "genus"
+    df$taxonRank[tf][!is.na(df$specificEpithet[tf])] <- "species"
   }
 
-  temp <- occur_df %>%
+  temp <- df %>%
     filter(
       grepl("aceae$", genus),
       is.na(scientificNameAuthorship)
     )
   if (nrow(temp) > 0) {
-    tf <- occur_df$occurrenceID %in% temp$occurrenceID
-    occur_df$family[tf] <- temp$genus
-    occur_df$genus[tf] <- NA
-    occur_df$specificEpithet[tf] <- NA
+    tf <- df$occurrenceID %in% temp$occurrenceID
+    df$family[tf] <- temp$genus
+    df$genus[tf] <- NA
+    df$specificEpithet[tf] <- NA
   }
 
-  temp <- occur_df %>%
+  temp <- df %>%
     filter(
       grepl("aceae", genus),
       is.na(scientificNameAuthorship)
     )
   if (nrow(temp) > 0) {
-    tf <- occur_df$occurrenceID %in% temp$occurrenceID
-    occur_df$family[tf] <- gsub("\\s.*", "", temp$genus)
+    tf <- df$occurrenceID %in% temp$occurrenceID
+    df$family[tf] <- gsub("\\s.*", "", temp$genus)
     temp$genus <- sub("^\\S+\\s+", "", temp$genus)
-    occur_df$genus[tf] <- gsub("\\s.*", "", temp$genus)
+    df$genus[tf] <- gsub("\\s.*", "", temp$genus)
 
-    occur_df$specificEpithet[tf] <- .firstLower(sub("^\\S+\\s+(\\S+).*", "\\1", temp$genus))
-    occur_df$infraspecificEpithet[tf] <- NA
+    df$specificEpithet[tf] <- .firstLower(sub("^\\S+\\s+(\\S+).*", "\\1", temp$genus))
+    df$infraspecificEpithet[tf] <- NA
 
     if (any(is.na(temp$specificEpithet))) {
-      occur_df$specificEpithet[which(tf)[is.na(temp$specificEpithet)]] <- NA
+      df$specificEpithet[which(tf)[is.na(temp$specificEpithet)]] <- NA
     }
 
-    occur_df$taxonRank[tf][is.na(occur_df$specificEpithet[tf])] <- "genus"
-    occur_df$taxonRank[tf][!is.na(occur_df$specificEpithet[tf])] <- "species"
+    df$taxonRank[tf][is.na(df$specificEpithet[tf])] <- "genus"
+    df$taxonRank[tf][!is.na(df$specificEpithet[tf])] <- "species"
   }
 
-  temp <- occur_df %>%
+  temp <- df %>%
     filter(
       grepl("aceae", genus)
     )
   if (nrow(temp) > 0) {
-    tf <- occur_df$occurrenceID %in% temp$occurrenceID
-    occur_df$genus[tf] <- gsub("aceae", "a", temp$genus)
+    tf <- df$occurrenceID %in% temp$occurrenceID
+    df$genus[tf] <- gsub("aceae", "a", temp$genus)
   }
 
-  temp <- occur_df %>%
+  temp <- df %>%
     filter(
       grepl("aceae", specificEpithet),
       is.na(family)
     )
   if (nrow(temp) > 0) {
-    tf <- occur_df$occurrenceID %in% temp$occurrenceID
+    tf <- df$occurrenceID %in% temp$occurrenceID
     # remove everything after the second space with removing of trailing space)
     temp$specificEpithet <- sub("^((\\S+\\s+){2})\\S+.*", "\\1", temp$specificEpithet) |> trimws()
 
-    occur_df$family[tf] <- .firstUp(gsub("\\s.*", "", temp$specificEpithet))
-    occur_df$genus[tf] <- .firstUp(temp$infraspecificEpithet)
-    occur_df$specificEpithet[tf] <- temp$scientificNameAuthorship
-    occur_df$infraspecificEpithet[tf] <- NA
-    occur_df$scientificNameAuthorship[tf] <- NA
+    df$family[tf] <- .firstUp(gsub("\\s.*", "", temp$specificEpithet))
+    df$genus[tf] <- .firstUp(temp$infraspecificEpithet)
+    df$specificEpithet[tf] <- temp$scientificNameAuthorship
+    df$infraspecificEpithet[tf] <- NA
+    df$scientificNameAuthorship[tf] <- NA
 
     tftf <- grepl("aceae", temp$infraspecificEpithet)
     if (any(tftf)){
-      occur_df$genus[occur_df$occurrenceID %in% temp$occurrenceID[tftf]] <- .firstUp(sub("^\\S+\\s+", "", temp$specificEpithet[tftf]))
+      df$genus[df$occurrenceID %in% temp$occurrenceID[tftf]] <- .firstUp(sub("^\\S+\\s+", "", temp$specificEpithet[tftf]))
     }
 
-    occur_df$taxonRank[tf][is.na(occur_df$specificEpithet[tf])] <- "genus"
-    occur_df$taxonRank[tf][!is.na(occur_df$specificEpithet[tf])] <- "species"
+    df$taxonRank[tf][is.na(df$specificEpithet[tf])] <- "genus"
+    df$taxonRank[tf][!is.na(df$specificEpithet[tf])] <- "species"
   }
 
-  temp <- occur_df %>%
+  temp <- df %>%
     filter(
       grepl("aceae", infraspecificEpithet),
       is.na(genus)
     )
   if (nrow(temp) > 0) {
-    tf <- occur_df$occurrenceID %in% temp$occurrenceID
+    tf <- df$occurrenceID %in% temp$occurrenceID
 
-    occur_df$family[tf] <- .firstUp(temp$infraspecificEpithet)
-    occur_df$genus[tf] <- temp$scientificNameAuthorship
-    occur_df$infraspecificEpithet[tf] <- NA
-    occur_df$scientificNameAuthorship[tf] <- NA
-    occur_df$taxonRank[tf] <- "genus"
+    df$family[tf] <- .firstUp(temp$infraspecificEpithet)
+    df$genus[tf] <- temp$scientificNameAuthorship
+    df$infraspecificEpithet[tf] <- NA
+    df$scientificNameAuthorship[tf] <- NA
+    df$taxonRank[tf] <- "genus"
   }
 
-  tf <- grepl("aceae", occur_df$scientificNameAuthorship)
+  tf <- grepl("aceae", df$scientificNameAuthorship)
   if (any(tf)) {
-    occur_df$scientificNameAuthorship[tf] <- NA
+    df$scientificNameAuthorship[tf] <- NA
   }
 
-  index <- which(occur_df$taxonRank == "subfamily" & !is.na(occur_df$genus))
+  index <- which(df$taxonRank == "subfamily" & !is.na(df$genus))
   if (length(index) > 0) {
-    occur_df$taxonRank[index] <- "genus"
+    df$taxonRank[index] <- "genus"
   }
 
-  occur_df <- .fill_taxon_name(occur_df)
-  occur_df <- .fill_scientific_name(occur_df)
+  df <- .fill_taxon_name(df)
+  df <- .fill_scientific_name(df)
 
-  return(occur_df)
+  return(df)
 }
 
 .firstUp <- function(x) {
@@ -573,6 +545,35 @@
 
   df$scientificName <- trimws(df$scientificName)
   return(df)
+}
+
+
+#_______________________________________________________________________________
+# Extract each "occurrence.txt" data frame and merge them ####
+
+.merge_occur_txt <- function(dwca_files,
+                             verbose = verbose) {
+  occur_df <- dplyr::bind_rows(lapply(dwca_files, function(x) {
+
+    df <- x[["data"]][["occurrence.txt"]]
+
+    df$recordNumber <- suppressWarnings(as.character(df$recordNumber))
+    df$decimalLongitude <- suppressWarnings(as.numeric(df$decimalLongitude))
+    df$decimalLatitude <- suppressWarnings(as.numeric(df$decimalLatitude))
+
+    df$occurrenceID <- as.character(df$occurrenceID)
+    df$recordNumber <- as.character(df$recordNumber)
+    df$minimumElevationInMeters <- as.character(df$minimumElevationInMeters)
+    df$maximumElevationInMeters <- as.character(df$maximumElevationInMeters)
+    df$eventDate <- as.character(df$eventDate)
+    df$year <- as.character(df$year)
+    df$month <- as.character(df$month)
+    df$day <- as.character(df$day)
+
+    return(df)
+  }))
+
+  return(occur_df)
 }
 
 

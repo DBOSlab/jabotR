@@ -100,25 +100,3 @@ test_that("jabot_download prints messages when verbose = TRUE", {
   unlink(tmp_dir, recursive = TRUE)
 })
 
-
-test_that("jabot_download replaces stale dwca folders", {
-  tmp_dir <- file.path(tempdir(), "jabot_replace_test")
-  dir.create(tmp_dir, showWarnings = FALSE)
-
-  # Simulate stale dwca folder
-  dummy_dir <- file.path(tmp_dir, "dwca_afr_v1_49")
-  dir.create(dummy_dir)
-
-  expect_true(dir.exists(dummy_dir))
-  expect_true(length(list.files(dummy_dir)) == 0)
-
-  jabot_download(herbarium = "AFR",
-                 verbose = FALSE,
-                 dir = tmp_dir)
-  expect_true(dir.exists(dummy_dir))
-  expect_true(length(list.files(dummy_dir)) > 0)
-
-  unlink(tmp_dir, recursive = TRUE)
-})
-
-

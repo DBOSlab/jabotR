@@ -117,7 +117,7 @@
 #'
 #' @importFrom stringr str_split
 #' @importFrom utils write.csv capture.output
-#' @importFrom dplyr bind_rows filter mutate recode
+#' @importFrom dplyr bind_rows filter
 #' @importFrom magrittr "%>%"
 #'
 #' @export
@@ -213,8 +213,7 @@ jabot_indets <- function(level = NULL,
   }
 
   # Extract each "occurrence.txt" data frame and merge them
-  occur_df <- .merge_occur_txt(dwca_files,
-                               verbose = verbose)
+  occur_df <- .merge_occur_txt(dwca_files)
 
   if (is.null(level)) {
     # Keep only higher-rank indeterminate taxa
@@ -265,4 +264,3 @@ jabot_indets <- function(level = NULL,
 
   return(occur_df)
 }
-
