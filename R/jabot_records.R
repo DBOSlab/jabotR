@@ -111,7 +111,7 @@
 #'
 #' @importFrom stringr str_split
 #' @importFrom utils write.csv capture.output
-#' @importFrom dplyr bind_rows arrange across
+#' @importFrom dplyr bind_rows arrange across mutate recode
 #' @importFrom tidyselect all_of
 #' @importFrom magrittr "%>%"
 #' @importFrom stringi stri_trans_general
@@ -201,7 +201,8 @@ jabot_records <- function(herbarium = NULL,
   }
 
   # Extract each "occurrence.txt" data frame and merge them
-  occur_df <- .merge_occur_txt(dwca_files)
+  occur_df <- .merge_occur_txt(dwca_files,
+                               verbose = verbose)
 
   # Filter occurrence data
   occur_df <- .filter_occur_df(occur_df, taxon, state, recordYear, verbose)
@@ -218,6 +219,9 @@ jabot_records <- function(herbarium = NULL,
 
   # Reorder the data by the order of specific columns
   occur_df <- .reorder_df(occur_df, reorder)
+
+  # Remove columns that are completely NA
+  occur_df <- occur_df[, colSums(!is.na(occur_df)) > 0]
 
   # Save the search results if param save is TRUE
   if (save) {

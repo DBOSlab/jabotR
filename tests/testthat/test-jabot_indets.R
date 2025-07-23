@@ -1,32 +1,32 @@
-test_that("jabot_indets returns a data.frame and filters by level FAMILY", {
+test_that("jabot_indets returns a data.frame and filters by level 'family'", {
   df <- jabot_indets(
-    level = "FAMILY",
+    level = "family",
     herbarium = "AFR",
     taxon = "Fabaceae",
     verbose = FALSE,
     save = FALSE
   )
   expect_s3_class(df, "data.frame")
-  expect_true(all(df$taxonRank %in% c("family", "FAMILY", "FAMILIA")))
+  expect_true(all(df$taxonRank %in% "family"))
 })
 
 
-test_that("jabot_indets filters by level GENUS", {
+test_that("jabot_indets filters by level 'genus'", {
   df <- jabot_indets(
-    level = "GENUS",
+    level = "genus",
     herbarium = "AFR",
     taxon = "Fabaceae",
     verbose = FALSE,
     save = FALSE
   )
   expect_s3_class(df, "data.frame")
-  expect_true(all(df$taxonRank %in% c("genus", "GENERO")))
+  expect_true(all(df$taxonRank %in% "genus"))
 })
 
 
 test_that("jabot_indets filters by year range and state", {
   df <- jabot_indets(
-    level = "FAMILY",
+    level = "family",
     herbarium = "R",
     recordYear = c("2000", "2024"),
     state = c("Bahia", "Minas Gerais"),
@@ -43,7 +43,7 @@ test_that("jabot_indets saves output when save = TRUE", {
   tmpdir <- tempdir()
   outfile <- "test_indets"
   df <- jabot_indets(
-    level = "GENUS",
+    level = "genus",
     herbarium = "R",
     taxon = "Fabaceae",
     dir = tmpdir,
@@ -66,7 +66,7 @@ test_that("jabot_indets returns more rows when level is NULL (all indets)", {
     save = FALSE
   )
   only_family <- jabot_indets(
-    level = "FAMILY",
+    level = "family",
     herbarium = "R",
     taxon = "Fabaceae",
     verbose = FALSE,
@@ -81,7 +81,7 @@ test_that("jabot_indets uses updates = FALSE with provided path", {
   jabot_download(herbarium = "R", dir = temp_path, verbose = FALSE)
 
   df <- jabot_indets(
-    level = "FAMILY",
+    level = "family",
     herbarium = "R",
     taxon = "Fabaceae",
     path = temp_path,
@@ -101,7 +101,7 @@ test_that("jabot_indets updates = TRUE and path is given", {
                  verbose = FALSE)
 
   df <- jabot_indets(
-    level = "GENUS",
+    level = "genus",
     herbarium = "R",
     taxon = "Fabaceae",
     path = temp_path,
@@ -116,7 +116,7 @@ test_that("jabot_indets updates = TRUE and path is given", {
 
 test_that("jabot_indets applies custom reorder", {
   df <- jabot_indets(
-    level = "FAMILY",
+    level = "family",
     herbarium = "R",
     taxon = "Fabaceae",
     reorder = c("year", "taxa"),
@@ -132,7 +132,7 @@ test_that("jabot_indets creates directory if missing", {
   if (dir.exists(tmpdir)) unlink(tmpdir, recursive = TRUE)
 
   jabot_indets(
-    level = "FAMILY",
+    level = "family",
     herbarium = "R",
     taxon = "Fabaceae",
     dir = tmpdir,
@@ -148,7 +148,7 @@ test_that("jabot_indets creates directory if missing", {
 test_that("jabot_indets handles non-matching level filter", {
   expect_error(
     jabot_indets(
-      level = "SPECIES", # invalid for this function
+      level = "species", # invalid for this function
       herbarium = "R",
       taxon = "Fabaceae",
       verbose = FALSE,
@@ -161,7 +161,7 @@ test_that("jabot_indets handles non-matching level filter", {
 test_that("jabot_indets returns empty for unknown taxon", {
   expect_error(
     jabot_indets(
-      level = "FAMILY",
+      level = "family",
       herbarium = "R",
       taxon = "Fakeplantus",
       verbose = FALSE,

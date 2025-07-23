@@ -3,7 +3,7 @@
 
 
 #_______________________________________________________________________________
-### Function to get raw metadata from JABOT repository ###
+# Function to get raw metadata from JABOT repository ####
 
 .get_ipt_info <- function(herbarium) {
 
@@ -71,7 +71,7 @@
 
 
 #_______________________________________________________________________________
-### Function to get summary information of each JABOT-associated collection ###
+# Function to get summary information of each JABOT-associated collection ####
 
 .get_herb_info <- function(herb_URLs, ipt_metadata, i) {
 
@@ -112,7 +112,7 @@
 
 
 #_______________________________________________________________________________
-### Function to reorder retrieved data based on specific columns ###
+# Function to reorder retrieved data based on specific columns ####
 
 .reorder_df <- function(df, reorder) {
 
@@ -174,45 +174,10 @@
 
 
 #_______________________________________________________________________________
-### Extract each "occurrence.txt" data frame and merge them ###
-.merge_occur_txt <- function(dwca_files) {
-  dfs <- lapply(dwca_files, function(x) {
-    df <- x[["data"]][["occurrence.txt"]]
-
-    df$recordNumber <- suppressWarnings(as.character(df$recordNumber))
-    df$decimalLongitude <- suppressWarnings(as.numeric(df$decimalLongitude))
-    df$decimalLatitude <- suppressWarnings(as.numeric(df$decimalLatitude))
-
-    df$occurrenceID <- as.character(df$occurrenceID)
-    df$minimumElevationInMeters <- as.character(df$minimumElevationInMeters)
-    df$maximumElevationInMeters <- as.character(df$maximumElevationInMeters)
-    df$eventDate <- as.character(df$eventDate)
-    df$year <- as.character(df$year)
-    df$month <- as.character(df$month)
-    df$day <- as.character(df$day)
-    df$institutionCode <- as.character(df$institutionCode)
-    df$collectionCode <- as.character(df$collectionCode)
-    df$catalogNumber <- as.character(df$catalogNumber)
-    df$taxonRank <- as.character(df$taxonRank)
-    df$specificEpithet <- as.character(df$specificEpithet)
-    df$infraspecificEpithet <- as.character(df$infraspecificEpithet)
-    df$scientificNameAuthorship <- as.character(df$scientificNameAuthorship)
-    df$scientificName <- as.character(df$scientificName)
-
-    return(as.data.frame(df))  # Ensure it's a proper data frame
-  })
-
-  occur_df <- dplyr::bind_rows(dfs)  # Handles different columns by filling NA
-
-  occur_df <- .std_inside_columns(occur_df)
-
-  return(occur_df)
-}
-
-#_______________________________________________________________________________
 # Extract each "occurrence.txt" data frame and merge them ####
 
-.merge_occur_txt <- function(dwca_files) {
+.merge_occur_txt <- function(dwca_files,
+                             verbose = verbose) {
   occur_df <- dplyr::bind_rows(lapply(dwca_files, function(x) {
 
     df <- x[["data"]][["occurrence.txt"]]
@@ -233,37 +198,52 @@
     return(df)
   }))
 
-  occur_df <- .std_inside_columns(occur_df)
+  occur_df <- .std_inside_columns(occur_df,
+                                  verbose = verbose)
 
   return(occur_df)
 }
 
-.std_inside_columns <- function(occur_df) {
+.std_inside_columns <- function(occur_df,
+                                verbose = verbose) {
+
+  if (verbose) {
+    message("Standardizing taxonRank and taxonomic columns...")
+  }
 
   # Standardize and clean taxonRank column
-  taxonrank_form <- c("f.", "form", "forma", "FORM", "FORMA")
-  taxonrank_var <- c("var.", "VAR.", "variedade", "VARIEDADE", "VARIETY", "variety")
-  taxonrank_subsp <- c("subsp.", "ssp.", "SUBSP.", "SUBSP", "SUB_ESPECIE", "Infr.", "infr.", "infraspecific")
-  taxonrank_species <- c("sp", "sp.", "especie", "ESPECIE", "espécie", "ESPÊCIE", "species", "specie", "SPECIES", "SPECIE")
-  taxonrank_genus <- c("genero", "GENERO", "gênero", "GÊNERO", "gen.", "genus", "GENUS")
-  taxonrank_tribe <- c("tribo", "TRIBO", "tribe","TRIBE")
-  taxonrank_subfam <- c("sub_familia", "SUB_FAMILIA", "subfamily", "SUBFAMILY")
-  taxonrank_family <- c("fam.", "família", "FAMÍLIA", "familia", "FAMILIA", "family", "FAMILY")
-  taxonrank_order <- c("ordem", "ORDEM", "order", "ORDER")
-  taxonrank_class <- c("classe", "CLASSE", "class", "CLASS")
-  taxonrank_division <- c("divisao", "DIVISAO", "divisão", "DIVISÃO", "division", "DIVISION")
+  taxonrank_form <- c("f.", "form", "Forma", "forma", "FORM", "FORMA")
+  taxonrank_var <- c("var.", "VAR.", "Variedade", "variedade", "VARIEDADE", "VARIETY", "variety")
+  taxonrank_subsp <- c("subsp.", "ssp.", "subespecie", "Subespecie", "subespécie", "Subespécie", "SUBSP.", "SUBSP", "SUB_ESPECIE", "Infr.", "infr.", "infraspecific")
+  taxonrank_species <- c("sp", "sp.", "especie", "ESPECIE", "Espécie", "espécie", "ESPÊCIE", "species", "Species", "specie", "SPECIES", "SPECIE")
+  taxonrank_genus <- c("genero", "Genero", "GENERO", "Gênero", "gênero", "GÊNERO", "gen.", "genus", "Genus", "GENUS")
+  taxonrank_tribe <- c("tribo", "TRIBO", "tribe", "Tribe", "TRIBE")
+  taxonrank_subfam <- c("sub_familia", "SUB_FAMILIA", "subfamily", "Subfamily", "SUBFAMILY")
+  taxonrank_family <- c("fam.", "família", "Família", "FAMÍLIA", "familia", "Familia", "FAMILIA", "family", "Family", "FAMILY")
+  taxonrank_order <- c("ordem", "Ordem", "ORDEM", "order", "Order", "ORDER")
+  taxonrank_class <- c("classe", "CLASSE", "class", "Class", "CLASS")
+  taxonrank_division <- c("divisao", "DIVISAO", "divisão", "DIVISÃO", "division", "Division", "DIVISION")
 
-  occur_df <- .replace_taxonrank(occur_df, taxonrank_form, "forma")
-  occur_df <- .replace_taxonrank(occur_df, taxonrank_subsp, "subspecies")
-  occur_df <- .replace_taxonrank(occur_df, taxonrank_var, "varietas")
-  occur_df <- .replace_taxonrank(occur_df, taxonrank_species, "species")
-  occur_df <- .replace_taxonrank(occur_df, taxonrank_genus, "genus")
-  occur_df <- .replace_taxonrank(occur_df, taxonrank_tribe, "tribe")
-  occur_df <- .replace_taxonrank(occur_df, taxonrank_subfam, "subfamily")
-  occur_df <- .replace_taxonrank(occur_df, taxonrank_family, "family")
-  occur_df <- .replace_taxonrank(occur_df, taxonrank_order, "order")
-  occur_df <- .replace_taxonrank(occur_df, taxonrank_class, "class")
-  occur_df <- .replace_taxonrank(occur_df, taxonrank_division, "division")
+  # Create unified taxon rank mapping
+  taxonrank_map <- c(
+    setNames(rep("forma", length(taxonrank_form)), taxonrank_form),
+    setNames(rep("varietas", length(taxonrank_var)), taxonrank_var),
+    setNames(rep("subspecies", length(taxonrank_subsp)), taxonrank_subsp),
+    setNames(rep("species", length(taxonrank_species)), taxonrank_species),
+    setNames(rep("genus", length(taxonrank_genus)), taxonrank_genus),
+    setNames(rep("tribe", length(taxonrank_tribe)), taxonrank_tribe),
+    setNames(rep("subfamily", length(taxonrank_subfam)), taxonrank_subfam),
+    setNames(rep("family", length(taxonrank_family)), taxonrank_family),
+    setNames(rep("order", length(taxonrank_order)), taxonrank_order),
+    setNames(rep("class", length(taxonrank_class)), taxonrank_class),
+    setNames(rep("division", length(taxonrank_division)), taxonrank_division)
+  )
+
+  # Normalize taxonRank values
+  occur_df <- occur_df %>%
+    dplyr::mutate(
+      taxonRank = dplyr::recode(taxonRank, !!!taxonrank_map)
+    )
 
   # Remove scientific names erroneously added into the taxonRank column
   taxonranks <- c("infraspecific", "forma", "subspecies", "varietas",
@@ -382,20 +362,222 @@
     occur_df$taxonRank[occur_df$taxonRank %in% "genus"][tf] <- "family"
   }
 
+  index <- which(occur_df$taxonRank == "family" & is.na(occur_df$specificEpithet))
+  tf <- grepl("aceae$", occur_df$genus[index])
+  if (any(tf)) {
+    occur_df$family[index[tf]] <- occur_df$genus[index[tf]]
+    occur_df$genus[index[tf]] <- NA
+  }
+
+  temp <- occur_df %>%
+    filter(
+      taxonRank != "family",
+      grepl("aceae$", genus),
+      is.na(scientificNameAuthorship) | scientificNameAuthorship %in% names(taxonrank_map)
+    )
+  if (nrow(temp) > 0) {
+    tf <- occur_df$occurrenceID %in% temp$occurrenceID
+    occur_df$family[tf] <- temp$genus
+    occur_df$genus[tf] <- temp$specificEpithet
+    occur_df$specificEpithet[tf] <- temp$infraspecificEpithet
+    occur_df$infraspecificEpithet[tf] <- NA
+    occur_df$scientificNameAuthorship[tf] <- NA
+    occur_df$scientificName[tf] <- NA
+    occur_df$taxonName[tf] <- NA
+    occur_df$genus[tf] <- .firstUp(occur_df$genus[tf])
+
+    occur_df$taxonRank[tf][is.na(occur_df$genus[tf])] <- "family"
+    occur_df$taxonRank[tf][occur_df$taxonRank[tf] %in% "species"] <- "genus"
+    occur_df$taxonRank[tf][!is.na(occur_df$specificEpithet[tf])] <- "species"
+  }
+
+  temp <- occur_df %>%
+    filter(
+      grepl("aceae$", genus),
+      is.na(scientificNameAuthorship)
+    )
+  if (nrow(temp) > 0) {
+    tf <- occur_df$occurrenceID %in% temp$occurrenceID
+    occur_df$family[tf] <- temp$genus
+    occur_df$genus[tf] <- NA
+    occur_df$specificEpithet[tf] <- NA
+  }
+
+  temp <- occur_df %>%
+    filter(
+      grepl("aceae", genus),
+      is.na(scientificNameAuthorship)
+    )
+  if (nrow(temp) > 0) {
+    tf <- occur_df$occurrenceID %in% temp$occurrenceID
+    occur_df$family[tf] <- gsub("\\s.*", "", temp$genus)
+    temp$genus <- sub("^\\S+\\s+", "", temp$genus)
+    occur_df$genus[tf] <- gsub("\\s.*", "", temp$genus)
+
+    occur_df$specificEpithet[tf] <- .firstLower(sub("^\\S+\\s+(\\S+).*", "\\1", temp$genus))
+    occur_df$infraspecificEpithet[tf] <- NA
+
+    if (any(is.na(temp$specificEpithet))) {
+      occur_df$specificEpithet[which(tf)[is.na(temp$specificEpithet)]] <- NA
+    }
+
+    occur_df$taxonRank[tf][is.na(occur_df$specificEpithet[tf])] <- "genus"
+    occur_df$taxonRank[tf][!is.na(occur_df$specificEpithet[tf])] <- "species"
+  }
+
+  temp <- occur_df %>%
+    filter(
+      grepl("aceae", genus)
+    )
+  if (nrow(temp) > 0) {
+    tf <- occur_df$occurrenceID %in% temp$occurrenceID
+    occur_df$genus[tf] <- gsub("aceae", "a", temp$genus)
+  }
+
+  temp <- occur_df %>%
+    filter(
+      grepl("aceae", specificEpithet),
+      is.na(family)
+    )
+  if (nrow(temp) > 0) {
+    tf <- occur_df$occurrenceID %in% temp$occurrenceID
+    # remove everything after the second space with removing of trailing space)
+    temp$specificEpithet <- sub("^((\\S+\\s+){2})\\S+.*", "\\1", temp$specificEpithet) |> trimws()
+
+    occur_df$family[tf] <- .firstUp(gsub("\\s.*", "", temp$specificEpithet))
+    occur_df$genus[tf] <- .firstUp(temp$infraspecificEpithet)
+    occur_df$specificEpithet[tf] <- temp$scientificNameAuthorship
+    occur_df$infraspecificEpithet[tf] <- NA
+    occur_df$scientificNameAuthorship[tf] <- NA
+
+    tftf <- grepl("aceae", temp$infraspecificEpithet)
+    if (any(tftf)){
+      occur_df$genus[occur_df$occurrenceID %in% temp$occurrenceID[tftf]] <- .firstUp(sub("^\\S+\\s+", "", temp$specificEpithet[tftf]))
+    }
+
+    occur_df$taxonRank[tf][is.na(occur_df$specificEpithet[tf])] <- "genus"
+    occur_df$taxonRank[tf][!is.na(occur_df$specificEpithet[tf])] <- "species"
+  }
+
+  temp <- occur_df %>%
+    filter(
+      grepl("aceae", infraspecificEpithet),
+      is.na(genus)
+    )
+  if (nrow(temp) > 0) {
+    tf <- occur_df$occurrenceID %in% temp$occurrenceID
+
+    occur_df$family[tf] <- .firstUp(temp$infraspecificEpithet)
+    occur_df$genus[tf] <- temp$scientificNameAuthorship
+    occur_df$infraspecificEpithet[tf] <- NA
+    occur_df$scientificNameAuthorship[tf] <- NA
+    occur_df$taxonRank[tf] <- "genus"
+  }
+
+  tf <- grepl("aceae", occur_df$scientificNameAuthorship)
+  if (any(tf)) {
+    occur_df$scientificNameAuthorship[tf] <- NA
+  }
+
+  index <- which(occur_df$taxonRank == "subfamily" & !is.na(occur_df$genus))
+  if (length(index) > 0) {
+    occur_df$taxonRank[index] <- "genus"
+  }
+
+  occur_df <- .fill_taxon_name(occur_df)
+  occur_df <- .fill_scientific_name(occur_df)
+
   return(occur_df)
 }
 
-.replace_taxonrank <- function(occur_df, taxonrank, rank) {
-  tf <- occur_df$taxonRank %in% taxonrank
-  if (any(tf)) {
-    occur_df$taxonRank[tf] <- rank
+.firstUp <- function(x) {
+  substr(x, 1, 1) <- toupper(substr(x, 1, 1))
+  x
+}
+
+.firstLower <- function(x) {
+  substr(x, 1, 1) <- tolower(substr(x, 1, 1))
+  x
+}
+
+.fill_taxon_name <- function(df) {
+  df$taxonName <- NA_character_
+
+  is_family <- df$taxonRank == "family" & !is.na(df$family)
+  df$taxonName[is_family] <- df$family[is_family]
+
+  is_taxon <- !is_family
+  df$taxonName[is_taxon] <- paste(
+    df$genus[is_taxon],
+    ifelse(!is.na(df$specificEpithet[is_taxon]), df$specificEpithet[is_taxon], ""),
+    ifelse(!is.na(df$infraspecificEpithet[is_taxon]), df$infraspecificEpithet[is_taxon], "")
+  ) |> trimws()
+
+  return(df)
+}
+
+.fill_scientific_name <- function(df) {
+  df$scientificName <- NA_character_
+
+  # Abbreviation lookup
+  rank_abbr <- function(rank) {
+    if (is.na(rank)) return("")
+    switch(rank,
+           "varietas" = "var.",
+           "subspecies" = "subsp.",
+           "forma" = "f.",
+           "")
   }
-  return(occur_df)
+
+  # Vectorized abbreviation mapping
+  ranks <- vapply(df$taxonRank, rank_abbr, character(1))
+
+  # Build name base
+  name_base <- ifelse(
+    !is.na(df$genus) & !is.na(df$specificEpithet),
+    paste(df$genus, df$specificEpithet),
+    df$genus
+  )
+
+  # Skip duplication if specific == infraspecific
+  same_epi <- !is.na(df$specificEpithet) & !is.na(df$infraspecificEpithet) &
+    df$specificEpithet == df$infraspecificEpithet
+
+  add_infra <- !is.na(df$infraspecificEpithet) & ranks != "" & !same_epi
+
+  name_base[add_infra] <- paste(
+    name_base[add_infra],
+    ranks[add_infra],
+    df$infraspecificEpithet[add_infra]
+  )
+
+  df$scientificName <- trimws(name_base)
+
+  # Add authorship before infraspecific when same
+  has_auth <- !is.na(df$scientificNameAuthorship) & df$scientificNameAuthorship != ""
+  has_same <- same_epi & has_auth
+
+  df$scientificName[has_same] <- paste(
+    name_base[has_same],
+    df$scientificNameAuthorship[has_same],
+    ranks[has_same],
+    df$infraspecificEpithet[has_same]
+  )
+
+  # Regular authorship placement otherwise
+  regular_auth <- has_auth & !has_same
+  df$scientificName[regular_auth] <- paste(
+    df$scientificName[regular_auth],
+    df$scientificNameAuthorship[regular_auth]
+  )
+
+  df$scientificName <- trimws(df$scientificName)
+  return(df)
 }
 
 
 #_______________________________________________________________________________
-### Function to filter occurrence data ###
+# Function to filter occurrence data ####
 
 .filter_occur_df <- function(occur_df, taxon, state, recordYear, verbose) {
 
@@ -555,7 +737,7 @@
 
 
 #_______________________________________________________________________________
-### Function to save csv files ###
+# Function to save csv files ####
 
 .save_csv <- function(df,
                       verbose = TRUE,
@@ -582,7 +764,7 @@
 
 
 #_______________________________________________________________________________
-### Function to save log.txt file ###
+# Function to save log.txt file ####
 
 .save_log <- function(df,
                       herbarium = NULL,
