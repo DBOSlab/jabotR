@@ -1,4 +1,5 @@
 utils::globalVariables(c(
   "family", "genus", "specificEpithet",
-  "infraspecificEpithet", "taxonRank"
+  "infraspecificEpithet", "taxonRank",
+  "scientificNameAuthorship", "year"
 ))

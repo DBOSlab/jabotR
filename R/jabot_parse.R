@@ -39,9 +39,11 @@
 #' @importFrom finch dwca_read
 #' @importFrom utils read.csv
 #' @importFrom stringr str_extract str_to_title
-#' @importFrom dplyr mutate select mutate recode
+#' @importFrom stringi stri_detect_regex
+#' @importFrom dplyr filter mutate select recode
 #' @importFrom tidyr replace_na
 #' @importFrom magrittr "%>%"
+#' @importFrom stats setNames
 #'
 #' @export
 #'

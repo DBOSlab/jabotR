@@ -54,10 +54,10 @@ test_that("jabot_records saves file when save = TRUE", {
   result <- jabot_records(
     herbarium = "R",
     taxon = "Fabaceae",
-    dir = temp_dir,
-    filename = test_file,
+    verbose = FALSE,
     save = TRUE,
-    verbose = FALSE
+    dir = temp_dir,
+    filename = test_file
   )
   output_path <- file.path(temp_dir, paste0(test_file, ".csv"))
   expect_true(file.exists(output_path))
@@ -66,72 +66,13 @@ test_that("jabot_records saves file when save = TRUE", {
 })
 
 
-test_that(".check_taxon_match handles valid and invalid taxa", {
-  df <- data.frame(
-    family = c("Fabaceae", "Rosaceae"),
-    genus = c("Luetzelburgia", "Rosa"),
-    taxonName = c("Luetzelburgia auriculata", "Rosa canina"),
-    stringsAsFactors = FALSE
-  )
-  expect_silent(
-    .check_taxon_match(df, c("Fabaceae", "Luetzelburgia"), verbose = FALSE)
-  )
-  expect_error(
-    .check_taxon_match(df, c("Fakeplantus"), verbose = FALSE),
-    "must contain at least one name"
-  )
-  expect_message(
-    .check_taxon_match(df, c("Fabaceae", "Unknownus"), verbose = TRUE),
-    "not found"
-  )
-})
-
-
-test_that(".check_year_match handles valid and invalid years", {
-  df <- data.frame(
-    year = c(1999, 2005, 2020),
-    stringsAsFactors = FALSE
-  )
-  expect_silent(
-    .check_year_match(df, c("2005", "2020"), verbose = FALSE)
-  )
-  expect_error(
-    .check_year_match(df, c("1800", "1801"), verbose = FALSE),
-    "must contain at least one year"
-  )
-  expect_message(
-    .check_year_match(df, c("2005", "3000"), verbose = TRUE),
-    "not found"
-  )
-})
-
-
-test_that(".check_state_match handles valid and invalid states", {
-  df <- data.frame(
-    stateProvince = c("Bahia", "Minas Gerais", "São Paulo"),
-    stringsAsFactors = FALSE
-  )
-  expect_silent(
-    .check_state_match(df, c("Bahia", "Minas Gerais"), verbose = FALSE)
-  )
-  expect_error(
-    .check_state_match(df, c("ZZ", "XX"), verbose = FALSE),
-    "must contain at least one name"
-  )
-  expect_message(
-    .check_state_match(df, c("Minas Gerais", "ZZ"), verbose = TRUE),
-    "not found"
-  )
-})
-
-
 test_that("jabot_records removes indeterminate specimens with indets = FALSE", {
   result <- jabot_records(
     herbarium = "R",
     taxon = "Fabaceae",
     indets = FALSE,
-    save = FALSE,
-    verbose = FALSE
+    verbose = FALSE,
+    save = FALSE
   )
   expect_false(any(result$taxonRank %in% c("family", "genus", "FAMILY", "GENERO", "FAMILIA", "SUB_FAMILIA",
                                            "TRIBO", "DIVISAO", "ORDEM", "CLASSE")))
@@ -143,8 +84,8 @@ test_that("jabot_records triggers auto download when path is NULL", {
     herbarium = "R",
     taxon = "Fabaceae",
     path = NULL,
-    save = FALSE,
-    verbose = FALSE
+    verbose = FALSE,
+    save = FALSE
   )
   expect_s3_class(result, "data.frame")
 })
@@ -157,9 +98,9 @@ test_that("jabot_records creates new dir if not present", {
     jabot_records(
       herbarium = "R",
       taxon = "Fabaceae",
-      dir = tmp_dir,
+      verbose = FALSE,
       save = TRUE,
-      verbose = FALSE
+      dir = tmp_dir
     )
   )
   expect_true(dir.exists(tmp_dir))
@@ -173,8 +114,8 @@ test_that("jabot_records returns empty data.frame if no match after filters", {
       herbarium = "R",
       taxon = "Fabaceae",
       state = "ZZ",  # invalid state
-      save = FALSE,
-      verbose = FALSE)
+      verbose = FALSE,
+      save = FALSE)
   )
 })
 
@@ -182,16 +123,16 @@ test_that("jabot_records returns empty data.frame if no match after filters", {
 test_that("jabot_records uses updates = FALSE with preexisting path", {
   test_path <- tempdir()
   jabot_download(herbarium = "R",
-                 dir = test_path,
-                 verbose = FALSE)
+                 verbose = FALSE,
+                 dir = test_path)
 
   result <- jabot_records(
     herbarium = "R",
     taxon = "Fabaceae",
     path = test_path,
     updates = FALSE,
-    save = FALSE,
-    verbose = FALSE
+    verbose = FALSE,
+    save = FALSE
   )
   expect_s3_class(result, "data.frame")
 })
@@ -202,8 +143,8 @@ test_that("jabot_records handles partial reorder vector", {
     herbarium = "R",
     taxon = "Fabaceae",
     reorder = c("taxa", "year"),
-    save = FALSE,
-    verbose = FALSE
+    verbose = FALSE,
+    save = FALSE
   )
   expect_true(all(c("family", "year") %in% colnames(result)))
 })
@@ -215,8 +156,8 @@ test_that("jabot_records stops on invalid year", {
       taxon = "Fabaceae",
       herbarium = "R",
       recordYear = c("1880", "1870"), # invalid range
-      save = FALSE,
-      verbose = FALSE
+      verbose = FALSE,
+      save = FALSE
     )
   )
 })
@@ -230,8 +171,8 @@ test_that("jabot_records updates data when path is given and updates = TRUE", {
     taxon = "Fabaceae",
     path = tmp_path,
     updates = TRUE,
-    save = FALSE,
-    verbose = FALSE
+    verbose = FALSE,
+    save = FALSE
   )
   expect_s3_class(result, "data.frame")
 })
@@ -241,8 +182,8 @@ test_that("jabot_records works with herbarium = NULL", {
   result <- jabot_records(
     herbarium = NULL,
     taxon = "Fabaceae",
-    save = FALSE,
-    verbose = FALSE
+    verbose = FALSE,
+    save = FALSE
   )
   expect_s3_class(result, "data.frame")
 })
@@ -255,10 +196,10 @@ test_that("jabot_records saves CSV and log.txt with save = TRUE", {
   result <- jabot_records(
     herbarium = "R",
     taxon = "Fabaceae",
+    verbose = FALSE,
     save = TRUE,
     dir = tmp_dir,
-    filename = test_file,
-    verbose = FALSE
+    filename = test_file
   )
 
   expect_true(file.exists(file.path(tmp_dir, paste0(test_file, ".csv"))))
@@ -274,8 +215,8 @@ test_that("jabot_records prints message when verbose = TRUE", {
     jabot_records(
       herbarium = "R",
       taxon = "Fabaceae",
-      save = FALSE,
-      verbose = TRUE
+      verbose = TRUE,
+      save = FALSE
     ),
     "Checking whether the input herbarium code exists"
   )
@@ -286,9 +227,9 @@ test_that("jabot_records handles NULL filename (if supported)", {
   result <- jabot_records(
     herbarium = "R",
     taxon = "Fabaceae",
-    filename = NULL,
+    verbose = FALSE,
     save = FALSE,
-    verbose = FALSE
+    filename = NULL
   )
   expect_s3_class(result, "data.frame")
 })
@@ -300,8 +241,8 @@ test_that("jabot_records handles invalid reorder column gracefully", {
       herbarium = "R",
       taxon = "Fabaceae",
       reorder = c("INVALID_COLUMN"),
-      save = FALSE,
-      verbose = FALSE
+      verbose = FALSE,
+      save = FALSE
     )
   )
 })
@@ -311,8 +252,8 @@ test_that("jabot_records works with genus-level taxon only", {
   result <- jabot_records(
     herbarium = "R",
     taxon = "Inga",
-    save = FALSE,
-    verbose = FALSE
+    verbose = FALSE,
+    save = FALSE
   )
   expect_s3_class(result, "data.frame")
 })
@@ -321,5 +262,27 @@ test_that("jabot_records works with genus-level taxon only", {
 test_that("jabot_records with default values still returns results", {
   result <- jabot_records()
   expect_s3_class(result, "data.frame")
+})
+
+
+test_that("jabot_records prints messages with verbose = TRUE", {
+  expect_message(jabot_records(herbarium = "R",
+                               verbose = TRUE,
+                               save = FALSE))
+})
+
+
+test_that("jabot_records creates directory when not found", {
+  tmpdir <- tempdir()
+  expect_message(
+    jabot_records(herbarium = "R",
+                  state = "Bahia",
+                  recordYear = "2000",
+                  updates = FALSE,
+                  verbose = TRUE,
+                  save = FALSE,
+                  dir = "new_dir"),
+    "Creating directory 'new_dir' in working directory..."
+  )
 })
 

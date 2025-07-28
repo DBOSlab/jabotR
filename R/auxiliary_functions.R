@@ -186,8 +186,8 @@
   # Standardize and clean taxonRank column
   taxonrank_form <- c("f.", "form", "Forma", "forma", "FORM", "FORMA")
   taxonrank_var <- c("var.", "VAR.", "Variedade", "variedade", "VARIEDADE", "VARIETY", "variety")
-  taxonrank_subsp <- c("subsp.", "ssp.", "subespecie", "Subespecie", "subespécie", "Subespécie", "SUBSP.", "SUBSP", "SUB_ESPECIE", "Infr.", "infr.", "infraspecific")
-  taxonrank_species <- c("sp", "sp.", "especie", "ESPECIE", "Espécie", "espécie", "ESPÊCIE", "species", "Species", "specie", "SPECIES", "SPECIE")
+  taxonrank_subsp <- c("subsp.", "ssp.", "subespecie", "Subespecie", "subespécie", "Subespécie", "SUBSP.", "SUBSP", "SUB_ESPECIE", "Infr.", "infr.", "infraspecific", "subspecies", "Subspecies", "SUBSPECIES")
+  taxonrank_species <- c("sp", "sp.", "especie", "ESPECIE", "Especie", "Espécie", "espécie", "ESPÊCIE", "species", "Species", "specie", "SPECIES", "SPECIE")
   taxonrank_genus <- c("genero", "Genero", "GENERO", "Gênero", "gênero", "GÊNERO", "gen.", "genus", "Genus", "GENUS")
   taxonrank_tribe <- c("tribo", "TRIBO", "tribe", "Tribe", "TRIBE")
   taxonrank_subfam <- c("sub_familia", "SUB_FAMILIA", "subfamily", "Subfamily", "SUBFAMILY")
@@ -198,17 +198,17 @@
 
   # Create unified taxon rank mapping
   taxonrank_map <- c(
-    setNames(rep("forma", length(taxonrank_form)), taxonrank_form),
-    setNames(rep("varietas", length(taxonrank_var)), taxonrank_var),
-    setNames(rep("subspecies", length(taxonrank_subsp)), taxonrank_subsp),
-    setNames(rep("species", length(taxonrank_species)), taxonrank_species),
-    setNames(rep("genus", length(taxonrank_genus)), taxonrank_genus),
-    setNames(rep("tribe", length(taxonrank_tribe)), taxonrank_tribe),
-    setNames(rep("subfamily", length(taxonrank_subfam)), taxonrank_subfam),
-    setNames(rep("family", length(taxonrank_family)), taxonrank_family),
-    setNames(rep("order", length(taxonrank_order)), taxonrank_order),
-    setNames(rep("class", length(taxonrank_class)), taxonrank_class),
-    setNames(rep("division", length(taxonrank_division)), taxonrank_division)
+    stats::setNames(rep("FORMA", length(taxonrank_form)), taxonrank_form),
+    stats::setNames(rep("VARIETAS", length(taxonrank_var)), taxonrank_var),
+    stats::setNames(rep("SUBSPECIES", length(taxonrank_subsp)), taxonrank_subsp),
+    stats::setNames(rep("SPECIES", length(taxonrank_species)), taxonrank_species),
+    stats::setNames(rep("GENUS", length(taxonrank_genus)), taxonrank_genus),
+    stats::setNames(rep("TRIBE", length(taxonrank_tribe)), taxonrank_tribe),
+    stats::setNames(rep("SUBFAMILY", length(taxonrank_subfam)), taxonrank_subfam),
+    stats::setNames(rep("FAMILY", length(taxonrank_family)), taxonrank_family),
+    stats::setNames(rep("ORDER", length(taxonrank_order)), taxonrank_order),
+    stats::setNames(rep("CLASS", length(taxonrank_class)), taxonrank_class),
+    stats::setNames(rep("DIVISION", length(taxonrank_division)), taxonrank_division)
   )
 
   # Normalize taxonRank values
@@ -218,20 +218,20 @@
     )
 
   # Remove scientific names erroneously added into the taxonRank column
-  taxonranks <- c("infraspecific", "forma", "subspecies", "varietas",
-                  "species", "genus", "tribe", "subfamily",
-                  "family", "order", "class", "division")
+  taxonranks <- c("INFRASPECIFIC", "FORMA", "SUBSPECIES", "VARIETAS",
+                  "SPECIES", "GENUS", "TRIBE", "SUBFAMILY",
+                  "FAMILY", "ORDER", "CLASS", "DIVISION")
   n_diff <- setdiff(df$taxonRank, taxonranks)
   if (length(n_diff > 0)) {
     tf <- grepl("aceae$|ACEAE", n_diff)
     if (any(tf)) {
-      df$taxonRank[df$taxonRank %in% n_diff[tf]] <- "family"
+      df$taxonRank[df$taxonRank %in% n_diff[tf]] <- "FAMILY"
     }
     tf <- grepl("[[:lower:]]\\s[[:lower:]]", n_diff)
     if (any(tf)) {
-      df$taxonRank[df$taxonRank %in% n_diff[tf]] <- "species"
+      df$taxonRank[df$taxonRank %in% n_diff[tf]] <- "SPECIES"
     }
-    df$taxonRank[df$taxonRank %in% n_diff] <- "genus"
+    df$taxonRank[df$taxonRank %in% n_diff] <- "GENUS"
   }
 
   #_____________________________________________________________________________
@@ -299,7 +299,7 @@
 
   tf <- df$family %in% c("Incertae", "Incertaesedes", "Incertae Sedis")
   if (any(tf)) {
-    df$family[tf] <- "incertae sedis"
+    df$family[tf] <- "INSERTAE SEDIS"
   }
 
   suffixes <- c("lceae", "siceae", "nceae", "iceae")
@@ -320,21 +320,21 @@
                           "", df$family[tf])
   }
 
-  tf <- grepl("sp$|sp[.]$", df$specificEpithet[df$taxonRank %in% "species"])
+  tf <- grepl("sp$|sp[.]$", df$specificEpithet[df$taxonRank %in% "SPECIES"])
   #sort(unique(df$specificEpithet[df$taxonRank %in% "species"][tf]))
   if(any(tf)) {
-    df$specificEpithet[df$taxonRank %in% "species"][tf] <- NA
-    df$taxonRank[df$taxonRank %in% "species"][tf] <- "genus"
+    df$specificEpithet[df$taxonRank %in% "SPECIES"][tf] <- NA
+    df$taxonRank[df$taxonRank %in% "SPECIES"][tf] <- "GENUS"
   }
 
-  tf <- grepl("aceae$", df$genus[df$taxonRank %in% "genus"])
-  #sort(unique(df$genus[df$taxonRank %in% "genus"][tf]))
+  tf <- grepl("aceae$", df$genus[df$taxonRank %in% "GENUS"])
+  #sort(unique(df$genus[df$taxonRank %in% "GENUS"][tf]))
   if (any(tf)) {
-    df$genus[df$taxonRank %in% "genus"][tf] <- NA
-    df$taxonRank[df$taxonRank %in% "genus"][tf] <- "family"
+    df$genus[df$taxonRank %in% "GENUS"][tf] <- NA
+    df$taxonRank[df$taxonRank %in% "GENUS"][tf] <- "FAMILY"
   }
 
-  index <- which(df$taxonRank == "family" & is.na(df$specificEpithet))
+  index <- which(df$taxonRank == "FAMILY" & is.na(df$specificEpithet))
   tf <- grepl("aceae$", df$genus[index])
   if (any(tf)) {
     df$family[index[tf]] <- df$genus[index[tf]]
@@ -342,8 +342,8 @@
   }
 
   temp <- df %>%
-    filter(
-      taxonRank != "family",
+    dplyr::filter(
+      taxonRank != "FAMILY",
       grepl("aceae$", genus),
       is.na(scientificNameAuthorship) | scientificNameAuthorship %in% names(taxonrank_map)
     )
@@ -358,13 +358,13 @@
     df$taxonName[tf] <- NA
     df$genus[tf] <- .firstUp(df$genus[tf])
 
-    df$taxonRank[tf][is.na(df$genus[tf])] <- "family"
-    df$taxonRank[tf][df$taxonRank[tf] %in% "species"] <- "genus"
-    df$taxonRank[tf][!is.na(df$specificEpithet[tf])] <- "species"
+    df$taxonRank[tf][is.na(df$genus[tf])] <- "FAMILY"
+    df$taxonRank[tf][df$taxonRank[tf] %in% "SPECIES"] <- "GENUS"
+    df$taxonRank[tf][!is.na(df$specificEpithet[tf])] <- "SPECIES"
   }
 
   temp <- df %>%
-    filter(
+    dplyr::filter(
       grepl("aceae$", genus),
       is.na(scientificNameAuthorship)
     )
@@ -376,7 +376,7 @@
   }
 
   temp <- df %>%
-    filter(
+    dplyr::filter(
       grepl("aceae", genus),
       is.na(scientificNameAuthorship)
     )
@@ -393,12 +393,12 @@
       df$specificEpithet[which(tf)[is.na(temp$specificEpithet)]] <- NA
     }
 
-    df$taxonRank[tf][is.na(df$specificEpithet[tf])] <- "genus"
-    df$taxonRank[tf][!is.na(df$specificEpithet[tf])] <- "species"
+    df$taxonRank[tf][is.na(df$specificEpithet[tf])] <- "GENUS"
+    df$taxonRank[tf][!is.na(df$specificEpithet[tf])] <- "SPECIES"
   }
 
   temp <- df %>%
-    filter(
+    dplyr::filter(
       grepl("aceae", genus)
     )
   if (nrow(temp) > 0) {
@@ -407,7 +407,7 @@
   }
 
   temp <- df %>%
-    filter(
+    dplyr::filter(
       grepl("aceae", specificEpithet),
       is.na(family)
     )
@@ -427,12 +427,12 @@
       df$genus[df$occurrenceID %in% temp$occurrenceID[tftf]] <- .firstUp(sub("^\\S+\\s+", "", temp$specificEpithet[tftf]))
     }
 
-    df$taxonRank[tf][is.na(df$specificEpithet[tf])] <- "genus"
-    df$taxonRank[tf][!is.na(df$specificEpithet[tf])] <- "species"
+    df$taxonRank[tf][is.na(df$specificEpithet[tf])] <- "GENUS"
+    df$taxonRank[tf][!is.na(df$specificEpithet[tf])] <- "SPECIES"
   }
 
   temp <- df %>%
-    filter(
+    dplyr::filter(
       grepl("aceae", infraspecificEpithet),
       is.na(genus)
     )
@@ -443,7 +443,7 @@
     df$genus[tf] <- temp$scientificNameAuthorship
     df$infraspecificEpithet[tf] <- NA
     df$scientificNameAuthorship[tf] <- NA
-    df$taxonRank[tf] <- "genus"
+    df$taxonRank[tf] <- "GENUS"
   }
 
   tf <- grepl("aceae", df$scientificNameAuthorship)
@@ -451,9 +451,9 @@
     df$scientificNameAuthorship[tf] <- NA
   }
 
-  index <- which(df$taxonRank == "subfamily" & !is.na(df$genus))
+  index <- which(df$taxonRank == "SUBFAMILY" & !is.na(df$genus))
   if (length(index) > 0) {
-    df$taxonRank[index] <- "genus"
+    df$taxonRank[index] <- "GENUS"
   }
 
   df <- .fill_taxon_name(df)
@@ -475,15 +475,19 @@
 .fill_taxon_name <- function(df) {
   df$taxonName <- NA_character_
 
-  is_family <- df$taxonRank == "family" & !is.na(df$family)
-  df$taxonName[is_family] <- df$family[is_family]
+  is_family <- df$taxonRank == "FAMILY" & !is.na(df$family)
+  if (any(is_family)) {
+    df$taxonName[is_family] <- df$family[is_family]
+  }
 
   is_taxon <- !is_family
-  df$taxonName[is_taxon] <- paste(
-    df$genus[is_taxon],
-    ifelse(!is.na(df$specificEpithet[is_taxon]), df$specificEpithet[is_taxon], ""),
-    ifelse(!is.na(df$infraspecificEpithet[is_taxon]), df$infraspecificEpithet[is_taxon], "")
-  ) |> trimws()
+  if (any(is_taxon)) {
+    df$taxonName[is_taxon] <- paste(
+      df$genus[is_taxon],
+      ifelse(!is.na(df$specificEpithet[is_taxon]), df$specificEpithet[is_taxon], ""),
+      ifelse(!is.na(df$infraspecificEpithet[is_taxon]), df$infraspecificEpithet[is_taxon], "")
+    ) |> trimws()
+  }
 
   return(df)
 }
@@ -495,9 +499,9 @@
   rank_abbr <- function(rank) {
     if (is.na(rank)) return("")
     switch(rank,
-           "varietas" = "var.",
-           "subspecies" = "subsp.",
-           "forma" = "f.",
+           "VARIETAS" = "var.",
+           "SUBSPECIES" = "subsp.",
+           "FORMA" = "f.",
            "")
   }
 
@@ -593,14 +597,9 @@
       message("\nFiltering taxon names... ")
     }
 
-    tf <- grepl("aceae$", taxon)
-    if (any(tf)) {
-      taxon <- append(taxon, toupper(taxon[tf]))
-    }
-
     .check_taxon_match(occur_df, taxon, verbose)
 
-    tf_fam <- grepl("aceae$|ACEAE$", taxon)
+    tf_fam <- grepl("aceae$", taxon)
     if (any(tf_fam)) {
       taxon_fam <- taxon[tf_fam]
       tf <- occur_df$family %in% taxon_fam
@@ -664,12 +663,13 @@
 
     if (length(recordYear) == 1) {
       # If only one year is given, filter for that specific year
-      occur_df <- occur_df[occur_df$year == recordYear, ]
+      occur_df <- occur_df %>% dplyr::filter(year == recordYear)
     } else if (length(recordYear) == 2) {
       # If a range is given, filter for records within that range
-      occur_df <- occur_df[!is.na(occur_df$year) &
-                             occur_df$year >= as.numeric(recordYear[1]) &
-                             occur_df$year <= as.numeric(recordYear[2]), ]
+      occur_df <- occur_df %>%
+        dplyr::filter(!is.na(occur_df$year) &
+                        occur_df$year >= as.numeric(recordYear[1]) &
+                        occur_df$year <= as.numeric(recordYear[2]))
     }
   }
   return(occur_df)
@@ -689,11 +689,10 @@
   matches <- occur_df$family %in% matched_taxa |
     occur_df$genus %in% matched_taxa |
     occur_df$taxonName %in% matched_taxa
-  matches <- any(matches)
 
-  if (!matches) {
+  if (!any(matches)) {
     stop(paste0(
-      "Your input 'taxon' list must contain at least one name existing within the JABOT collections.\n",
+      "Your input 'taxon' list must contain at least one name existing within the REFLORA collections.\n",
       "Check whether the input taxon list has any typo: ",
       paste(unmatched_taxa, collapse = ", ")
     ))
@@ -711,7 +710,7 @@
 
   if (length(matched_state) == 0) {
     stop(paste0(
-      "Your input 'state' list must contain at least one name existing within the JABOT collections.\n",
+      "Your input 'state' list must contain at least one name existing within the REFLORA collections.\n",
       "Check whether the input state list has any typo: ",
       paste(unmatched_state, collapse = ", ")
     ))
@@ -729,7 +728,7 @@
 
   if (length(matched_year) == 0) {
     stop(paste0(
-      "Your input 'recordYear' list must contain at least one year existing within the JABOT collections.\n",
+      "Your input 'recordYear' list must contain at least one year existing within the REFLORA collections.\n",
       "Check whether the input recordYear list has any typo: ",
       paste(unmatched_year, collapse = ", ")
     ))

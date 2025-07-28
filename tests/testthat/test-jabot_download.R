@@ -97,6 +97,9 @@ test_that("jabot_download prints messages when verbose = TRUE", {
                                 dir = tmp_dir),
                  "Downloading DwC-A files")
 
+  expect_message(jabot_download(herbarium = "AFR",
+                                verbose = TRUE))
+
   unlink(tmp_dir, recursive = TRUE)
 })
 
