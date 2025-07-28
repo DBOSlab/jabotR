@@ -45,8 +45,7 @@ test_that("jabot_download returns silently with existing dwca folder", {
                  verbose = FALSE,
                  dir = temp_dir)
 
-  # Call again to ensure it skips if files already exist
-  expect_silent(jabot_download(herbarium = "AFR",
+  expect_silent(jabot_download(herbarium = "R",
                                verbose = FALSE,
                                dir = temp_dir))
 
