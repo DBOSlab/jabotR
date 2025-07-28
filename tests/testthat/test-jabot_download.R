@@ -41,7 +41,7 @@ test_that("jabot_download returns silently with existing dwca folder", {
   if (dir.exists(temp_dir)) unlink(temp_dir, recursive = TRUE)
   dir.create(temp_dir)
 
-  jabot_download(herbarium = "AFR",
+  jabot_download(herbarium = "R",
                  verbose = FALSE,
                  dir = temp_dir)
 
