@@ -186,15 +186,15 @@
   # Standardize and clean taxonRank column
   taxonrank_form <- c("f.", "form", "Forma", "forma", "FORM", "FORMA")
   taxonrank_var <- c("var.", "VAR.", "Variedade", "variedade", "VARIEDADE", "VARIETY", "variety")
-  taxonrank_subsp <- c("subsp.", "ssp.", "subespecie", "Subespecie", "subespécie", "Subespécie", "SUBSP.", "SUBSP", "SUB_ESPECIE", "Infr.", "infr.", "infraspecific", "subspecies", "Subspecies", "SUBSPECIES")
-  taxonrank_species <- c("sp", "sp.", "especie", "ESPECIE", "Especie", "Espécie", "espécie", "ESPÊCIE", "species", "Species", "specie", "SPECIES", "SPECIE")
-  taxonrank_genus <- c("genero", "Genero", "GENERO", "Gênero", "gênero", "GÊNERO", "gen.", "genus", "Genus", "GENUS")
+  taxonrank_subsp <- c("subsp.", "ssp.", "subespecie", "Subespecie", "subesp\u00e9cie", "Subesp\u00e9cie", "SUBSP.", "SUBSP", "SUB_ESPECIE", "Infr.", "infr.", "infraspecific", "subspecies", "Subspecies", "SUBSPECIES")
+  taxonrank_species <- c("sp", "sp.", "especie", "ESPECIE", "Especie", "Esp\u00e9cie", "esp\u00e9cie", "ESP\u00caCIE", "species", "Species", "specie", "SPECIES", "SPECIE")
+  taxonrank_genus <- c("genero", "Genero", "GENERO", "G\u00eanero", "g\u00eanero", "G\u00caNERO", "gen.", "genus", "Genus", "GENUS")
   taxonrank_tribe <- c("tribo", "TRIBO", "tribe", "Tribe", "TRIBE")
   taxonrank_subfam <- c("sub_familia", "SUB_FAMILIA", "subfamily", "Subfamily", "SUBFAMILY")
-  taxonrank_family <- c("fam.", "família", "Família", "FAMÍLIA", "familia", "Familia", "FAMILIA", "family", "Family", "FAMILY")
+  taxonrank_family <- c("fam.", "fam\u00edlia", "Fam\u00edlia", "FAM\u00cdLIA", "familia", "Familia", "FAMILIA", "family", "Family", "FAMILY")
   taxonrank_order <- c("ordem", "Ordem", "ORDEM", "order", "Order", "ORDER")
   taxonrank_class <- c("classe", "CLASSE", "class", "Class", "CLASS")
-  taxonrank_division <- c("divisao", "DIVISAO", "divisão", "DIVISÃO", "division", "Division", "DIVISION")
+  taxonrank_division <- c("divisao", "DIVISAO", "divis\u00e3o", "DIVIS\u00c3O", "division", "Division", "DIVISION")
 
   # Create unified taxon rank mapping
   taxonrank_map <- c(
@@ -287,11 +287,12 @@
   tf <- df$family %in% c("L", "Jes", "Sem", "X", "Dicot", "Cf",
                          "Indet", "Indet.", "Indt", "Em Branco", "Det.",
                          "Indeterminada", "Indeterminado", "Indetermindada",
-                         "Ordem", "Classe", "Número Cancelado", "Número Não Encontrado",
-                         "Número Não Localizado", "Plantae", "Sp.", "sp.",
-                         "Sem Informação", "Angiosperma", "Angiospermae",
+                         "Ordem", "Classe", "N\u00famero Cancelado", "N\u00famero N\u00e3o Encontrado",
+                         "N\u00famero N\u00e3o Localizado", "Plantae", "Sp.", "sp.",
+                         "Sem Informa\u00e7\u00e3o", "Angiosperma", "Angiospermae",
                          "Ignorada", "Undesignated", "Zzoutras", "Unknown",
                          "unknown")
+
   if (any(tf)) {
     df$family[tf] <- NA
     df$taxonRank[tf] <- NA
