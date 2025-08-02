@@ -180,7 +180,7 @@
                                 verbose = verbose) {
 
   if (verbose) {
-    message("Standardizing taxonRank and taxonomic columns...")
+    message("Standardizing taxonomic columns...")
   }
 
   # Standardize and clean taxonRank column
@@ -195,6 +195,7 @@
   taxonrank_order <- c("ordem", "Ordem", "ORDEM", "order", "Order", "ORDER")
   taxonrank_class <- c("classe", "CLASSE", "class", "Class", "CLASS")
   taxonrank_division <- c("divisao", "DIVISAO", "divis\u00e3o", "DIVIS\u00c3O", "division", "Division", "DIVISION")
+  taxonrank_kingdom <- c("reino", "Reino", "REINO", "kingdom", "Kingdom", "KINGDOM")
 
   # Create unified taxon rank mapping
   taxonrank_map <- c(
@@ -208,7 +209,8 @@
     stats::setNames(rep("FAMILY", length(taxonrank_family)), taxonrank_family),
     stats::setNames(rep("ORDER", length(taxonrank_order)), taxonrank_order),
     stats::setNames(rep("CLASS", length(taxonrank_class)), taxonrank_class),
-    stats::setNames(rep("DIVISION", length(taxonrank_division)), taxonrank_division)
+    stats::setNames(rep("DIVISION", length(taxonrank_division)), taxonrank_division),
+    stats::setNames(rep("KINGDOM", length(taxonrank_kingdom)), taxonrank_kingdom)
   )
 
   # Normalize taxonRank values
@@ -217,10 +219,15 @@
       taxonRank = dplyr::recode(taxonRank, !!!taxonrank_map)
     )
 
+  tf <- !is.na(df$taxonRank) & is.na(df$family) & is.na(df$genus) & is.na(df$specificEpithet) & is.na(df$infraspecificEpithet)
+  if (any(tf)) {
+    df$taxonRank[tf] = NA
+  }
+
   # Remove scientific names erroneously added into the taxonRank column
   taxonranks <- c("INFRASPECIFIC", "FORMA", "SUBSPECIES", "VARIETAS",
                   "SPECIES", "GENUS", "TRIBE", "SUBFAMILY",
-                  "FAMILY", "ORDER", "CLASS", "DIVISION")
+                  "FAMILY", "ORDER", "CLASS", "DIVISION", "KINGDOM")
   n_diff <- setdiff(df$taxonRank, taxonranks)
   if (length(n_diff > 0)) {
     tf <- grepl("aceae$|ACEAE", n_diff)
@@ -235,7 +242,34 @@
   }
 
   #_____________________________________________________________________________
-  # Errors within family column ####
+  # Cleanup invisible characters  ####
+  pattern <- c("^\\p{Z}+|\\p{Z}+$")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$family, pattern), FALSE)
+  if (any(tf)) {
+    df$family[tf] <- stringi::stri_trim_both(df$family[tf])
+  }
+
+  pattern <- c("^\\p{Z}+|\\p{Z}+$")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$genus, pattern), FALSE)
+  if (any(tf)) {
+    df$genus[tf] <- stringi::stri_trim_both(df$genus[tf])
+  }
+
+  pattern <- c("^\\p{Z}+|\\p{Z}+$")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$specificEpithet, pattern), FALSE)
+  if (any(tf)) {
+    df$specificEpithet[tf] <- stringi::stri_trim_both(df$specificEpithet[tf])
+  }
+
+  pattern <- c("^\\p{Z}+|\\p{Z}+$")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$infraspecificEpithet, pattern), FALSE)
+  if (any(tf)) {
+    df$infraspecificEpithet[tf] <- stringi::stri_trim_both(df$infraspecificEpithet[tf])
+  }
+
+  #_____________________________________________________________________________
+  # $family cleaning ####
+
   # tf <- grepl("aceae$|Leguminosae|Compositae|Palmae|Cruciferae|Labiatae|Umbeliferae|Guttiferae",
   #             df$family)
   # sort(unique(df$family[!tf]))
@@ -271,7 +305,7 @@
 
   tf <- df$family %in% c("Leg", "Leguminosa", "Leguminoseae", "Leguminosa",
                          "Leg Caesalpinioideae", "Fabaceae Caesalp.",
-                         "Fabaceae Caesalpinioideae",
+                         "Fabaceae Caesalpinioideae", "Faboideae",
                          "Leg Papilionoideae", "Flaboideae", "Fabace",
                          "Fab.", "Papi.", "Papi", "Papilionoideae", "Leguminosae Papilio",
                          "Fabaceae Cercideae", "Fabaceae Faboideae",
@@ -284,15 +318,13 @@
     df$family[tf] <- "Fabaceae"
   }
 
-  tf <- df$family %in% c("L", "Jes", "Sem", "X", "Dicot", "Cf",
+  tf <- df$family %in% c("L", "Jes", "Sem", "X", "Cf", "unknown", "Unknown",
                          "Indet", "Indet.", "Indt", "Em Branco", "Det.",
                          "Indeterminada", "Indeterminado", "Indetermindada",
-                         "Ordem", "Classe", "N\u00famero Cancelado", "N\u00famero N\u00e3o Encontrado",
-                         "N\u00famero N\u00e3o Localizado", "Plantae", "Sp.", "sp.",
-                         "Sem Informa\u00e7\u00e3o", "Angiosperma", "Angiospermae",
-                         "Ignorada", "Undesignated", "Zzoutras", "Unknown",
-                         "unknown")
-
+                         "Ordem", "Classe", "N\u00famero Cancelado",
+                         "N\u00famero N\u00e3o Localizado",  "Sp.", "sp.",
+                         "Sem Informa\u00e7\u00e3o", "N\u00famero N\u00e3o Encontrado",
+                         "Ignorada", "Undesignated", "Zzoutras")
   if (any(tf)) {
     df$family[tf] <- NA
     df$taxonRank[tf] <- NA
@@ -321,9 +353,22 @@
                           "", df$family[tf])
   }
 
+  pattern <- c("^(Not\\s|Não é\\s).*aceae$")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$family, pattern), FALSE)
+  if (any(tf)) {
+    df$family[tf] <- NA
+    df$taxonRank[tf] <- NA
+  }
+
+  pattern <- c("^Cf.*\\s.*aceae$|^cf.*\\s.*aceae$")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$family, pattern), FALSE)
+  if (any(tf)) {
+    df$family[tf] <- gsub("^Cf.*\\s|^cf.*\\s", "", df$family[tf])
+  }
+
   tf <- grepl("sp$|sp[.]$", df$specificEpithet[df$taxonRank %in% "SPECIES"])
   #sort(unique(df$specificEpithet[df$taxonRank %in% "species"][tf]))
-  if(any(tf)) {
+  if (any(tf)) {
     df$specificEpithet[df$taxonRank %in% "SPECIES"][tf] <- NA
     df$taxonRank[df$taxonRank %in% "SPECIES"][tf] <- "GENUS"
   }
@@ -358,7 +403,6 @@
     df$scientificName[tf] <- NA
     df$taxonName[tf] <- NA
     df$genus[tf] <- .firstUp(df$genus[tf])
-
     df$taxonRank[tf][is.na(df$genus[tf])] <- "FAMILY"
     df$taxonRank[tf][df$taxonRank[tf] %in% "SPECIES"] <- "GENUS"
     df$taxonRank[tf][!is.na(df$specificEpithet[tf])] <- "SPECIES"
@@ -398,6 +442,8 @@
     df$taxonRank[tf][!is.na(df$specificEpithet[tf])] <- "SPECIES"
   }
 
+  #_____________________________________________________________________________
+  # $genus cleaning ####
   temp <- df %>%
     dplyr::filter(
       grepl("aceae", genus)
@@ -405,6 +451,53 @@
   if (nrow(temp) > 0) {
     tf <- df$occurrenceID %in% temp$occurrenceID
     df$genus[tf] <- gsub("aceae", "a", temp$genus)
+  }
+
+  pattern <- c("^Indeterminad|Indet[.]")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$genus, pattern), FALSE)
+  if (any(tf)) {
+    df$genus[tf] <- NA
+    df$specificEpithet[tf] <- NA
+    df$infraspecificEpithet[tf] <- NA
+    if (any(!is.na(df$family[tf]))) {
+      df$taxonRank[tf][!is.na(df$family[tf])] <- "FAMILY"
+    }
+  }
+
+  pattern <- c("Leguminosae$|Guttiferae$|Compositae$|Cruciferae$")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$genus, pattern), FALSE)
+  if (any(tf)) {
+    df$genus[tf] <- NA
+    df$specificEpithet[tf] <- NA
+  }
+
+  pattern <- c("Leguminosae")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$genus, pattern), FALSE)
+  if (any(tf)) {
+    df$family[tf] <- "Leguminosae"
+    df$genus[tf] <- .firstUp(df$specificEpithet[tf])
+    df$specificEpithet[tf] <- df$infraspecificEpithet[tf]
+    df$infraspecificEpithet[tf] <- NA
+    index <- which(grepl("Leguminosae", df$genus[tf]))
+    if (length(index) > 0) {
+      df$genus[tf][index] <- .firstUp(df$specificEpithet[tf][index])
+      df$specificEpithet[tf][index] <- NA
+      df$taxonRank[tf][index] <- "GENUS"
+    }
+    df$taxonRank[tf][df$taxonRank[tf] != "GENUS"] <- "SPECIES"
+  }
+
+  pattern <- c("Bri\\u00f3fita$|Lichen$|Briophyta$|Lichenes|Fungos$")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$genus, pattern), FALSE)
+  if (any(tf)) {
+    df$division[tf] <- df$genus[tf]
+    df$genus[tf] <- NA
+    df$taxonRank[tf] <- "DIVISION"
+    index <- which(grepl("aceae$", df$family[tf]))
+    if (length(index) > 0) {
+      df$taxonRank[tf][index] <- "FAMILY"
+      df$family[tf][!grepl("aceae$", df$family[tf])] <- NA
+    }
   }
 
   temp <- df %>%
@@ -447,16 +540,215 @@
     df$taxonRank[tf] <- "GENUS"
   }
 
-  tf <- grepl("aceae", df$scientificNameAuthorship)
-  if (any(tf)) {
-    df$scientificNameAuthorship[tf] <- NA
-  }
-
   index <- which(df$taxonRank == "SUBFAMILY" & !is.na(df$genus))
   if (length(index) > 0) {
     df$taxonRank[index] <- "GENUS"
   }
 
+  tf <- grepl("aceae", df$scientificNameAuthorship)
+  if (any(tf)) {
+    df$scientificNameAuthorship[tf] <- NA
+  }
+
+  pattern <- c("^Sp$|^sp$|^sp[.]$|^Sp[.]$")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$genus, pattern), FALSE)
+  if (any(tf)) {
+    df$genus[tf] <- NA
+    df$taxonRank[tf] <- "FAMILY"
+  }
+
+  pattern <- c("Sp$|sp$|sp[.]$|Sp[.]$|sp[.]\\snov[.]|Sp[.]\\sNov[.]")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$genus, pattern), FALSE)
+  if (any(tf)) {
+    df$genus[tf] <- gsub("\\s.*", "", df$genus[tf])
+    df$specificEpithet[tf] <- NA
+    df$taxonRank[tf] <- "GENUS"
+  }
+
+  pattern <- c("^[?]")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$genus, pattern), FALSE)
+  if (any(tf)) {
+    df$genus[tf] <- NA
+    df$taxonRank[tf] <- "FAMILY"
+  }
+
+  #_____________________________________________________________________________
+  # $specificEpithet cleaning ####
+  pattern <- c("^Sp$|^sp$|^sp[.]$|^Sp[.]$|^sp[.]\\snov[.]|^Sp[.]\\sNov[.]")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$specificEpithet, pattern), FALSE)
+  if (any(tf)) {
+    df$specificEpithet[tf] <- NA
+    df$taxonRank[tf] <- "GENUS"
+  }
+
+  pattern <- c("Sp$|sp$|sp[.]$|Sp[.]$|sp[.]\\snov[.]|Sp[.]\\sNov[.]")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$specificEpithet, pattern), FALSE)
+  if (any(tf)) {
+    df$specificEpithet[tf] <- gsub("\\s.*", "", df$specificEpithet[tf])
+    df$specificEpithet[tf] <- gsub("sp[.]|subsp[.]", NA, df$specificEpithet[tf])
+  }
+
+  index <- which(df$taxonRank == "DIVISION" & !is.na(df$genus))
+  tf <- grepl("phyta$", df$genus[index])
+  if (any(tf)) {
+    df$division[index][tf] <- df$genus[index][tf]
+    df$genus[index][tf] <- NA
+  }
+
+  tf <- is.na(df$genus) & df$taxonRank %in% "GENUS"
+  if (any(tf)) {
+    df$taxonRank[tf] <- NA
+  }
+
+  pattern <- c("ales$")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$family, pattern), FALSE)
+  if (any(tf)) {
+    df$order[tf] <- df$family[tf]
+    df$family[tf] <- NA
+    index <- which(tf)
+    tf <- df$taxonRank[index] %in% "FAMILY"
+    if (any(tf)) {
+      df$taxonRank[index[tf]] <- "ORDER"
+    }
+  }
+
+  pattern <- c("phyceae$")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$family, pattern), FALSE)
+  if (any(tf)) {
+    df$class[tf] <- df$family[tf]
+    df$family[tf] <- NA
+    index <- which(tf)
+    tf <- df$taxonRank[index] %in% "FAMILY"
+    if (any(tf)) {
+      df$taxonRank[index[tf]] <- "CLASS"
+    }
+  }
+
+  pattern <- c("phyta$")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$family, pattern), FALSE)
+  if (any(tf)) {
+    df$division[tf] <- df$family[tf]
+    df$family[tf] <- NA
+    index <- which(tf)
+    tf <- df$taxonRank[index] %in% "FAMILY"
+    if (any(tf)) {
+      df$taxonRank[index[tf]] <- "DIVISION"
+    }
+  }
+
+  tf <- df$division %in% c("Bri\u00f3fita", "Briophyta")
+  if (any(tf)) {
+    df$division[tf] <- "Bryophyta"
+  }
+
+  tf <- df$division %in% c("Pterydophyta")
+  if (any(tf)) {
+    df$division[tf] <- "Pteridophyta"
+  }
+
+  pattern <- c("Pterid.*ta$|Pterid.*phyta$")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$genus, pattern), FALSE)
+  if (any(tf)) {
+    df$genus[tf] <- NA
+    df$division[tf] <- "Pterydophyta"
+    df$taxonRank[tf] <- "DIVISION"
+  }
+
+  tf <- grepl("Pterid.*ta$|Pterid.*phyta$|Samambaia|Pteridophyte", df$family) & df$taxonRank %in% "FAMILY"
+  if (any(tf)) {
+    df$family[tf] <- NA
+    df$division[tf] <- "Pterydophyta"
+    df$taxonRank[tf] <- "DIVISION"
+  }
+
+  tf <- df$division %in% c("Fungos") & is.na(df$genus)
+  if (any(tf)) {
+    df$division[tf] <- NA
+    df$kingdom[tf] <- "Fungi"
+    df$taxonRank[tf] <- "KINGDOM"
+    df$family[tf] <- NA
+  }
+
+  tf <- grepl("Fungos|Fungi|Fungae|Unk[.]fungus|fungi$|Fungae", df$family) & is.na(df$genus)
+  if (any(tf)) {
+    df$division[tf] <- NA
+    df$kingdom[tf] <- "Fungi"
+    df$taxonRank[tf] <- "KINGDOM"
+    df$family[tf] <- NA
+  }
+
+  tf <- grepl("Fungos|Fungi|Fungae|Unk[.]fungus|fungi$|Fungae", df$family) & !is.na(df$genus)
+  if (any(tf)) {
+    df$division[tf] <- NA
+    df$kingdom[tf] <- "Fungi"
+    df$family[tf] <- NA
+  }
+
+  tf <- grepl("Basidiom", df$family)
+  if (any(tf)) {
+    df$kingdom[tf] <- "Fungi"
+    df$division[tf] <- "Basidiomycota"
+    df$family[tf] <- NA
+  }
+
+  tf <- df$division %in% c("Lichenes", "Lichen") & is.na(df$genus)
+  if (any(tf)) {
+    df$kingdom[tf] <- "Fungi"
+    df$division[tf] <- "Ascomycota"
+    df$taxonRank[tf] <- "DIVISION"
+    df$family[tf] <- NA
+  }
+
+  tf <- df$family %in% c("Lichenes", "Lichen", "Liquem", "Liquen", "Ascomycota",
+                         "Unk.ascomycete") & is.na(df$genus)
+  if (any(tf)) {
+    df$kingdom[tf] <- "Fungi"
+    df$family[tf] <- NA
+    df$division[tf] <- "Ascomycota"
+    df$taxonRank[tf] <- "DIVISION"
+  }
+
+  tf <- df$family %in% c("Lichenes", "Lichen", "Liquem", "Liquen", "Ascomycota",
+                         "Unk.ascomycete") & !is.na(df$genus)
+  if (any(tf)) {
+    df$kingdom[tf] <- "Fungi"
+    df$family[tf] <- NA
+    df$division[tf] <- "Ascomycota"
+    df$taxonRank[tf] <- "DIVISION"
+  }
+
+  pattern <- c("Angiosperm|Dicotyled|Dicot$")
+  tf <- tidyr::replace_na(stringi::stri_detect_regex(df$family, pattern), FALSE)
+  if (any(tf)) {
+    df$division[tf] <- "Angiospermae"
+    df$family[tf] <- NA
+    df$genus[tf] <- NA
+    df$taxonRank[tf] <- "DIVISION"
+  }
+
+  # tf <- grepl("aceae$|Leguminosae|Compositae|Palmae|Cruciferae|Labiatae|Umbelliferae|Guttiferae", df$family)
+  # sort(unique(df$family[!tf]))
+  # index <- which(!is.na(df$genus[!tf]))
+  # unique(df$family[!tf][index])
+
+  # Clean names within specificEpithet
+  # pattern <- c("\\s")
+  # tf <- tidyr::replace_na(stringi::stri_detect_regex(df$specificEpithet, pattern), FALSE)
+  # if (any(tf)) {
+  #   df$specificEpithet[tf] <- gsub("\\s.*", "", df$specificEpithet[tf])
+  #   df$specificEpithet[tf] <- gsub("sp[.]|subsp[.]", NA, df$specificEpithet[tf])
+  # }
+
+  tf <- df$basisOfRecord %in% "PreservedSpecimen"
+  if (any(tf)) {
+    df$basisOfRecord[tf] <- "PRESERVED_SPECIMEN"
+  }
+  tf <- df$basisOfRecord %in% "FossilSpecimen"
+  if (any(tf)) {
+    df$basisOfRecord[tf] <- "FOSSIL_SPECIMEN"
+  }
+
+  df <- .fill_species_name(df)
   df <- .fill_taxon_name(df)
   df <- .fill_scientific_name(df)
 
@@ -473,21 +765,53 @@
   x
 }
 
+.fill_species_name <- function(df) {
+  df$species <- NA_character_
+
+  is_species <- df$taxonRank %in% "SPECIES" & !is.na(df$family)
+  if (any(is_species)) {
+    df$species[is_species] <- paste(df$genus[is_species], df$specificEpithet[is_species])
+  }
+
+  return(df)
+}
+
 .fill_taxon_name <- function(df) {
   df$taxonName <- NA_character_
 
-  is_family <- df$taxonRank == "FAMILY" & !is.na(df$family)
+  is_kingdom <- df$taxonRank %in% "KINGDOM" & !is.na(df$kingdom)
+  if (any(is_kingdom)) {
+    df$taxonName[is_kingdom] <- df$kingdom[is_kingdom]
+  }
+
+  is_division <- df$taxonRank %in% "DIVISION" & !is.na(df$division)
+  if (any(is_division)) {
+    df$taxonName[is_division] <- df$division[is_division]
+  }
+
+  is_class <- df$taxonRank %in% "CLASS" & !is.na(df$class)
+  if (any(is_class)) {
+    df$taxonName[is_class] <- df$class[is_class]
+  }
+
+  is_order <- df$taxonRank %in% "ORDER" & !is.na(df$order)
+  if (any(is_order)) {
+    df$taxonName[is_order] <- df$order[is_order]
+  }
+
+  is_family <- df$taxonRank %in% "FAMILY" & !is.na(df$family)
   if (any(is_family)) {
     df$taxonName[is_family] <- df$family[is_family]
   }
 
-  is_taxon <- !is_family
+  is_taxon <- !is_kingdom & !is_division & !is_class & !is_order & !is_family
   if (any(is_taxon)) {
     df$taxonName[is_taxon] <- paste(
-      df$genus[is_taxon],
+      ifelse(!is.na(df$genus[is_taxon]), df$genus[is_taxon], ""),
       ifelse(!is.na(df$specificEpithet[is_taxon]), df$specificEpithet[is_taxon], ""),
       ifelse(!is.na(df$infraspecificEpithet[is_taxon]), df$infraspecificEpithet[is_taxon], "")
-    ) |> trimws()
+    ) |>
+      trimws()
   }
 
   return(df)
@@ -565,7 +889,8 @@
     df$recordNumber <- suppressWarnings(as.character(df$recordNumber))
     df$decimalLongitude <- suppressWarnings(as.numeric(df$decimalLongitude))
     df$decimalLatitude <- suppressWarnings(as.numeric(df$decimalLatitude))
-
+    df$verbatimLatitude <- as.character(df$verbatimLatitude)
+    df$verbatimLongitude <- as.character(df$verbatimLongitude)
     df$occurrenceID <- as.character(df$occurrenceID)
     df$recordNumber <- as.character(df$recordNumber)
     df$minimumElevationInMeters <- as.character(df$minimumElevationInMeters)
