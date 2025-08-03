@@ -278,9 +278,10 @@ test_that(".check_state_match() handles valid and invalid states", {
 test_that(".std_inside_columns() handles unexpected taxonRank values", {
   df <- data.frame(
     taxonRank = c("Especie", "GENERO", "familia"),
-    family = c(NA, NA, NA),
-    genus = c(NA, NA, NA),
-    specificEpithet = c(NA, NA, NA),
+    family = c("Solanaceae", "Fabaceae", "Bromeliaceae"),
+    genus = c("Solanum", "Luetzelburgia", NA),
+    specificEpithet = c("paniculatum", NA, NA),
+    species = c(NA, NA, NA),
     infraspecificEpithet = c(NA, NA, NA),
     scientificNameAuthorship = c(NA, NA, NA),
     scientificName = c(NA, NA, NA),
