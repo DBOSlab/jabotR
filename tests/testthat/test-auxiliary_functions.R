@@ -356,20 +356,26 @@ test_that(".check_year_match() behaves with single year and range", {
 })
 
 
-test_that(".fill_taxon_name() and .fill_scientific_name() are working", {
+test_that(".fill_species_name, .fill_taxon_name() and .fill_scientific_name() are working", {
   df <- data.frame(
     taxonRank = c("FAMILY", "SPECIES", "SUBSPECIES"),
     family = c("Fabaceae", NA, NA),
     genus = c(NA, "Solanum", "Solanum"),
     specificEpithet = c(NA, "lycopersicum", "lycopersicum"),
+    species = NA_character_,
     infraspecificEpithet = c(NA, NA, "esculentum"),
     scientificNameAuthorship = c(NA, NA, "Mill."),
     taxonName = NA_character_,
     scientificName = NA_character_,
     stringsAsFactors = FALSE
   )
+  df <- .fill_species_name(df)
   df <- .fill_taxon_name(df)
   df <- .fill_scientific_name(df)
+
+  expect_true(is.na(df$species[1]))
+  expect_equal(df$species[2], "Solanum lycopersicum")
+  expect_true(is.na(df$species[3]))
 
   expect_equal(df$taxonName[1], "Fabaceae")
   expect_equal(df$taxonName[2], "Solanum lycopersicum")
