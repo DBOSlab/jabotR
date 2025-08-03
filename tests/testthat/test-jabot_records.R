@@ -74,8 +74,9 @@ test_that("jabot_records removes indeterminate specimens with indets = FALSE", {
     verbose = FALSE,
     save = FALSE
   )
-  expect_false(any(result$taxonRank %in% c("family", "genus", "FAMILY", "GENERO", "FAMILIA", "SUB_FAMILIA",
-                                           "TRIBO", "DIVISAO", "ORDEM", "CLASSE")))
+  expect_false(any(result$taxonRank %in% c("family", "genus", "FAMILY", "GENERO",
+                                           "FAMILIA", "SUB_FAMILIA", "TRIBO",
+                                           "DIVISAO", "ORDEM", "CLASSE")))
 })
 
 
@@ -284,5 +285,33 @@ test_that("jabot_records creates directory when not found", {
                   dir = "new_dir"),
     "Creating directory 'new_dir' in working directory..."
   )
+})
+
+
+test_that("jabot_records triggers dwca update message with path and updates = TRUE", {
+
+  temp_path <- file.path(tempdir(), "jabot_dwca_test")
+  if (!dir.exists(temp_path)) dir.create(temp_path)
+
+  # Run jabot_download manually to prepopulate path
+  jabot_download(herbarium = "R",
+                 verbose = FALSE,
+                 dir = temp_path)
+  list.files(temp_path)
+  # Now call jabot_records with path + updates = TRUE to hit the uncovered branch
+  expect_message(
+    df <- jabot_records(
+      herbarium = "R",
+      taxon = "Fabaceae",
+      path = temp_path,
+      updates = TRUE,
+      verbose = TRUE,
+      save = FALSE
+    ),
+    regexp = paste0("Updating dwca files within '", temp_path, "'")
+  )
+
+  expect_s3_class(df, "data.frame")
+  expect_true(nrow(df) >= 0)
 })
 
