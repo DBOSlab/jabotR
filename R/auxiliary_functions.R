@@ -353,7 +353,7 @@
                           "", df$family[tf])
   }
 
-  pattern <- c("^(Not\\s|Não é\\s).*aceae$")
+  pattern <- c("^(Not\\s|N\u00E3o\\s\u00E9\\s).*aceae$")
   tf <- tidyr::replace_na(stringi::stri_detect_regex(df$family, pattern), FALSE)
   if (any(tf)) {
     df$family[tf] <- NA
