@@ -65,7 +65,7 @@ test_that("jabot_summary prints expected verbose messages", {
     jabot_summary(herbarium = "R",
                   verbose = TRUE,
                   save = FALSE),
-    regexp = "Checking whether the input herbarium code exist in the JABOT..."
+    regexp = "Summarizing specimen collections of R 1/1"
   )
 })
 

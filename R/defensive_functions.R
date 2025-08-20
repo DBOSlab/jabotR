@@ -129,8 +129,12 @@
 
 #_______________________________________________________________________________
 # Check the herbarium input
-.arg_check_herbarium <- function(x) {
+.arg_check_herbarium <- function(x, verbose = verbose) {
   if (is.null(x) || length(x) == 0) return(invisible(TRUE))
+
+  if (verbose) {
+    message("Checking whether the input herbarium code exists in the JABOT...")
+  }
 
   # Get valid herbarium acronyms from JABOT metadata
   ipt_info <- .get_ipt_info(herbarium = NULL)

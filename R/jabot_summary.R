@@ -52,10 +52,7 @@ jabot_summary <- function(herbarium = NULL,
 
   # herbarium check
   if (!is.null(herbarium)) {
-    if (verbose) {
-      message("Checking whether the input herbarium code exist in the JABOT...")
-    }
-    .arg_check_herbarium(herbarium)
+    .arg_check_herbarium(herbarium, verbose = verbose)
   }
 
   # dir check

@@ -125,6 +125,11 @@ jabot_parse <- function(path = NULL,
     "basisOfRecord"
   )
 
+  herbarium <- sapply(dwca_filenames, function(x) {
+    csv <- x[grepl("_Reflora\\.csv$", x)]
+    sub("_Reflora\\.csv$", "", basename(csv))
+  })
+
   for (i in seq_along(dwca_files)) {
 
     temp <- dwca_files[[i]][["data"]][["occurrence.txt"]]
@@ -153,7 +158,10 @@ jabot_parse <- function(path = NULL,
       dplyr::mutate(order = if (!"order" %in% names(.)) NA else order,
                     .after = class)
 
-    temp <- .std_inside_columns(temp, verbose = verbose)
+    temp <- .std_inside_columns(temp,
+                                herbarium = herbarium,
+                                i = i,
+                                verbose = verbose)
     dwca_files[[i]][["data"]][["occurrence.txt"]] <- temp
   }
 

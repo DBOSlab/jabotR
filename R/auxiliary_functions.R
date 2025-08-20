@@ -177,10 +177,12 @@
 # Function for standardizing taxonRank and taxonomic columns ####
 
 .std_inside_columns <- function(df,
+                                herbarium = herbarium,
+                                i = i,
                                 verbose = verbose) {
 
   if (verbose) {
-    message("Standardizing taxonomic columns...")
+    message(paste0("Standardizing taxonomic columns of '", herbarium[i], "'..."))
   }
 
   # Standardize and clean taxonRank column
@@ -1268,21 +1270,40 @@
 
   # Add summary statistics
   count_total <- nrow(df)
-  by_herbarium <- capture.output(print(table(df$collectionCode)))
-  by_family <- capture.output(print(table(df$family)))
-  by_genus <- capture.output(print(table(df$genus)))
-  by_country <- capture.output(print(table(df$country)))
-  by_state <- capture.output(print(table(df$stateProvince)))
+  by_herbarium <- utils::capture.output(print(table(df$collectionCode)))
+  by_family <- utils::capture.output(print(table(df$family)))
+  by_genus <- utils::capture.output(print(table(df$genus)))
+  by_species <- utils::capture.output(print(table(df$species)))
+  by_country <- utils::capture.output(print(table(df$country)))
+  by_state <- utils::capture.output(print(table(df$stateProvince)))
 
-  stats_summary <- c(
-    sprintf("Total records: %d", count_total),
-    "\nRecords per herbarium:", by_herbarium,
-    "\nRecords per family:", by_family,
-    "\nRecords per genus:", by_genus,
-    "\nRecords per country:", by_country,
-    "\nRecords per stateProvince:", by_state,
-    "--------------------------------------------------\n"
-  )
+
+  if (length(unique(df$genus)) > 1) {
+
+    stats_summary <- c(
+      sprintf("Total records: %d", count_total),
+      "\nRecords per herbarium:", by_herbarium,
+      "\nRecords per family:", by_family,
+      "\nRecords per genus:", by_genus,
+      "\nRecords per country:", by_country,
+      "\nRecords per stateProvince:", by_state,
+      "--------------------------------------------------\n"
+    )
+
+  } else {
+
+    stats_summary <- c(
+      sprintf("Total records: %d", count_total),
+      "\nRecords per herbarium:", by_herbarium,
+      "\nRecords per family:", by_family,
+      "\nRecords per genus:", by_genus,
+      "\nRecords per species:", by_species,
+      "\nRecords per country:", by_country,
+      "\nRecords per stateProvince:", by_state,
+      "--------------------------------------------------\n"
+    )
+
+  }
 
   write(c(log_line, stats_summary), file = file.path(dir, "log.txt"), append = TRUE)
 
