@@ -156,8 +156,7 @@ jabot_records <- function(herbarium = NULL,
   # dir check
   dir <- .arg_check_dir(dir)
 
-  # Create a new directory to save the dataframe
-  # If there is no directory create one in the working directory
+  # Create a new folder to save the dataframe, if there is none already
   if (!dir.exists(dir)) {
     if (verbose) {
       message(paste0("Creating directory '", dir, "' in working directory..."))
