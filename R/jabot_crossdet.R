@@ -34,8 +34,6 @@
 #' are not included in the canonical output.
 #'
 #' Records with missing/invalid collector or collection number are excluded from the analysis
-#' (e.g., empty, NA, \code{"sn"}, \code{"s/n"}, \code{"s/n°"}, \code{"sem numero"},
-#' \code{"sem número"}, variants).
 #'
 #' @usage
 #' jabot_crossdet(focal_herbarium,
@@ -64,7 +62,7 @@
 #'
 #' @return A list with one element:
 #' \describe{
-#'   \item{matches}{A data.frame (long format): one row per focal specimen \times other-herbarium
+#'   \item{matches}{A data.frame (long format): one row per focal specimen and other herbarium
 #'   determination, for all focal specimens that have at least one conflicting determination elsewhere.}
 #' }
 #'
@@ -93,6 +91,7 @@
 #'
 #' @importFrom DBI dbConnect dbDisconnect dbExecute dbGetQuery
 #' @importFrom duckdb duckdb
+#' @importFrom openxlsx write.xlsx
 #'
 #' @export
 #'
@@ -287,7 +286,6 @@ jabot_crossdet <- function(focal_herbarium,
         WHEN recnum_key_raw IN ('sn','snn','na','n/a','nd','sindado','sindados') THEN ''
         WHEN recordNumber_lc LIKE '%s/n%' THEN ''
         WHEN recordNumber_lc LIKE '%sem numero%' THEN ''
-        WHEN recordNumber_lc LIKE '%sem número%' THEN ''
         WHEN recordNumber_lc LIKE '%sem n.%' THEN ''
         WHEN recordNumber_lc LIKE '%sem n %' THEN ''
         ELSE recnum_key_raw

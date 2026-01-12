@@ -32,7 +32,7 @@ files (downloaded previously, e.g. via \code{jabot_download()}).}
 \value{
 A list with one element:
 \describe{
-  \item{matches}{A data.frame (long format): one row per focal specimen \times other-herbarium
+  \item{matches}{A data.frame (long format): one row per focal specimen and other herbarium
   determination, for all focal specimens that have at least one conflicting determination elsewhere.}
 }
 }
@@ -67,8 +67,6 @@ Author strings are ignored. Rank markers such as \code{subsp.}, \code{ssp.}, \co
 are not included in the canonical output.
 
 Records with missing/invalid collector or collection number are excluded from the analysis
-(e.g., empty, NA, \code{"sn"}, \code{"s/n"}, \code{"s/n°"}, \code{"sem numero"},
-\code{"sem número"}, variants).
 }
 \examples{
 \dontrun{
