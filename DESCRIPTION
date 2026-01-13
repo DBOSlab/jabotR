@@ -40,7 +40,8 @@ Imports:
     dplyr,
     tidyselect,
     DBI,
-    duckdb
+    duckdb,
+    openxlsx
 Suggests:
     quarto,
     testthat (>= 3.0.0)
