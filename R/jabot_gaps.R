@@ -75,11 +75,21 @@
 #'            format = "pdf")
 #' }
 #'
-#' @importFrom dplyr filter mutate group_by summarise arrange desc n_distinct left_join anti_join semi_join bind_rows relocate
+#' @importFrom dplyr filter mutate group_by summarise arrange desc n_distinct left_join anti_join semi_join bind_rows relocate if_all across
 #' @importFrom tidyr separate_rows
 #' @importFrom magrittr "%>%"
-#' @importFrom utils head
+#' @importFrom utils head browseURL
 #' @importFrom stats reorder
+#' @importFrom scales comma
+#' @importFrom rmarkdown render
+#' @importFrom floraR flora_search
+#' @importFrom geobr read_state
+#' @importFrom ggplot2 ggplot aes geom_col coord_flip labs scale_fill_manual scale_fill_gradient geom_text scale_y_continuous expansion theme_void element_text element_rect margin unit
+#' @importFrom plotly ggplotly
+#' @importFrom DT datatable
+#' @importFrom leaflet leaflet addProviderTiles addPolygons addLegend colorNumeric
+#' @importFrom sf st_as_sf
+#' @importFrom htmltools tags p
 #'
 #' @export
 
@@ -117,6 +127,7 @@ jabot_gaps <- function(herbarium = NULL,
   ffb <- .load_ffb_data(verbose)
   taxon <- ffb$taxon
   distribution <- ffb$distribution
+  distribution$locationID <- gsub("BR-", "", distribution$locationID)
   speciesprofile <- ffb$speciesprofile
   typesandspecimen <- ffb$typesandspecimen
 
@@ -132,8 +143,8 @@ jabot_gaps <- function(herbarium = NULL,
   if (verbose) message("[2/5] Loading JABOT records for herbarium '", herbarium, "'...")
   herb_df <- .load_herb_data(herbarium, jabot_path, verbose)
 
-  # Keep only determined specimens with family and species
-  herb_df <- herb_df[!is.na(herb_df$family) & !is.na(herb_df$genus) & !is.na(herb_df$species), ]
+  # Keep only determined specimens at family and genus level
+  herb_df <- herb_df[!is.na(herb_df$genus) & !is.na(herb_df$species), ]
 
   names(herb_df)[names(herb_df) %in% "division"] <- "phylum"
   idx <- match(herb_df$genus, taxon$genus)
@@ -150,15 +161,15 @@ jabot_gaps <- function(herbarium = NULL,
   splist <- unique(herb_df$taxonName)
   syns <- splist[splist %in% taxon_non_accepted$taxonName]
   if (length(syns) > 0) {
-    res <- floraR::flora_search(syns, progress_bar = verbose,
+    res <- floraR::flora_search(syns,
+                                progress_bar = verbose,
                                 rm_flora_database = FALSE)
     res <- res[!is.na(res$Accepted.taxon.Name), ]
     idx <- match(herb_df$taxonName, res$Search)
     tf <- !is.na(idx)
     herb_df$taxonName[tf] <- res$Accepted.taxon.Name[idx[tf]]
     herb_df$family[tf] <- res$family[idx[tf]]
-    if (verbose)
-      message("   Resolved ", sum(tf), " synonym(s) to accepted names.")
+    if (verbose) message("   Resolved ", sum(tf), " synonym(s) to accepted names.")
   }
 
   # ── 4. Gap computation ──────────────────────────────────────────────────────
@@ -175,6 +186,20 @@ jabot_gaps <- function(herbarium = NULL,
                             "scientificNameAuthorship", "references")],
       by = "id"
     )
+
+  dist_summary <- distribution %>%
+    dplyr::group_by(id) %>%
+    dplyr::summarise(locationID = paste(unique(na.omit(locationID)), collapse = " | "),
+                     phytogeographicDomain =
+                       paste(unique(unlist(strsplit(phytogeographicDomain, ",\\s*"))),
+                             collapse = " | "),
+                     endemism = paste(unique(na.omit(endemism)), collapse = " | "),
+                     .groups = "drop") %>%
+    dplyr::mutate(dplyr::across(
+      where(is.character), ~ .x |> dplyr::na_if("") |> dplyr::na_if("NA")))
+
+  taxon_not_in_herb <- taxon_not_in_herb %>%
+    dplyr::left_join(dist_summary, by = "id")
 
   # Key statistics
   n_ffb_total <- nrow(taxon_accepted)
@@ -247,16 +272,14 @@ jabot_gaps <- function(herbarium = NULL,
   # ── 5. ggplot2 figures ──────────────────────────────────────────────────────
   if (verbose) message("[5/5] Building figures...")
 
-  plots <- .make_gap_plots(
-    herbarium = herbarium,
-    group_gap = group_gap,
-    family_gap = family_gap,
-    genus_gap = genus_gap,
-    domain_gap = domain_gap,
-    endemism_gap = endemism_gap,
-    state_gap = state_gap,
-    n_missing = n_missing
-  )
+  plots <- .make_gap_plots(herbarium = herbarium,
+                           group_gap = group_gap,
+                           family_gap = family_gap,
+                           genus_gap = genus_gap,
+                           domain_gap = domain_gap,
+                           endemism_gap = endemism_gap,
+                           state_gap = state_gap,
+                           n_missing = n_missing)
 
   # Save individual figures if requested
   if (!is.null(format)) {
@@ -331,9 +354,14 @@ jabot_gaps <- function(herbarium = NULL,
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
 
-.make_gap_plots <- function(herbarium, group_gap, family_gap, genus_gap,
-                            domain_gap, endemism_gap, state_gap,
-                            n_ffb_total, n_missing) {
+.make_gap_plots <- function(herbarium,
+                            group_gap,
+                            family_gap,
+                            genus_gap,
+                            domain_gap,
+                            endemism_gap,
+                            state_gap,
+                            n_missing) {
 
   pal_terra <- c(
     "#6D071A",
@@ -418,7 +446,8 @@ jabot_gaps <- function(herbarium = NULL,
     domain_gap,
     ggplot2::aes(x = stats::reorder(phytogeographicDomain, n_missing),
                  y = n_missing,
-                 text = tooltip)) +
+                 text = tooltip,
+                 fill = n_missing)) +
     ggplot2::geom_col() +
     ggplot2::coord_flip() +
     ggplot2::scale_fill_gradient(low = "#F2D7C9",
@@ -427,8 +456,8 @@ jabot_gaps <- function(herbarium = NULL,
     ggplot2::labs(
       title = paste0("Missing taxa by phytogeographic domain — ", herbarium),
       subtitle = "Based on FFB occurrence records",
-      x = NULL, y = "Number of missing taxa"
-    ) +
+      x = NULL,
+      y = "Number of missing taxa") +
     .jabot_theme(plot_title_color = "#A4243B")
 
   # 5 — Endemism breakdown (bar)
@@ -449,7 +478,8 @@ jabot_gaps <- function(herbarium = NULL,
       hjust = -0.2, size = 3.5, color = "#495057") +
     ggplot2::coord_flip(clip = "off") +
     ggplot2::scale_fill_manual(values = c("Brazilian endemic" = col_miss,
-                                          "Non-endemic" = "#A3B18A")) +
+                                          "Non-endemic" = "#A3B18A",
+                                          guide = "none")) +
     ggplot2::scale_y_continuous(labels = scales::comma,
                                 expand = ggplot2::expansion(mult = c(0, 0.15))) +
     ggplot2::labs(

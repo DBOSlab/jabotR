@@ -310,17 +310,36 @@ The table below shows all `r scales::comma(d$n_missing)` species missing from
 `r herb`. Use the search box to filter by any column.
 
 ```{r table-missing, echo=FALSE}
-display_cols <- c("group", "family", "genus", "taxonName",
-                  "scientificNameAuthorship")
-display_cols <- display_cols[display_cols %in% names(d$taxon_not_in_herb)]
+display_cols <- c("group", "class", "order", "family", "genus", "taxonName",
+                  "scientificNameAuthorship", "endemism", "locationID", 
+                  "phytogeographicDomain", "references")
+
+# Create a copy with clickable links
+table_data <- d$taxon_not_in_herb[, display_cols, drop = FALSE]
+
+# Make references column clickable
+if ("references" %in% colnames(table_data)) {
+  table_data$references <- sapply(table_data$references, function(x) {
+    if (!is.na(x) && x != "" && x != "NA") {
+      paste0('<a href="', x, '" target="_blank">', x, '</a>')
+    } else {
+      ""
+    }
+  })
+}
 
 DT::datatable(
-  d$taxon_not_in_herb[, display_cols, drop = FALSE],
-  colnames = c("Group", "Family", "Genus",
-                 "Taxon name", "Authorship")[seq_along(display_cols)],
+  table_data,
+  colnames = c("Group", "Class", "Order", "Family", "Genus", "Taxon", "Authorship",  
+               "Endemism", "State", "Domain", "FFB URL"),
   rownames = FALSE,
-  filter = "top",
-  extensions = "Buttons",
+  filter = list(
+    position = "top",
+    clear = TRUE,
+    plain = FALSE
+  ),
+  escape = FALSE,  # This allows HTML in the table (for clickable links)
+  extensions = c("Buttons", "Select"),
   caption = htmltools::tags$caption(
     style = "caption-side: top; text-align: left; font-weight: bold;",
     paste0("Table 3. All ", scales::comma(d$n_missing),
@@ -330,7 +349,19 @@ DT::datatable(
     pageLength = 20,
     dom = "Bfrtip",
     buttons = c("copy", "csv", "excel"),
-    scrollX = TRUE
+    scrollX = TRUE,
+    # This ensures ALL columns have search/filter options
+    search = list(regex = TRUE, caseInsensitive = TRUE),
+    # Control column filters
+    columnDefs = list(
+      list(searchable = TRUE, targets = "_all"),
+      # For columns with many unique values, ensure they still have filter
+      list(orderable = TRUE, targets = "_all")
+    ),
+    # Increase the number of filter choices shown (if applicable)
+    lengthMenu = list(c(10, 20, 50, 100, -1), 
+                      c("10", "20", "50", "100", "All")),
+    pageLength = 20
   )
 )
 ```

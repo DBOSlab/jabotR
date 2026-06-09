@@ -64,11 +64,21 @@
 #'                format = c("pdf", "png"))
 #' }
 #'
-#' @importFrom dplyr filter mutate group_by summarise arrange desc n_distinct left_join anti_join semi_join
+#' @importFrom dplyr filter mutate group_by summarise arrange desc n_distinct left_join anti_join semi_join if_all relocate full_join
 #' @importFrom tidyr separate_rows
 #' @importFrom magrittr "%>%"
 #' @importFrom utils head
 #' @importFrom stats reorder
+#' @importFrom scales comma
+#' @importFrom rmarkdown render
+#' @importFrom floraR flora_search
+#' @importFrom geobr read_state
+#' @importFrom ggplot2 ggplot aes geom_col coord_flip labs scale_fill_manual scale_fill_gradient geom_text scale_y_continuous expansion theme_void element_text element_rect margin unit
+#' @importFrom plotly ggplotly
+#' @importFrom DT datatable formatStyle styleColorBar
+#' @importFrom leaflet leaflet addProviderTiles addPolygons addLegend colorNumeric
+#' @importFrom sf st_as_sf
+#' @importFrom htmltools tags p
 #'
 #' @export
 
@@ -106,6 +116,7 @@ jabot_coverage <- function(herbarium = NULL,
   ffb <- .load_ffb_data(verbose)
   taxon <- ffb$taxon
   distribution <- ffb$distribution
+  distribution$locationID <- gsub("BR-", "", distribution$locationID)
   speciesprofile <- ffb$speciesprofile
   typesandspecimen <- ffb$typesandspecimen
 
@@ -122,7 +133,7 @@ jabot_coverage <- function(herbarium = NULL,
   herb_df <- .load_herb_data(herbarium, jabot_path, verbose)
 
   # Keep only determined specimens with family and species
-  herb_df <- herb_df[!is.na(herb_df$family) & !is.na(herb_df$species), ]
+  herb_df <- herb_df[!is.na(herb_df$genus) & !is.na(herb_df$species), ]
 
   names(herb_df)[names(herb_df) %in% "division"] <- "phylum"
   idx <- match(herb_df$genus, taxon$genus)
@@ -153,6 +164,20 @@ jabot_coverage <- function(herbarium = NULL,
 
   taxon_in_herb <- taxon_accepted[taxon_accepted$taxonName %in% herb_df$taxonName, ]
   taxon_not_in_herb <- taxon_accepted[!taxon_accepted$taxonName %in% herb_df$taxonName, ]
+
+  dist_summary <- distribution %>%
+    dplyr::group_by(id) %>%
+    dplyr::summarise(locationID = paste(unique(na.omit(locationID)), collapse = " | "),
+                     phytogeographicDomain =
+                       paste(unique(unlist(strsplit(phytogeographicDomain, ",\\s*"))),
+                             collapse = " | "),
+                     endemism = paste(unique(na.omit(endemism)), collapse = " | "),
+                     .groups = "drop") %>%
+    dplyr::mutate(dplyr::across(
+      where(is.character), ~ .x |> dplyr::na_if("") |> dplyr::na_if("NA")))
+
+  taxon_in_herb <- taxon_in_herb %>%
+    dplyr::left_join(dist_summary, by = "id")
 
   n_ffb_total <- nrow(taxon_accepted)
   n_in_herb <- nrow(taxon_in_herb)
@@ -441,13 +466,11 @@ jabot_coverage <- function(herbarium = NULL,
     ggplot2::aes(x = stats::reorder(group, coverage_pct),
                  y = coverage_pct,
                  text = tooltip,
-                 fill = coverage_pct)
-  ) +
+                 fill = coverage_pct)) +
     ggplot2::geom_col() +
     ggplot2::geom_text(
       ggplot2::aes(label = paste0(coverage_pct, "%")),
-      hjust = -0.15, size = 3.5, color = "#495057"
-    ) +
+      hjust = -0.15, size = 3.5, color = "#495057") +
     ggplot2::coord_flip(clip = "off") +
     ggplot2::scale_fill_gradient(low = col_pres_light,
                                  high = col_pres_dark,
@@ -478,13 +501,11 @@ jabot_coverage <- function(herbarium = NULL,
     ggplot2::aes(x = stats::reorder(family, coverage_pct),
                  y = coverage_pct,
                  text = tooltip,
-                 fill = coverage_pct)
-  ) +
+                 fill = coverage_pct)) +
     ggplot2::geom_col() +
     ggplot2::geom_text(
       ggplot2::aes(label = paste0(coverage_pct, "%")),
-      hjust = -0.15, size = 3, color = "#495057"
-    ) +
+      hjust = -0.15, size = 3, color = "#495057") +
     ggplot2::coord_flip(clip = "off") +
     ggplot2::scale_fill_gradient(low = col_pres_light, high = col_pres_dark,
                                  name = NULL, guide = "none") +
@@ -586,14 +607,9 @@ jabot_coverage <- function(herbarium = NULL,
   ) +
     ggplot2::geom_col() +
     ggplot2::geom_text(
-      ggplot2::aes(
-        label = paste0(
-          pct_type_species,
-          "%"
-        )
-      ),
-      hjust = -0.15
-    ) +
+      ggplot2::aes(label = paste0(pct_type_species,"%")),
+      hjust = -0.15,
+      color = "#495057") +
     ggplot2::coord_flip() +
     ggplot2::scale_fill_gradient(low = col_pres_light,
                                  high = col_pres_dark,
@@ -636,7 +652,7 @@ jabot_coverage <- function(herbarium = NULL,
   ) +
     ggplot2::geom_col() +
     ggplot2::geom_text(ggplot2::aes(label = scales::comma(n_type_taxa)),
-                       hjust = -0.15, size = 3) +
+                       hjust = -0.15, size = 3, color = "#495057") +
     ggplot2::coord_flip(clip = "off") +
     ggplot2::scale_fill_gradient(
       low = col_pres_light,
@@ -674,7 +690,7 @@ jabot_coverage <- function(herbarium = NULL,
                  text = tooltip)) +
     ggplot2::geom_col(width = 0.65) +
     ggplot2::geom_text(ggplot2::aes(label = paste0(coverage_pct, "%")),
-                       vjust = -0.3) +
+                       vjust = -0.3, color = "#495057") +
     ggplot2::scale_fill_gradient(low = col_pres_light,
                                  high = col_pres_dark,
                                  name = "Coverage %") +
