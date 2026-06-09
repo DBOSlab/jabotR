@@ -114,5 +114,5 @@ jabot_records(herbarium = c("AFR", "R", "RB"),
 \code{\link{jabot_parse}}
 }
 \author{
-Domingos Cardoso & Carlos Calderón
+Domingos Cardoso
 }

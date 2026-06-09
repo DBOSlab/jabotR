@@ -1,0 +1,137 @@
+/* ── jabotR HTML report stylesheet ───────────────────────────────────────── */
+
+/* Google-like sans-serif body */
+body {
+  font-family: "Lato", "Helvetica Neue", Arial, sans-serif;
+  font-size: 15px;
+  color: #333333;
+  background-color: #fafafa;
+}
+
+/* Headings */
+h1.title {
+  color: #1b4332;
+  font-weight: 700;
+  font-size: 1.9em;
+  margin-bottom: 0.2em;
+}
+h3.subtitle {
+  color: #6c757d;
+  font-weight: 400;
+  font-size: 1.1em;
+  margin-top: 0;
+}
+h2, h3, h4 {
+  color: #2d6a4f;
+  font-weight: 600;
+}
+h2 { border-bottom: 2px solid #2d6a4f; padding-bottom: 6px; }
+
+/* TOC sidebar */
+.tocify-header { font-weight: 600; }
+.tocify-subheader { font-size: 0.92em; }
+
+/* ── KPI / stat boxes ─────────────────────────────────────────────────────── */
+.kpi-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 18px 0 24px 0;
+}
+.kpi-box {
+  flex: 1 1 160px;
+  border-radius: 10px;
+  padding: 16px 20px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+.kpi-value {
+  font-size: 2em;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.kpi-label {
+  font-size: 0.82em;
+  color: #555;
+  margin-top: 4px;
+}
+
+/* Colour variants */
+.kpi-green  { background: #f0fdf4; border-left: 5px solid #2d6a4f; }
+.kpi-green  .kpi-value { color: #1b4332; }
+
+.kpi-blue   { background: #dbeafe; border-left: 5px solid #2563eb; }
+.kpi-blue   .kpi-value { color: #1d4ed8; }
+
+.kpi-red    { background: #fde8ea; border-left: 5px solid #e63946; }
+.kpi-red    .kpi-value { color: #c0001a; }
+
+.kpi-amber  { background: #fef3c7; border-left: 5px solid #f59e0b; }
+.kpi-amber  .kpi-value { color: #b45309; }
+
+.kpi-gray   { background: #f1f3f5; border-left: 5px solid #868e96; }
+.kpi-gray   .kpi-value { color: #495057; }
+
+.kpi-purple { background: #ede9fe; border-left: 5px solid #7c3aed; }
+.kpi-purple .kpi-value { color: #5b21b6; }
+
+.kpi-ocean   { background: #e0f7fa; border-left: 5px solid #00838f; }
+.kpi-ocean   .kpi-value { color: #006064; }
+
+.kpi-coral   { background: #fff3e0; border-left: 5px solid #ff6f00; }
+.kpi-coral   .kpi-value { color: #e65100; }
+
+.kpi-seafoam { background: #e0f2f1; border-left: 5px solid #00796b; }
+.kpi-seafoam .kpi-value { color: #004d40; }
+
+.kpi-lagoon  { background: #e1f5fe; border-left: 5px solid #0277bd; }
+.kpi-lagoon  .kpi-value { color: #01579b; }
+
+/* ── Plots ────────────────────────────────────────────────────────────────── */
+.plotly { border-radius: 8px; }
+
+/* ── Tables ───────────────────────────────────────────────────────────────── */
+table.dataTable thead th {
+  background-color: #2d6a4f !important;
+  color: #fff !important;
+  font-weight: 600;
+}
+table.dataTable tbody tr:hover { background-color: #f0fdf4 !important; }
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+footer { margin-top: 3em; color: #333333}
+
+/* ── Tabset tabs ──────────────────────────────────────────────────────────── */
+.nav-tabs > li.active > a,
+.nav-tabs > li.active > a:hover {
+  background-color: #2d6a4f;
+  color: #fff;
+  border-color: #2d6a4f;
+}
+.nav-tabs > li > a { color: #2d6a4f; }
+.nav-tabs > li > a:hover { background-color: #2d6a4f; }
+
+.author {
+  color: #6c757d !important;
+}
+
+.date {
+  color: #6c757d !important;
+}
+
+.author a {
+  color: #2d6a4f !important;
+  text-decoration: none;
+}
+
+.author a:hover {
+  color: #2d6a4f !important;
+}
+
+.section a {
+  color: #2d6a4f !important;
+}
+
+.section a:hover {
+  color: #2d6a4f !important;
+}

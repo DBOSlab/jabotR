@@ -6,7 +6,7 @@
 \alias{jabotR-package}
 \title{jabotR: An R Package for Exploring JABOT Online Plant Specimen Collections}
 \description{
-Provides tools to access and analyze plant specimen records from JABOT, a botanical data repository maintained by the Rio de Janeiro Botanical Garden. Users can retrieve, filter, and summarize specimen data using taxonomic, geographic, or temporal criteria. The package supports downloading structured Darwin Core (DwC-A) archives and integrates with tidyverse workflows for downstream analysis and visualization.
+Provides tools to access and analyze plant specimen records from JABOT, a botanical data repository maintained by the Rio de Janeiro Botanical Garden. Users can retrieve, filter, and summarize specimen data using taxonomic, geographic, or temporal criteria. The package supports downloading structured Darwin Core (DwC-A) archives and integrates with tidyverse workflows for downstream analysis and visualization. Two analytical functions — jabot_gap_analysis() and jabot_representativeness() — compare any JABOT-hosted herbarium against the Flora e Funga do Brasil and produce self-contained HTML reports with interactive figures and tables.
 }
 \seealso{
 Useful links:
@@ -22,8 +22,7 @@ Useful links:
 
 Authors:
 \itemize{
-  \item Carlos Calderón \email{caldecid@gmail.com} (\href{https://orcid.org/0000-0002-3897-4615}{ORCID}) [copyright holder]
-  \item Luís Alexandre Estevão da Silva \email{estevao@jbrj.gov.br} (\href{https://orcid.org/0000-0002-7464-922X}{ORCID}) [copyright holder]
+  \item Domingos Cardoso \email{domingoscardoso@jbrj.gov.br} (\href{https://orcid.org/0000-0001-7072-2656}{ORCID}) [copyright holder]
 }
 
 }

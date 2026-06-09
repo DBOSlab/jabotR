@@ -1308,3 +1308,216 @@
   write(c(log_line, stats_summary), file = file.path(dir, "log.txt"), append = TRUE)
 
 }
+
+
+#' Parse Darwin Core Archive (DwC-A) files from Flora e Funga do Brasil
+#'
+#' @importFrom finch dwca_read
+#' @importFrom dplyr mutate select relocate filter rename tibble
+#' @importFrom tidyr unnest
+#' @importFrom stringr str_match
+#' @importFrom purrr pmap_chr
+#' @importFrom magrittr "%>%"
+#'
+#' @keywords internal
+#' @noRd
+
+.flora_parse <- function(path = NULL,
+                         version = "latest",
+                         verbose = TRUE) {
+
+  dwca_folders <- list.files(path)
+  dwca_filenames <- lapply(paste0(path, "/", dwca_folders), list.files)
+
+  downloaded_files <- gsub("[.]latest", "", gsub("_", ".", gsub("dwca_ffb_v", "", dwca_folders)))
+
+  tf <- grepl("latest", dwca_folders)
+  latest_version <- downloaded_files[tf]
+  dwca_folders <- dwca_folders[downloaded_files %in% latest_version]
+
+  # Calling all dwca files
+
+  if (verbose) {
+    message("Parsing data from dwca folders...\n\n")
+  }
+  dwca_files <- lapply(dwca_folders,
+                       function(x) finch::dwca_read(input = paste0(path, "/", x),
+                                                    read = TRUE,
+                                                    encoding = "UTF-8",
+                                                    na.strings = ""))
+  names(dwca_files) <- dwca_folders
+
+  for (i in seq_along(dwca_files)) {
+
+    dwca_files[[i]][["data"]][["taxon.txt"]][["family"]][dwca_files[[i]][["data"]][["taxon.txt"]][["family"]] %in% "NA"] <- NA
+    dwca_files[[i]][["data"]][["taxon.txt"]][["genus"]][dwca_files[[i]][["data"]][["taxon.txt"]][["genus"]] %in% "NA"] <- NA
+    taxon_df <- dwca_files[[i]][["data"]][["taxon.txt"]]
+    # taxon_df$references <- paste0("https://floradobrasil.jbrj.gov.br/consulta/ficha.html?idDadosListaBrasil=",
+    #                               gsub(".*=FB", "", taxon_df$references))
+    distribution_df <- dwca_files[[i]][["data"]][["distribution.txt"]]
+    speciesprofile_df <- dwca_files[[i]][["data"]][["speciesprofile.txt"]]
+
+    dwca_files[[i]][["data"]][["taxon.txt"]] <- dwca_files[[i]][["data"]][["taxon.txt"]] %>%
+      dplyr::mutate(
+        taxonName = purrr::pmap_chr(
+          list(genus, specificEpithet, infraspecificEpithet),
+          function(genus, specificEpithet, infraspecificEpithet) {
+            parts <- c(genus, specificEpithet, infraspecificEpithet)
+            parts <- parts[!is.na(parts) & parts != ""]
+            if (length(parts) == 0) NA_character_ else paste(parts, collapse = " ")
+          }
+        )
+      ) %>%
+      dplyr::relocate(taxonName, .before = taxonRank)
+
+    # Organize distribution and domains data
+    temp_df <- dwca_files[[i]][["data"]][["distribution.txt"]]
+
+    endemism <- stringr::str_match(temp_df$occurrenceRemarks, '"endemism":"([^"]+)"')[,2]
+    domains_raw <- stringr::str_match(temp_df$occurrenceRemarks, '"phytogeographicDomain":\\[(.*)\\]')[,2]
+    phytogeographicDomain <- strsplit(gsub('"', "", domains_raw), ",")
+
+    # Assemble data frame
+    temp_df_fast <- data.frame(
+      endemism = endemism,
+      phytogeographicDomain = I(phytogeographicDomain), # keep as list-column
+      stringsAsFactors = FALSE
+    )
+    temp_df <- cbind(temp_df, temp_df_fast)
+    temp_df_long <- tidyr::unnest(temp_df, phytogeographicDomain)
+
+    dwca_files[[i]][["data"]][["distribution.txt"]] <- temp_df_long
+
+    # Organize speciesprofile data frame
+    temp_df <- dwca_files[[i]][["data"]][["speciesprofile.txt"]]
+
+    # Handle NAs safely
+    text <- temp_df$lifeForm
+    text[is.na(text)] <- "{}"
+
+    # Extract parts using regex
+    lifeForm_raw <- stringr::str_match(text, '"lifeForm":\\[(.*?)\\]')[,2]
+    habitat_raw <- stringr::str_match(text, '"habitat":\\[(.*?)\\]')[,2]
+    vegetation_raw <- stringr::str_match(text, '"vegetationType":\\[(.*?)\\]')[,2]
+
+    # Split into character vectors (remove quotes)
+    lifeForm_list <- strsplit(gsub('"', "", lifeForm_raw), ",")
+    habitat_list <- strsplit(gsub('"', "", habitat_raw), ",")
+    vegetation_list <- strsplit(gsub('"', "", vegetation_raw), ",")
+
+    # Combine into a new clean data frame
+    temp_df_fast <- dplyr::tibble(
+      lifeForm_new = I(lifeForm_list),
+      habitat_new = I(habitat_list),
+      vegetationType = I(vegetation_list)
+    )
+
+    temp_df_long <- cbind(temp_df, temp_df_fast)
+
+    temp_df_long <- temp_df_long %>%
+      tidyr::unnest(cols = c(lifeForm_new)) %>%
+      tidyr::unnest(cols = c(habitat_new)) %>%
+      tidyr::unnest(cols = c(vegetationType)) %>%
+      dplyr::filter(!if_all(-1, ~ is.na(.) | . == "")) %>%
+      dplyr::select("id", "lifeForm_new",  "habitat_new", "vegetationType", "lifeForm") %>%
+      dplyr::rename(lifeForm_json = lifeForm) %>%
+      dplyr::rename(lifeForm = lifeForm_new) %>%
+      dplyr::rename(habitat = habitat_new)
+
+    # Save back into your structure
+    dwca_files[[i]][["data"]][["speciesprofile.txt"]] <- temp_df_long
+
+  }
+
+  if (verbose) {
+    message("Versioned FFB datasets and associated metadata were parsed from the following dwca folders: \n\n",
+            paste0(names(dwca_files), "\n"))
+  }
+
+  return(dwca_files)
+}
+
+#' Default theme for plotting graphics
+#'
+#' @keywords internal
+#' @noRd
+.jabot_theme <- function(plot_title_color) {
+  ggplot2::theme_minimal(base_size = 12) +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(face = "bold",
+                                         size = 13,
+                                         color = plot_title_color),
+      plot.subtitle = ggplot2::element_text(size = 10,
+                                            color = "#6c757d"),
+      plot.caption = ggplot2::element_text(size = 8,
+                                           color = "#adb5bd",
+                                           hjust = 1),
+      axis.title = ggplot2::element_text(size = 10,
+                                         color = "#495057"),
+      axis.text = ggplot2::element_text(size = 9,
+                                        color = "#495057"),
+      panel.grid.minor = ggplot2::element_blank(),
+      panel.grid.major = ggplot2::element_line(color = "#e9ecef",
+                                               linewidth = 0.4),
+      legend.position = "bottom",
+      legend.title = ggplot2::element_text(face = "bold"),
+      strip.text = ggplot2::element_text(face = "bold")
+    )
+}
+
+#' Download and parse FFB data
+#'
+#' @keywords internal
+#' @noRd
+.load_ffb_data <- function(verbose) {
+  floraR::flora_download(version = "latest",
+                         verbose = verbose,
+                         dir = "flora_download")
+  dwca <- .flora_parse(path = "flora_download",
+                       version = "latest",
+                       verbose = verbose)
+
+  key <- names(dwca)[1]
+  taxon = dwca[[key]][["data"]][["taxon.txt"]]
+  unique(taxon$class)
+  unique(taxon$group)
+
+  taxon <- taxon %>%
+    dplyr::mutate(
+      group = dplyr::case_when(
+        class %in% c("Magnoliopsida", "Liliopsida") ~ "angiosperms",
+        class %in% c("Cycadopsida", "Ginkgoopsida", "Pinopsida", "Gnetopsida") ~ "gymnosperms",
+        class %in% "Polypodiopsida" ~ "ferns",
+        class %in% "Lycopodiopsida" ~ "lycophytes",
+        class %in% c("Bryopsida", "Anthocerotopsida", "Sphagnopsida",
+                     "Marchantiopsida", "Jungermanniopsida", "Polytrichopsida",
+                     "Andreaeopsida") ~ "bryophytes",
+        class %in% "Incertae sedis" ~ "incertae sedis",
+        grepl("phyceae", class) ~ "algae",
+        grepl("mycetes", class) ~ "fungi",
+        is.na(class) ~ "incertae sedis"
+      )
+    ) %>%
+    dplyr::relocate(group, .before = kingdom)
+
+  list(
+    taxon = taxon,
+    distribution = dwca[[key]][["data"]][["distribution.txt"]],
+    speciesprofile = dwca[[key]][["data"]][["speciesprofile.txt"]]
+  )
+}
+
+#' Download and parse JABOT data
+#'
+#' @keywords internal
+#' @noRd
+.load_herb_data <- function(herbarium, jabot_path, verbose) {
+  jabot_records(
+    herbarium = herbarium,
+    indets = FALSE,
+    path = jabot_path,
+    updates = is.null(jabot_path),
+    verbose = verbose,
+    save = FALSE
+  )
+}

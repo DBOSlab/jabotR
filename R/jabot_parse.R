@@ -46,7 +46,6 @@
 #' @importFrom stats setNames
 #'
 #' @export
-#'
 
 jabot_parse <- function(path = NULL,
                         herbarium = NULL,
@@ -126,8 +125,8 @@ jabot_parse <- function(path = NULL,
   )
 
   herbarium <- sapply(dwca_filenames, function(x) {
-    csv <- x[grepl("_Reflora\\.csv$", x)]
-    sub("_Reflora\\.csv$", "", basename(csv))
+    csv <- x[grepl("_Jabot\\.csv$", x)]
+    sub("_Jabot\\.csv$", "", basename(csv))
   })
 
   for (i in seq_along(dwca_files)) {

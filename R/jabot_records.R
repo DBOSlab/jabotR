@@ -1,7 +1,7 @@
 #' Retrieve taxon records from JABOT
 #'
 #' @author
-#' Domingos Cardoso & Carlos Calderón
+#' Domingos Cardoso
 #'
 #' @description
 #' Retrieve occurrence records for specific taxa from the
@@ -117,7 +117,6 @@
 #' @importFrom stringi stri_trans_general
 #'
 #' @export
-#'
 
 jabot_records <- function(herbarium = NULL,
                           taxon = NULL,
@@ -157,11 +156,13 @@ jabot_records <- function(herbarium = NULL,
   dir <- .arg_check_dir(dir)
 
   # Create a new folder to save the dataframe, if there is none already
-  if (!dir.exists(dir)) {
-    if (verbose) {
-      message(paste0("Creating directory '", dir, "' in working directory..."))
+  if (save) {
+    if (!dir.exists(dir)) {
+      if (verbose) {
+        message(paste0("Creating directory '", dir, "' in working directory..."))
+      }
+      dir.create(dir)
     }
-    dir.create(dir)
   }
 
   if (!is.null(path)) {
