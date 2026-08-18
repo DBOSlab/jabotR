@@ -20,9 +20,11 @@ MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 from the [JABOT online herbarium
 collections](https://jabot.jbrj.gov.br/v3/consulta.php), hosted by the
 [Rio de Janeiro Botanical Garden](https://www.gov.br/jbrj/pt-br). It
-provides tools for downloading, summarizing, and filtering herbarium
-records in Darwin Core Archive (DwC-A) format via the [JABOT
-IPT](https://ipt.jbrj.gov.br/jabot).
+provides tools for summarizing JABOT collections, downloading and
+parsing specimen records in Darwin Core Archive (DwC-A) format,
+retrieving and filtering occurrence records, identifying indeterminate
+specimens, and evaluating taxonomic gaps and collection
+representativeness against the Flora e Funga do Brasil (FFB).
 
 ## Installation
 
@@ -43,9 +45,11 @@ library(jabotR)
 
 ## Usage
 
-A general description of the available main functions (`jabot_download`
-and `jabot_summary`) that extract original JABOT collections are
-provided below.  
+A general description of the main functions available in `jabotR` is
+provided below. These functions support a workflow from summarizing and
+downloading original JABOT collections to parsing specimen records,
+filtering occurrence data, retrieving indeterminate specimens, and
+evaluating taxonomic gaps and herbarium representativeness.  
   
 
 #### *1. `jabot_summary`: Summarizing JABOT collections*
@@ -65,7 +69,7 @@ summary_df <- jabot_summary(verbose = TRUE,
 
   
 By specifying a vector of herbarium acronyms, the user can extract a
-summary for just the specific herbarium collection.  
+summary for just the specific herbarium collections.  
 
 ``` r
 summary_some_df <- jabot_summary(herbarium = c("AFR", "R", "RB"),
@@ -80,7 +84,7 @@ summary_some_df <- jabot_summary(herbarium = c("AFR", "R", "RB"),
 #### *2. `jabot_download`: Downloading JABOT specimen records*
 
 The following code can be used to download original specimen records in
-DwC-A format and associated metada for all JABOT collections.  
+DwC-A format and associated metadata for all JABOT collections.  
 
 ``` r
 library(jabotR)
@@ -91,7 +95,7 @@ jabot_download(verbose = TRUE,
 
   
 By specifying a vector of herbarium acronyms, the user can download
-specimens records for just the specific herbarium collection.  
+specimen records for just the specific herbarium collections.  
 
 ``` r
 jabot_download(herbarium = c("AFR", "RB", "R"),
@@ -100,6 +104,268 @@ jabot_download(herbarium = c("AFR", "RB", "R"),
 ```
 
   
+The downloaded DwC-A folders can subsequently be parsed with
+`jabot_parse()` or reused by other `jabotR` functions.  
+  
+
+#### *3. `jabot_parse`: Parsing downloaded DwC-A files*
+
+`jabot_parse()` reads JABOT Darwin Core Archive folders and converts
+their occurrence records and associated metadata into R objects. It is
+useful when DwC-A files have already been downloaded using
+`jabot_download()` and the user wants to inspect or manipulate the
+original data directly.  
+
+The following code parses all DwC-A folders located in the
+`"jabot_download"` directory.  
+
+``` r
+dwca <- jabot_parse(path = "jabot_download",
+                    verbose = TRUE)
+```
+
+  
+Specific herbarium collections can also be selected.  
+
+``` r
+dwca_some <- jabot_parse(path = "jabot_download",
+                         herbarium = c("AFR", "RB"),
+                         verbose = TRUE)
+```
+
+  
+The function returns a named list containing parsed DwC-A data and
+associated metadata for each collection.  
+  
+
+#### *4. `jabot_records`: Retrieving and filtering specimen records*
+
+`jabot_records()` retrieves occurrence records from JABOT and allows
+users to filter specimens by herbarium, taxon, Brazilian state and
+collection year. The function can automatically download and parse the
+required DwC-A files or reuse files that have already been downloaded.  
+
+For example, Fabaceae records from selected JABOT collections can be
+retrieved with:  
+
+``` r
+fabaceae_records <- jabot_records(herbarium = c("AFR", "R", "RB"),
+                                  taxon = "Fabaceae",
+                                  verbose = TRUE,
+                                  save = FALSE)
+```
+
+  
+Taxonomic, geographic and temporal filters can be combined.  
+
+``` r
+filtered_records <- jabot_records(herbarium = "RB",
+                                  taxon = "Fabaceae",
+                                  state = c("Bahia", "Minas Gerais"),
+                                  recordYear = c("2000", "2024"),
+                                  verbose = TRUE,
+                                  save = FALSE)
+```
+
+  
+Previously downloaded DwC-A files can be reused by defining `path` and
+setting `updates = FALSE`.  
+
+``` r
+filtered_records <- jabot_records(herbarium = "RB",
+                                  taxon = "Fabaceae",
+                                  path = "jabot_download",
+                                  updates = FALSE,
+                                  verbose = TRUE,
+                                  save = FALSE)
+```
+
+  
+By default, indeterminate specimens are retained. Setting
+`indets = FALSE` removes records that are not identified to species
+level.  
+
+``` r
+species_records <- jabot_records(herbarium = "RB",
+                                 taxon = "Fabaceae",
+                                 indets = FALSE,
+                                 verbose = TRUE,
+                                 save = FALSE)
+```
+
+  
+When `save = TRUE`, the retrieved records are saved as a CSV file and a
+`log.txt` file containing summary information is generated in the output
+directory.  
+  
+
+#### *5. `jabot_indets`: Retrieving indeterminate specimens*
+
+`jabot_indets()` retrieves JABOT occurrence records for specimens that
+are not identified to species level. The function can be used to
+identify specimens determined only to higher taxonomic ranks,
+particularly family or genus, which can be useful for collection
+management and taxonomic curation.  
+
+For example, family-level indeterminate Fabaceae records can be
+retrieved with:  
+
+``` r
+family_indets <- jabot_indets(level = "FAMILY",
+                              herbarium = "RB",
+                              taxon = "Fabaceae",
+                              verbose = TRUE,
+                              save = FALSE)
+```
+
+  
+Genus-level indeterminate records can be retrieved with:  
+
+``` r
+genus_indets <- jabot_indets(level = "GENUS",
+                             herbarium = "RB",
+                             taxon = "Fabaceae",
+                             verbose = TRUE,
+                             save = FALSE)
+```
+
+  
+Geographic and temporal filters can also be applied.  
+
+``` r
+filtered_indets <- jabot_indets(level = "FAMILY",
+                                herbarium = "RB",
+                                taxon = "Fabaceae",
+                                state = c("Bahia", "Minas Gerais"),
+                                recordYear = c("2000", "2024"),
+                                verbose = TRUE,
+                                save = FALSE)
+```
+
+  
+When `level = NULL`, all supported higher-rank indeterminate records are
+retained. Previously downloaded JABOT DwC-A files can also be reused.  
+
+``` r
+family_indets <- jabot_indets(level = "FAMILY",
+                              herbarium = "RB",
+                              taxon = "Fabaceae",
+                              path = "jabot_download",
+                              updates = FALSE,
+                              verbose = TRUE,
+                              save = FALSE)
+```
+
+  
+  
+
+#### *6. `jabot_gaps`: Identifying collection gaps against Flora e Funga do Brasil*
+
+`jabot_gaps()` identifies species listed in the [Flora e Funga do Brasil
+(FFB)](https://floradobrasil.jbrj.gov.br/consulta/) that are absent from
+a JABOT-hosted herbarium collection. The function retrieves or reads
+previously downloaded JABOT data, standardizes synonym names against
+FFB, and compares the species represented in the target herbarium with
+the accepted species recognized by FFB.  
+
+The analysis includes overall summary statistics, missing taxa by
+taxonomic group, family and genus, genera entirely absent from the
+herbarium, missing taxa by phytogeographic domain, missing endemic
+species, geographic gaps by Brazilian state, graphical summaries and an
+HTML report.  
+
+A gap analysis can be performed with:  
+
+``` r
+gap_analysis <- jabot_gaps(herbarium = "RB",
+                           verbose = TRUE,
+                           open_report = TRUE,
+                           dir = "RB_gap_analysis")
+```
+
+  
+Individual figures can additionally be exported as PDF, PNG, or both.  
+
+``` r
+gap_analysis <- jabot_gaps(herbarium = "RB",
+                           format = c("pdf", "png"),
+                           verbose = TRUE,
+                           open_report = TRUE,
+                           dir = "RB_gap_analysis")
+```
+
+  
+Previously downloaded JABOT DwC-A files can be reused with
+`jabot_path`.  
+
+``` r
+gap_analysis <- jabot_gaps(herbarium = "RB",
+                           jabot_path = "jabot_download",
+                           format = "pdf",
+                           verbose = TRUE,
+                           open_report = TRUE,
+                           dir = "RB_gap_analysis")
+```
+
+  
+The HTML report is always generated. When `format` is specified,
+individual figures are additionally saved in the requested static
+format.  
+  
+
+#### *7. `jabot_coverage`: Measuring herbarium representativeness*
+
+`jabot_coverage()` measures how well a JABOT-hosted herbarium represents
+the species diversity recognized by the Flora e Funga do Brasil. Unlike
+`jabot_gaps()`, which focuses on species that are missing from a
+collection, `jabot_coverage()` characterizes the species that are
+represented.  
+
+Overall coverage is calculated as the number of FFB species represented
+in the herbarium divided by the total number of FFB species, multiplied
+by 100.  
+
+The analysis includes overall FFB species coverage, coverage by
+taxonomic group, family, phytogeographic domain and Brazilian state,
+coverage of endemic and non-endemic species, representation of type
+material, graphical summaries and an HTML report.  
+
+A representativeness analysis can be performed with:  
+
+``` r
+coverage_analysis <- jabot_coverage(herbarium = "RB",
+                                    verbose = TRUE,
+                                    open_report = TRUE,
+                                    dir = "RB_representativeness")
+```
+
+  
+Individual figures can additionally be exported as PDF, PNG, or both.  
+
+``` r
+coverage_analysis <- jabot_coverage(herbarium = "RB",
+                                    format = c("pdf", "png"),
+                                    verbose = TRUE,
+                                    open_report = TRUE,
+                                    dir = "RB_representativeness")
+```
+
+  
+Previously downloaded JABOT DwC-A files can be reused with
+`jabot_path`.  
+
+``` r
+coverage_analysis <- jabot_coverage(herbarium = "RB",
+                                    jabot_path = "jabot_download",
+                                    format = "pdf",
+                                    verbose = TRUE,
+                                    open_report = TRUE,
+                                    dir = "RB_representativeness")
+```
+
+  
+The HTML report is always generated. When `format` is specified,
+individual figures are additionally saved as PDF or PNG files.  
   
 
 ## Documentation
