@@ -47,6 +47,8 @@ Suggests:
     plotly,
     quarto,
     testthat (>= 3.0.0)
+Remotes:
+    DBOSlab/floraR
 URL:
     https://dboslab.github.io/jabotR-website/,
     https://github.com/dboslab/jabotR
