@@ -35,7 +35,7 @@ the default browser after rendering.}
 \item{verbose}{Logical. If `TRUE` (default), progress messages are printed.}
 
 \item{dir}{Character. Output directory. Defaults to
-`"{herbarium}_representativeness"`.}
+`"<herbarium>_representativeness"`.}
 }
 \value{
 Invisibly returns a named list with all computed data frames and
@@ -73,7 +73,7 @@ synonym names resolved before the comparison is made.
 }
 \examples{
 \dontrun{
-# Full run — renders HTML and saves PDF figures
+# Full run - renders HTML and saves PDF figures
 jabot_coverage(herbarium = "RB",
                format = "pdf",
                dir = "RB_representativeness")

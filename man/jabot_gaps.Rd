@@ -36,7 +36,7 @@ in the default browser after rendering.}
 \item{verbose}{Logical. If `TRUE` (default), progress messages are printed.}
 
 \item{dir}{Character. Output directory. Defaults to
-`"{herbarium}_gap_analysis"`.}
+`"<herbarium>_gap_analysis"`.}
 }
 \value{
 Invisibly returns a named list with all computed data frames and
@@ -74,7 +74,7 @@ and produces a rich set of analyses and visualisations:
    the bundled Rmd template during rendering.
 }
 \note{
-- Internet access is required unless `jabot_path` point to previously
+- Internet access is required unless `jabot_path` points to previously
   downloaded data.
 - Synonym resolution via [floraR::flora_search()] can be slow for large
   herbaria; supply `jabot_path` to skip re-downloading JABOT records on
@@ -84,7 +84,7 @@ and produces a rich set of analyses and visualisations:
 }
 \examples{
 \dontrun{
-# Full run (downloads everything) — renders HTML and saves PDF figures
+# Full run (downloads everything) - renders HTML and saves PDF figures
 jabot_gaps(herbarium = "RB",
            format = c("pdf", "png"),
            dir = "RB_gap_analysis")

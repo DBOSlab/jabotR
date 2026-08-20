@@ -29,7 +29,7 @@
 #'   the default browser after rendering.
 #' @param verbose Logical. If `TRUE` (default), progress messages are printed.
 #' @param dir Character. Output directory. Defaults to
-#'   `"{herbarium}_representativeness"`.
+#'   `"<herbarium>_representativeness"`.
 #'
 #' @return Invisibly returns a named list with all computed data frames and
 #'   ggplot2 objects. The HTML report (and optional figures) are written to
@@ -53,7 +53,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Full run — renders HTML and saves PDF figures
+#' # Full run - renders HTML and saves PDF figures
 #' jabot_coverage(herbarium = "RB",
 #'                format = "pdf",
 #'                dir = "RB_representativeness")
@@ -91,7 +91,7 @@ jabot_coverage <- function(herbarium = NULL,
                            verbose = TRUE,
                            dir = NULL) {
 
-  # ── Input validation ────────────────────────────────────────────────────────
+  # -- Input validation --------------------------------------------------------
   if (is.null(herbarium))
     stop("'herbarium' must be provided (e.g. herbarium = 'RB').", call. = FALSE)
   herbarium <- toupper(trimws(herbarium))
@@ -111,7 +111,7 @@ jabot_coverage <- function(herbarium = NULL,
   fig_dir <- file.path(dir, "figures")
   if (!dir.exists(fig_dir)) dir.create(fig_dir, recursive = TRUE)
 
-  # ── 1. FFB data ─────────────────────────────────────────────────────────────
+  # -- 1. FFB data -------------------------------------------------------------
   if (verbose) message("\n[1/5] Loading Flora e Funga do Brasil data...")
   ffb <- .load_ffb_data(verbose)
   taxon <- ffb$taxon
@@ -128,7 +128,7 @@ jabot_coverage <- function(herbarium = NULL,
     dplyr::filter(taxonomicStatus != "NOME_ACEITO",
                   taxonRank == "ESPECIE")
 
-  # ── 2. JABOT records ────────────────────────────────────────────────────────
+  # -- 2. JABOT records --------------------------------------------------------
   if (verbose) message("[2/5] Loading JABOT records for herbarium '", herbarium, "'...")
   herb_df <- .load_herb_data(herbarium, jabot_path, verbose)
 
@@ -145,7 +145,7 @@ jabot_coverage <- function(herbarium = NULL,
   herb_df$family <- taxon$family[idx]
   herb_df <- herb_df %>% dplyr::relocate(group, .before = kingdom)
 
-  # ── 3. Synonym resolution ───────────────────────────────────────────────────
+  # -- 3. Synonym resolution ---------------------------------------------------
   if (verbose) message("[3/5] Resolving synonyms against FFB...")
   splist <- unique(herb_df$taxonName)
   syns <- splist[splist %in% taxon_non_accepted$taxonName]
@@ -159,7 +159,7 @@ jabot_coverage <- function(herbarium = NULL,
     herb_df$family[tf] <- res$family[idx[tf]]
   }
 
-  # ── 4. Representativeness metrics ───────────────────────────────────────────
+  # -- 4. Representativeness metrics -------------------------------------------
   if (verbose) message("[4/5] Computing representativeness metrics...")
 
   taxon_in_herb <- taxon_accepted[taxon_accepted$taxonName %in% herb_df$taxonName, ]
@@ -259,7 +259,7 @@ jabot_coverage <- function(herbarium = NULL,
     dplyr::filter(
       endemism %in% c(
         TRUE, "TRUE",
-        "Endemic", "Endemica", "Endêmica"
+        "Endemic", "Endemica", "End\u00eamica"
       )
     ) %>%
     dplyr::distinct(id)
@@ -344,7 +344,7 @@ jabot_coverage <- function(herbarium = NULL,
       )
     )
 
-  # ── 5. ggplot2 figures ──────────────────────────────────────────────────────
+  # -- 5. ggplot2 figures ------------------------------------------------------
   if (verbose) message("[5/5] Building figures...")
 
   plots <- .make_rep_plots(
@@ -377,7 +377,7 @@ jabot_coverage <- function(herbarium = NULL,
     overwrite = TRUE
   )
 
-  # ── 6. Render HTML report ───────────────────────────────────────────────────
+  # -- 6. Render HTML report ---------------------------------------------------
   rep_list <- list(
     herbarium = herbarium,
     date_run = Sys.Date(),
@@ -434,7 +434,7 @@ jabot_coverage <- function(herbarium = NULL,
 }
 
 
-# ── Internal helpers ──────────────────────────────────────────────────────────
+# -- Internal helpers ----------------------------------------------------------
 
 .make_rep_plots <- function(herbarium,
                             group_rep,
@@ -454,7 +454,7 @@ jabot_coverage <- function(herbarium = NULL,
   col_pres_light <- "#DAD7CD"
   col_miss <- "#e63946"
 
-  # 1 — Overall gauge-style bar (group)
+  # 1 - Overall gauge-style bar (group)
   group_rep$tooltip <- paste0(
     "<b>", group_rep$group, "</b>",
     "<br>Coverage: ", group_rep$coverage_pct, "%",
@@ -480,13 +480,13 @@ jabot_coverage <- function(herbarium = NULL,
       labels = function(x) paste0(x, "%")
     ) +
     ggplot2::labs(
-      title = paste0("Coverage by taxonomic group — ", herbarium),
+      title = paste0("Coverage by taxonomic group \u2014 ", herbarium),
       subtitle = paste0("Overall: ", coverage_pct, "% of FFB species represented"),
       x = NULL, y = "% of FFB taxa represented"
     ) +
     .jabot_theme(plot_title_color = "#2d6a4f")
 
-  # 2 — Top 20 best-covered families
+  # 2 - Top 20 best-covered families
   top_cov <- utils::head(
     family_rep[family_rep$n_ffb >= 5, ], 20
   )
@@ -514,13 +514,13 @@ jabot_coverage <- function(herbarium = NULL,
       labels = function(x) paste0(x, "%")
     ) +
     ggplot2::labs(
-      title = paste0("Top 20 best-covered families — ", herbarium),
-      subtitle = "Families with ≥ 5 FFB species; ranked by % coverage",
+      title = paste0("Top 20 best-covered families \u2014 ", herbarium),
+      subtitle = "Families with \u2265 5 FFB species; ranked by % coverage",
       x = NULL, y = "% covered"
     ) +
     .jabot_theme(plot_title_color = "#2d6a4f")
 
-  # 3 — Top 20 worst-covered families (with >= 10 FFB species)
+  # 3 - Top 20 worst-covered families (with >= 10 FFB species)
   large_fam <- family_rep[family_rep$n_ffb >= 10, ]
   worst_cov <- utils::head(large_fam[order(large_fam$coverage_pct), ], 20)
   worst_cov$tooltip <- paste0(
@@ -549,13 +549,13 @@ jabot_coverage <- function(herbarium = NULL,
       labels = function(x) paste0(x, "%")
     ) +
     ggplot2::labs(
-      title = paste0("Top 20 least-covered families — ", herbarium),
-      subtitle = "Families with ≥ 10 FFB species; ranked by lowest % coverage",
+      title = paste0("Top 20 least-covered families \u2014 ", herbarium),
+      subtitle = "Families with \u2265 10 FFB species; ranked by lowest % coverage",
       x = NULL, y = "% covered"
     ) +
     .jabot_theme(plot_title_color = "#2d6a4f")
 
-  # 4 — Coverage by domain
+  # 4 - Coverage by domain
   domain_rep$tooltip <- paste0(
     "<b>", domain_rep$phytogeographicDomain, "</b>",
     "<br>Coverage: ", domain_rep$coverage_pct, "%",
@@ -577,11 +577,11 @@ jabot_coverage <- function(herbarium = NULL,
                                  name = "Coverage %") +
     ggplot2::scale_y_continuous(limits = c(0, 115),
                                 labels = function(x) paste0(x, "%")) +
-    ggplot2::labs(title = paste0("Coverage by phytogeographic domain — ", herbarium),
+    ggplot2::labs(title = paste0("Coverage by phytogeographic domain \u2014 ", herbarium),
                   x = NULL, y = "% of FFB taxa represented") +
     .jabot_theme(plot_title_color = "#2d6a4f")
 
-  # 6 — Type coverage
+  # 6 - Type coverage
   type_group_rep$tooltip <- paste0(
     "<b>", type_group_rep$group, "</b>",
     "<br>Species represented: ",
@@ -616,7 +616,7 @@ jabot_coverage <- function(herbarium = NULL,
                                  name = "Coverage %") +
     ggplot2::labs(
       title = paste0(
-        "Species represented by type material — ",
+        "Species represented by type material \u2014 ",
         herbarium
       ),
       subtitle =
@@ -659,7 +659,7 @@ jabot_coverage <- function(herbarium = NULL,
       high = col_pres_dark,
       name = "Coverage %",
       guide = "none") +
-    ggplot2::labs(title = paste0("Top 20 families by type taxa — ", herbarium),
+    ggplot2::labs(title = paste0("Top 20 families by type taxa \u2014 ", herbarium),
                   subtitle = "Families with the largest number of taxa represented by type specimens",
                   x = NULL, y = "Number of type taxa") +
     .jabot_theme(plot_title_color = "#2d6a4f")
@@ -694,12 +694,12 @@ jabot_coverage <- function(herbarium = NULL,
     ggplot2::scale_fill_gradient(low = col_pres_light,
                                  high = col_pres_dark,
                                  name = "Coverage %") +
-    ggplot2::labs(title = paste0("Coverage of endemic species — ", herbarium),
+    ggplot2::labs(title = paste0("Coverage of endemic species \u2014 ", herbarium),
                   x = NULL,
                   y = "% represented") +
     .jabot_theme(plot_title_color = "#2d6a4f")
 
-  # 8 — State coverage map
+  # 8 - State coverage map
   p_state_map <- tryCatch({
     states_sf <- geobr::read_state(year = 2020, showProgress = FALSE)
     states_sf <- dplyr::left_join(states_sf, state_rep, by = "abbrev_state")
@@ -723,7 +723,7 @@ jabot_coverage <- function(herbarium = NULL,
         limits = c(0, 100)
       ) +
       ggplot2::labs(
-        title = paste0("Herbarium coverage by Brazilian state — ", herbarium),
+        title = paste0("Herbarium coverage by Brazilian state \u2014 ", herbarium),
         subtitle = "% of FFB species with records in the herbarium",
         caption = "Source: Flora e Funga do Brasil / JABOT"
       ) +
@@ -737,7 +737,7 @@ jabot_coverage <- function(herbarium = NULL,
         legend.position = "right"
       )
   }, error = function(e) {
-    message("Note: geobr map could not be loaded — state map skipped. ",
+    message("Note: geobr map could not be loaded \u2014 state map skipped. ",
             e$message)
     NULL
   })
