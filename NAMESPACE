@@ -4,80 +4,110 @@ export(jabot_coverage)
 export(jabot_download)
 export(jabot_gaps)
 export(jabot_indets)
+export(jabot_missed_spp)
 export(jabot_parse)
 export(jabot_records)
 export(jabot_summary)
-importFrom(DT,datatable)
-importFrom(DT,formatStyle)
-importFrom(DT,styleColorBar)
-importFrom(dplyr,across)
-importFrom(dplyr,anti_join)
-importFrom(dplyr,arrange)
-importFrom(dplyr,bind_rows)
-importFrom(dplyr,desc)
-importFrom(dplyr,filter)
-importFrom(dplyr,full_join)
-importFrom(dplyr,group_by)
-importFrom(dplyr,if_all)
-importFrom(dplyr,left_join)
-importFrom(dplyr,mutate)
-importFrom(dplyr,n_distinct)
-importFrom(dplyr,recode)
-importFrom(dplyr,relocate)
-importFrom(dplyr,rename)
-importFrom(dplyr,select)
-importFrom(dplyr,semi_join)
-importFrom(dplyr,summarise)
-importFrom(dplyr,tibble)
-importFrom(dplyr,where)
+importFrom(DT,
+  datatable,
+  formatStyle,
+  styleColorBar
+)
+importFrom(dplyr,
+  across,
+  anti_join,
+  arrange,
+  bind_rows,
+  desc,
+  filter,
+  first,
+  full_join,
+  group_by,
+  if_all,
+  left_join,
+  mutate,
+  n_distinct,
+  recode,
+  relocate,
+  rename,
+  select,
+  semi_join,
+  summarise,
+  tibble,
+  where
+)
 importFrom(finch,dwca_read)
 importFrom(floraR,flora_search)
-importFrom(geobr,read_state)
-importFrom(ggplot2,aes)
-importFrom(ggplot2,coord_flip)
-importFrom(ggplot2,element_rect)
-importFrom(ggplot2,element_text)
-importFrom(ggplot2,expansion)
-importFrom(ggplot2,geom_col)
-importFrom(ggplot2,geom_text)
-importFrom(ggplot2,ggplot)
-importFrom(ggplot2,labs)
-importFrom(ggplot2,margin)
-importFrom(ggplot2,scale_fill_gradient)
-importFrom(ggplot2,scale_fill_manual)
-importFrom(ggplot2,scale_y_continuous)
-importFrom(ggplot2,theme_void)
-importFrom(ggplot2,unit)
-importFrom(htmltools,p)
-importFrom(htmltools,tags)
-importFrom(leaflet,addLegend)
-importFrom(leaflet,addPolygons)
-importFrom(leaflet,addProviderTiles)
-importFrom(leaflet,colorNumeric)
-importFrom(leaflet,leaflet)
+importFrom(geobr,
+  read_municipality,
+  read_state
+)
+importFrom(ggplot2,
+  aes,
+  coord_flip,
+  element_rect,
+  element_text,
+  expansion,
+  geom_col,
+  geom_sf,
+  geom_text,
+  ggplot,
+  labs,
+  margin,
+  scale_fill_gradient,
+  scale_fill_gradientn,
+  scale_fill_manual,
+  scale_y_continuous,
+  theme,
+  theme_void,
+  unit
+)
+importFrom(htmltools,
+  p,
+  tags
+)
+importFrom(leaflet,
+  addCircleMarkers,
+  addLegend,
+  addPolygons,
+  addProviderTiles,
+  colorNumeric,
+  leaflet,
+  markerClusterOptions
+)
 importFrom(magrittr,"%>%")
 importFrom(plotly,ggplotly)
 importFrom(purrr,pmap_chr)
 importFrom(rmarkdown,render)
 importFrom(scales,comma)
 importFrom(sf,st_as_sf)
-importFrom(stats,na.omit)
-importFrom(stats,reorder)
-importFrom(stats,setNames)
-importFrom(stringi,stri_detect_regex)
-importFrom(stringi,stri_trans_general)
-importFrom(stringr,str_extract)
-importFrom(stringr,str_match)
-importFrom(stringr,str_split)
-importFrom(stringr,str_to_title)
-importFrom(tidyr,replace_na)
-importFrom(tidyr,separate_rows)
-importFrom(tidyr,unnest)
+importFrom(stats,
+  na.omit,
+  reorder,
+  setNames
+)
+importFrom(stringi,
+  stri_detect_regex,
+  stri_trans_general
+)
+importFrom(stringr,
+  str_extract,
+  str_match,
+  str_split,
+  str_to_title
+)
+importFrom(tidyr,
+  replace_na,
+  separate_rows,
+  unnest
+)
 importFrom(tidyselect,all_of)
-importFrom(utils,browseURL)
-importFrom(utils,capture.output)
-importFrom(utils,download.file)
-importFrom(utils,head)
-importFrom(utils,read.csv)
-importFrom(utils,unzip)
-importFrom(utils,write.csv)
+importFrom(utils,
+  browseURL,
+  capture.output,
+  download.file,
+  head,
+  read.csv,
+  unzip,
+  write.csv
+)

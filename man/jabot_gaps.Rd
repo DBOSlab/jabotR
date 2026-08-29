@@ -7,6 +7,8 @@
 jabot_gaps(
   herbarium = NULL,
   jabot_path = NULL,
+  priority_map = FALSE,
+  network_herbaria = NULL,
   format = NULL,
   fig_width = 10,
   fig_height = 6,
@@ -21,6 +23,18 @@ jabot_gaps(
 \item{jabot_path}{Character or `NULL`. Path to a directory holding previously
 downloaded JABOT DwC-A files (created by [jabot_download()]). When `NULL`
 (default) the records are downloaded automatically.}
+
+\item{priority_map}{Logical. If `TRUE`, additionally downloads pooled
+occurrence records from the JABOT network (see `network_herbaria`) and
+builds a nationwide municipality-level heat map ranking collecting
+priority — i.e. which municipalities already hold the most known
+vouchers of species still missing from `herbarium` (see
+[jabot_missed_spp()] for the region-scoped version of this analysis).
+Default `FALSE`, since it requires downloading the full network sample.}
+
+\item{network_herbaria}{Character vector or `NULL`. Only used when
+`priority_map = TRUE`; restricts the pooled network sample to these
+herbarium acronyms. `NULL` (default) uses **all** JABOT-hosted herbaria.}
 
 \item{format}{Character vector. Which static formats to save individual
 figures. Any combination of `"pdf"` and `"png"` is accepted. The HTML
@@ -56,6 +70,8 @@ and produces a rich set of analyses and visualisations:
 - Identification of **genera entirely absent** from the herbarium
 - **Choropleth map** of missing taxa by Brazilian state
 - Interactive searchable table of the top missing species
+- Optionally, a **municipality-level heat map** ranking collecting
+  priority nationwide (see `priority_map`)
 - An **HTML report** (always generated) and optional **PDF** / **PNG** exports
   of every individual figure
 }
@@ -97,7 +113,7 @@ jabot_gaps(herbarium = "RB",
 
 }
 \seealso{
-[jabot_coverage()], [jabot_records()], [jabot_download()]
+[jabot_coverage()], [jabot_missed_spp()], [jabot_records()], [jabot_download()]
 }
 \author{
 Domingos Cardoso

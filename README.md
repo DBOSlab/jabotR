@@ -32,8 +32,12 @@ You can install the development version of `jabotR` from
 [GitHub](https://github.com/DBOSlab/jabotR) with:
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("DBOSlab/jabotR")
+if (!requireNamespace("BiocManager", quietly = TRUE)) 
+install.packages("BiocManager") 
+
+# Install the development version of jabotR from GitHub, 
+# together with its required dependencies 
+BiocManager::install("DBOSlab/jabotR", dependencies = TRUE)
 ```
 
 ``` r
@@ -376,6 +380,6 @@ Full function documentation and articles are available at the `jabotR`
 
 ## Citation
 
-Cardoso, D., Calderón, C. & Silva, L.A.E. 2025. *jabotR*: An R Package
-for Exploring JABOT Online Plant Specimen Collections.
-<https://github.com/dboslab/jabotR>
+Cardoso, D., Ottino, G.C., Versiane, A.F., Forzza, R.C. & Silva, L.A.E.
+2026. *jabotR*: An R Package for Exploring JABOT Online Plant Specimen
+Collections. <https://github.com/dboslab/jabotR>

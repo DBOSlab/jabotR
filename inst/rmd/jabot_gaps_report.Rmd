@@ -304,6 +304,96 @@ ggplotly(d$plots$endemism, tooltip = "text")
 
 ---
 
+## Priority Municipalities for Collecting Expeditions
+
+```{r priority-map-intro, results='asis'}
+if (is.null(d$muni_sf)) {
+  cat(
+    "This analysis was not requested for this run. Re-run `jabot_gaps()` ",
+    "with `priority_map = TRUE` to rank Brazilian municipalities by how ",
+    "many missing species already have a known voucher there, collected ",
+    "by another herbarium in the JABOT network — the best expedition ",
+    "targets to maximise the number of new species added to ", herb, "."
+  )
+} else {
+  cat(paste0(
+    "The heat map below ranks Brazilian municipalities by how many ",
+    "missing species already have a known voucher there, collected by ",
+    "another herbarium in the JABOT network. Darker municipalities ",
+    "represent the best expedition targets to maximise the number of ",
+    "new species added to ", herb, "."
+  ))
+}
+```
+
+```{r leaflet-priority-map, fig.height=6}
+muni_sf <- d$muni_sf
+
+if (!is.null(muni_sf) && nrow(muni_sf) > 0) {
+  pal <- leaflet::colorNumeric(
+    palette = c("#F2D7C9", "#E6B8A2", "#D98E73", "#CD5C5C",
+               "#BC4749", "#A4243B", "#8A1538", "#6D071A"),
+    domain = muni_sf$n_missing_species,
+    na.color = "#f5f5f5"
+  )
+
+  leaflet::leaflet(muni_sf) %>%
+    leaflet::addProviderTiles("CartoDB.Positron") %>%
+    leaflet::addPolygons(
+      fillColor = ~pal(n_missing_species),
+      fillOpacity = 0.8,
+      color = "white",
+      weight = 0.5,
+      label = ~paste0(name_muni, ", ", abbrev_state, ": ", n_missing_species,
+                      " missing species with known vouchers"),
+      labelOptions = leaflet::labelOptions(
+        style = list("font-size" = "12px"),
+        sticky = FALSE
+      ),
+      popup = ~paste0(
+        "<b>", name_muni, ", ", abbrev_state, "</b><br>",
+        "Missing species with known vouchers: <b>", n_missing_species, "</b><br>",
+        "Network records: <b>", n_records, "</b>"
+      )
+    ) %>%
+    leaflet::addLegend(
+      pal = pal,
+      values = ~n_missing_species,
+      title = "Missing species\n(known vouchers)",
+      position = "bottomright"
+    )
+}
+```
+
+```{r table-priority, echo=FALSE}
+mp <- d$municipality_priority
+
+if (!is.null(mp) && nrow(mp) > 0) {
+  DT::datatable(
+    head(mp[, c("municipality", "abbrev_state", "n_missing_species", "n_records")], 30),
+    colnames = c("Municipality", "State", "Missing species (known vouchers)",
+                "Network records"),
+    rownames = FALSE,
+    caption = htmltools::tags$caption(
+      style = "caption-side: top; text-align: left; font-weight: bold;",
+      "Table 3. Top 30 priority municipalities for collecting expeditions."
+    ),
+    options = list(
+      pageLength = 15,
+      dom = "ftp",
+      order = list(list(2, "desc"))
+    )
+  ) %>%
+    DT::formatStyle("n_missing_species",
+                    background = DT::styleColorBar(mp$n_missing_species, "#ffd6da"),
+                    backgroundSize = "98% 88%",
+                    backgroundRepeat = "no-repeat",
+                    backgroundPosition = "center")
+}
+```
+
+---
+
 ## Complete List of Missing Species
 
 The table below shows all `r scales::comma(d$n_missing)` species missing from
@@ -342,7 +432,7 @@ DT::datatable(
   extensions = c("Buttons", "Select"),
   caption = htmltools::tags$caption(
     style = "caption-side: top; text-align: left; font-weight: bold;",
-    paste0("Table 3. All ", scales::comma(d$n_missing),
+    paste0("Table 4. All ", scales::comma(d$n_missing),
            " taxa absent from ", herb, ".")
   ),
   options = list(

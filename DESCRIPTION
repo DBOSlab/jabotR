@@ -8,7 +8,12 @@ Authors@R:
              family = "Cardoso",
              role = c("aut", "cre", "cph"),
              email = "domingoscardoso@jbrj.gov.br",
-             comment = c(ORCID = "0000-0001-7072-2656"))
+             comment = c(ORCID = "0000-0001-7072-2656")),
+      person(given = "Giulia C.",
+             family = "Ottino",
+             email = "botgiuc@gmail.com",
+             role = c("aut"),
+             comment = c(ORCID = "0009-0001-4352-1733"))
     )
 Maintainer: Domingos Cardoso <domingoscardoso@jbrj.gov.br>
 Description: Provides tools to access and analyze plant specimen records from
@@ -17,10 +22,12 @@ Description: Provides tools to access and analyze plant specimen records from
     specimen data using taxonomic, geographic, or temporal criteria. The
     package supports downloading structured Darwin Core (DwC-A) archives and
     integrates with tidyverse workflows for downstream analysis and visualization.
-    Two analytical functions — jabot_gap_analysis() and
-    jabot_representativeness() — compare any JABOT-hosted herbarium against the
+    Three analytical functions — jabot_gaps(), jabot_coverage(), and
+    jabot_missed_spp() — compare any JABOT-hosted herbarium against the
     Flora e Funga do Brasil and produce self-contained HTML reports with
-    interactive figures and tables.
+    interactive figures and tables. jabot_missed_spp() further narrows the
+    comparison to a target Brazilian state/municipality and maps candidate
+    collecting localities drawn from the pooled JABOT network.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
@@ -57,5 +64,4 @@ URL:
     https://github.com/dboslab/jabotR
 BugReports: https://github.com/DBOSlab/jabotR/issues
 Config/testthat/edition: 3
-Config/roxygen2/version: 8.0.0
-RoxygenNote: 7.3.3
+Config/roxygen2/version: 8.1.0

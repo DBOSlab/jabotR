@@ -1521,3 +1521,88 @@
     save = FALSE
   )
 }
+
+#' Download and parse pooled JABOT network data (all or a subset of herbaria)
+#'
+#' @keywords internal
+#' @noRd
+.load_pool_data <- function(network_herbaria, jabot_path, verbose) {
+  jabot_records(
+    herbarium = network_herbaria,
+    indets = FALSE,
+    path = jabot_path,
+    updates = is.null(jabot_path),
+    verbose = verbose,
+    save = FALSE
+  )
+}
+
+#' Brazilian state names and acronyms lookup
+#'
+#' @keywords internal
+#' @noRd
+.br_states <- function() {
+  c("Acre" = "AC", "Alagoas" = "AL", "Amapá" = "AP", "Amazonas" = "AM",
+    "Bahia" = "BA", "Ceará" = "CE", "Distrito Federal" = "DF",
+    "Espírito Santo" = "ES", "Goiás" = "GO", "Maranhão" = "MA",
+    "Mato Grosso" = "MT", "Mato Grosso do Sul" = "MS", "Minas Gerais" = "MG",
+    "Pará" = "PA", "Paraíba" = "PB", "Paraná" = "PR", "Pernambuco" = "PE",
+    "Piauí" = "PI", "Rio de Janeiro" = "RJ", "Rio Grande do Norte" = "RN",
+    "Rio Grande do Sul" = "RS", "Rondônia" = "RO", "Roraima" = "RR",
+    "Santa Catarina" = "SC", "São Paulo" = "SP", "Sergipe" = "SE",
+    "Tocantins" = "TO")
+}
+
+#' Compute municipality-level collecting priority from pooled network records
+#'
+#' For each municipality, counts how many of the given (missing) species
+#' already have at least one voucher from a herbarium other than the target
+#' one. Higher counts indicate higher priority for a collecting expedition.
+#'
+#' @keywords internal
+#' @noRd
+.compute_municipality_priority <- function(pool_df, missing_taxonNames, herbarium) {
+  df <- pool_df[pool_df$taxonName %in% missing_taxonNames &
+                  pool_df$collectionCode != herbarium, ]
+  df <- df[!is.na(df$municipality) & nzchar(df$municipality) &
+             !is.na(df$stateProvince), ]
+
+  if (nrow(df) == 0) {
+    return(data.frame(muni_key = character(0), municipality = character(0),
+                      abbrev_state = character(0), n_missing_species = integer(0),
+                      n_records = integer(0)))
+  }
+
+  br_states <- .br_states()
+  df$abbrev_state <- unname(br_states[match(df$stateProvince, names(br_states))])
+  df <- df[!is.na(df$abbrev_state), ]
+  df$muni_key <- toupper(stringi::stri_trans_general(df$municipality, "Latin-ASCII"))
+
+  df %>%
+    dplyr::group_by(muni_key, abbrev_state) %>%
+    dplyr::summarise(municipality = dplyr::first(municipality),
+                     n_missing_species = dplyr::n_distinct(taxonName),
+                     n_records = dplyr::n(),
+                     .groups = "drop") %>%
+    dplyr::relocate(municipality, .after = muni_key) %>%
+    dplyr::arrange(dplyr::desc(n_missing_species))
+}
+
+#' Load municipality polygons for one/more Brazilian states, or the whole country
+#'
+#' @keywords internal
+#' @noRd
+.load_municipality_sf <- function(state_abbrevs, verbose) {
+  if (is.null(state_abbrevs) || "all" %in% state_abbrevs) {
+    muni_sf <- geobr::read_municipality(code_muni = "all", year = 2020,
+                                        showProgress = verbose)
+  } else {
+    muni_list <- lapply(state_abbrevs, function(uf) {
+      geobr::read_municipality(code_muni = uf, year = 2020,
+                               showProgress = FALSE)
+    })
+    muni_sf <- dplyr::bind_rows(muni_list)
+  }
+  muni_sf$muni_key <- toupper(stringi::stri_trans_general(muni_sf$name_muni, "Latin-ASCII"))
+  muni_sf
+}

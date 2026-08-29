@@ -15,6 +15,8 @@
 #' - Identification of **genera entirely absent** from the herbarium
 #' - **Choropleth map** of missing taxa by Brazilian state
 #' - Interactive searchable table of the top missing species
+#' - Optionally, a **municipality-level heat map** ranking collecting
+#'   priority nationwide (see `priority_map`)
 #' - An **HTML report** (always generated) and optional **PDF** / **PNG** exports
 #'   of every individual figure
 #'
@@ -22,6 +24,16 @@
 #' @param jabot_path Character or `NULL`. Path to a directory holding previously
 #'   downloaded JABOT DwC-A files (created by [jabot_download()]). When `NULL`
 #'   (default) the records are downloaded automatically.
+#' @param priority_map Logical. If `TRUE`, additionally downloads pooled
+#'   occurrence records from the JABOT network (see `network_herbaria`) and
+#'   builds a nationwide municipality-level heat map ranking collecting
+#'   priority — i.e. which municipalities already hold the most known
+#'   vouchers of species still missing from `herbarium` (see
+#'   [jabot_missed_spp()] for the region-scoped version of this analysis).
+#'   Default `FALSE`, since it requires downloading the full network sample.
+#' @param network_herbaria Character vector or `NULL`. Only used when
+#'   `priority_map = TRUE`; restricts the pooled network sample to these
+#'   herbarium acronyms. `NULL` (default) uses **all** JABOT-hosted herbaria.
 #' @param format Character vector. Which static formats to save individual
 #'   figures. Any combination of `"pdf"` and `"png"` is accepted. The HTML
 #'   report is **always** generated regardless of this argument.
@@ -60,7 +72,7 @@
 #' - The `rmarkdown`, `ggplot2`, `plotly`, `leaflet`, `DT`, `geobr`, and `sf`
 #'   packages must be installed.
 #'
-#' @seealso [jabot_coverage()], [jabot_records()], [jabot_download()]
+#' @seealso [jabot_coverage()], [jabot_missed_spp()], [jabot_records()], [jabot_download()]
 #'
 #' @examples
 #' \dontrun{
@@ -83,18 +95,21 @@
 #' @importFrom scales comma
 #' @importFrom rmarkdown render
 #' @importFrom floraR flora_search
-#' @importFrom geobr read_state
-#' @importFrom ggplot2 ggplot aes geom_col coord_flip labs scale_fill_manual scale_fill_gradient geom_text scale_y_continuous expansion theme_void element_text element_rect margin unit
+#' @importFrom geobr read_state read_municipality
+#' @importFrom ggplot2 ggplot aes geom_col geom_sf coord_flip labs scale_fill_manual scale_fill_gradient scale_fill_gradientn geom_text scale_y_continuous expansion theme_void element_text element_rect margin unit
 #' @importFrom plotly ggplotly
 #' @importFrom DT datatable
 #' @importFrom leaflet leaflet addProviderTiles addPolygons addLegend colorNumeric
 #' @importFrom sf st_as_sf
+#' @importFrom stringi stri_trans_general
 #' @importFrom htmltools tags p
 #'
 #' @export
 
 jabot_gaps <- function(herbarium = NULL,
                        jabot_path = NULL,
+                       priority_map = FALSE,
+                       network_herbaria = NULL,
                        format = NULL,
                        fig_width = 10,
                        fig_height = 6,
@@ -106,6 +121,11 @@ jabot_gaps <- function(herbarium = NULL,
   if (is.null(herbarium))
     stop("'herbarium' must be provided (e.g. herbarium = 'RB').", call. = FALSE)
   herbarium <- toupper(trimws(herbarium))
+
+  if (!is.null(network_herbaria)) {
+    network_herbaria <- toupper(trimws(network_herbaria))
+    .arg_check_herbarium(network_herbaria, verbose = FALSE)
+  }
 
   if (!is.null(format)) {
     format <- tolower(trimws(format))
@@ -123,7 +143,7 @@ jabot_gaps <- function(herbarium = NULL,
   if (!dir.exists(fig_dir)) dir.create(fig_dir, recursive = TRUE)
 
   # -- 1. FFB data -------------------------------------------------------------
-  if (verbose) message("\n[1/5] Loading Flora e Funga do Brasil data...")
+  if (verbose) message("\n[1/6] Loading Flora e Funga do Brasil data...")
   ffb <- .load_ffb_data(verbose)
   taxon <- ffb$taxon
   distribution <- ffb$distribution
@@ -140,7 +160,7 @@ jabot_gaps <- function(herbarium = NULL,
                   taxonRank == "ESPECIE")
 
   # -- 2. JABOT herbarium records ----------------------------------------------
-  if (verbose) message("[2/5] Loading JABOT records for herbarium '", herbarium, "'...")
+  if (verbose) message("[2/6] Loading JABOT records for herbarium '", herbarium, "'...")
   herb_df <- .load_herb_data(herbarium, jabot_path, verbose)
 
   # Keep only determined specimens at family and genus level
@@ -157,7 +177,7 @@ jabot_gaps <- function(herbarium = NULL,
   herb_df <- herb_df %>% dplyr::relocate(group, .before = kingdom)
 
   # -- 3. Synonym resolution ---------------------------------------------------
-  if (verbose) message("[3/5] Resolving synonyms against FFB...")
+  if (verbose) message("[3/6] Resolving synonyms against FFB...")
   splist <- unique(herb_df$taxonName)
   syns <- splist[splist %in% taxon_non_accepted$taxonName]
   if (length(syns) > 0) {
@@ -173,7 +193,7 @@ jabot_gaps <- function(herbarium = NULL,
   }
 
   # -- 4. Gap computation ------------------------------------------------------
-  if (verbose) message("[4/5] Computing taxonomic gaps...")
+  if (verbose) message("[4/6] Computing taxonomic gaps...")
 
   taxon_in_herb <- taxon_accepted[taxon_accepted$taxonName %in% herb_df$taxonName, ]
   taxon_not_in_herb <- taxon_accepted[!taxon_accepted$taxonName %in% herb_df$taxonName, ]
@@ -269,8 +289,38 @@ jabot_gaps <- function(herbarium = NULL,
     dplyr::group_by(endemism_label) %>%
     dplyr::summarise(n_missing = dplyr::n_distinct(id), .groups = "drop")
 
-  # -- 5. ggplot2 figures ------------------------------------------------------
-  if (verbose) message("[5/5] Building figures...")
+  # -- 5. Municipality collecting priority (optional, nationwide) --------------
+  municipality_priority <- NULL
+  muni_sf <- NULL
+
+  if (priority_map) {
+    if (verbose) message("[5/6] Computing municipality collecting priority...")
+
+    pool_df <- .load_pool_data(network_herbaria, jabot_path, verbose)
+    pool_df <- pool_df[!is.na(pool_df$genus) & !is.na(pool_df$species), ]
+
+    municipality_priority <- .compute_municipality_priority(
+      pool_df, taxon_not_in_herb$taxonName, herbarium)
+
+    muni_sf <- tryCatch({
+      sf_obj <- .load_municipality_sf("all", verbose)
+      sf_obj <- dplyr::left_join(sf_obj, municipality_priority,
+                                 by = c("muni_key", "abbrev_state"))
+      sf_obj$n_missing_species[is.na(sf_obj$n_missing_species)] <- 0
+      sf_obj$n_records[is.na(sf_obj$n_records)] <- 0
+      sf_obj
+    }, error = function(e) {
+      if (verbose)
+        message("Note: municipality polygons could not be loaded — ",
+               "priority map skipped. ", e$message)
+      NULL
+    })
+  } else {
+    if (verbose) message("[5/6] Skipping municipality collecting priority (priority_map = FALSE)...")
+  }
+
+  # -- 6. ggplot2 figures ------------------------------------------------------
+  if (verbose) message("[6/6] Building figures...")
 
   plots <- .make_gap_plots(herbarium = herbarium,
                            group_gap = group_gap,
@@ -279,6 +329,7 @@ jabot_gaps <- function(herbarium = NULL,
                            domain_gap = domain_gap,
                            endemism_gap = endemism_gap,
                            state_gap = state_gap,
+                           muni_sf = muni_sf,
                            n_missing = n_missing)
 
   # Save individual figures if requested
@@ -318,6 +369,8 @@ jabot_gaps <- function(herbarium = NULL,
     endemism_gap = endemism_gap,
     taxon_not_in_herb = taxon_not_in_herb,
     missing_dist = missing_dist,
+    municipality_priority = municipality_priority,
+    muni_sf = muni_sf,
     plots = plots
   )
 
@@ -361,6 +414,7 @@ jabot_gaps <- function(herbarium = NULL,
                             domain_gap,
                             endemism_gap,
                             state_gap,
+                            muni_sf,
                             n_missing) {
 
   pal_terra <- c(
@@ -496,9 +550,9 @@ jabot_gaps <- function(herbarium = NULL,
     ggplot2::ggplot(states_sf) +
       ggplot2::geom_sf(ggplot2::aes(fill = n_missing), color = "white",
                        linewidth = 0.3) +
-      ggplot2::scale_fill_gradient(colours = rev(pal_terra),
-                                   name = "Missing taxa",
-                                   labels = scales::comma) +
+      ggplot2::scale_fill_gradientn(colours = rev(pal_terra),
+                                    name = "Missing taxa",
+                                    labels = scales::comma) +
       ggplot2::labs(
         title = paste0("Missing taxa by Brazilian state \u2014 ", herbarium),
         subtitle = "Number of FFB species not represented in the herbarium",
@@ -517,12 +571,39 @@ jabot_gaps <- function(herbarium = NULL,
     NULL
   })
 
+  # 7 - Municipality collecting priority (choropleth, optional)
+  p_priority_map <- NULL
+  if (!is.null(muni_sf)) {
+    p_priority_map <- tryCatch({
+      ggplot2::ggplot(muni_sf) +
+        ggplot2::geom_sf(ggplot2::aes(fill = n_missing_species),
+                         color = "white", linewidth = 0.05) +
+        ggplot2::scale_fill_gradient(low = "#F2D7C9", high = "#A4243B",
+                                     name = "Missing species\nwith known vouchers") +
+        ggplot2::labs(
+          title = paste0("Priority municipalities for collecting expeditions \u2014 ",
+                         herbarium),
+          subtitle = "Missing species already vouchered by other network herbaria",
+          caption = "Source: Flora e Funga do Brasil / JABOT") +
+        ggplot2::theme_void(base_size = 12) +
+        ggplot2::theme(
+          plot.title = ggplot2::element_text(face = "bold", color = "#A4243B",
+                                             size = 13),
+          plot.subtitle = ggplot2::element_text(color = "#6c757d", size = 10),
+          plot.caption = ggplot2::element_text(color = "#adb5bd", size = 8,
+                                               hjust = 1),
+          legend.position = "right"
+        )
+    }, error = function(e) NULL)
+  }
+
   list(
     group = p_group,
     genus = p_genus,
     domain = p_domain,
     endemism = p_endemism,
-    state = p_state_map
+    state = p_state_map,
+    priority_map = p_priority_map
   )
 }
 
@@ -533,7 +614,8 @@ jabot_gaps <- function(herbarium = NULL,
     genus = "03_gap_top_genera",
     domain = "04_gap_domain",
     endemism = "05_gap_endemism",
-    state = "06_gap_state_map"
+    state = "06_gap_state_map",
+    priority_map = "07_priority_municipality_map"
   )
   for (nm in names(plots)) {
     p <- plots[[nm]]
