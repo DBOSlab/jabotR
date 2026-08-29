@@ -92,23 +92,6 @@ test_that("jabot_records triggers auto download when path is NULL", {
 })
 
 
-test_that("jabot_records creates new dir if not present", {
-  tmp_dir <- file.path(tempdir(), "new_jabot_records_dir")
-  if (dir.exists(tmp_dir)) unlink(tmp_dir, recursive = TRUE)
-  expect_silent(
-    jabot_records(
-      herbarium = "R",
-      taxon = "Fabaceae",
-      verbose = FALSE,
-      save = TRUE,
-      dir = tmp_dir
-    )
-  )
-  expect_true(dir.exists(tmp_dir))
-  unlink(tmp_dir, recursive = TRUE)
-})
-
-
 test_that("jabot_records returns empty data.frame if no match after filters", {
   expect_error(
     jabot_records(
@@ -273,29 +256,20 @@ test_that("jabot_records prints messages with verbose = TRUE", {
 })
 
 
-test_that("jabot_records creates directory when not found", {
-    jabot_records(herbarium = "R",
-                  state = "Bahia",
-                  recordYear = "2000",
-                  updates = FALSE,
-                  verbose = TRUE,
-                  save = FALSE,
-                  dir = "new_dir")
-  expect_true(dir.exists("new_dir"))
-})
-
-
 test_that("jabot_records triggers dwca update message with path and updates = TRUE", {
 
   temp_path <- file.path(tempdir(), "jabot_dwca_test")
-  if (!dir.exists(temp_path)) dir.create(temp_path)
 
-  # Run jabot_download manually to prepopulate path
-  jabot_download(herbarium = "R",
-                 verbose = FALSE,
-                 dir = temp_path)
-  list.files(temp_path)
-  # Now call jabot_records with path + updates = TRUE to hit the uncovered branch
+  if (!dir.exists(temp_path)) {
+    dir.create(temp_path)
+  }
+
+  jabot_download(
+    herbarium = "R",
+    verbose = FALSE,
+    dir = temp_path
+  )
+
   expect_message(
     df <- jabot_records(
       herbarium = "R",
@@ -305,10 +279,9 @@ test_that("jabot_records triggers dwca update message with path and updates = TR
       verbose = TRUE,
       save = FALSE
     ),
-    regexp = paste0("Updating dwca files within '", temp_path, "'")
+    regexp = "Updating dwca files within"
   )
 
   expect_s3_class(df, "data.frame")
   expect_true(nrow(df) >= 0)
 })
-

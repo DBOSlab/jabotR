@@ -10,5 +10,13 @@ utils::globalVariables(c(
   "coverage_pct", "endemism_label",
   "abbrev_state", "name_state",
   "phylum", "class", "order",
-  "taxonName", "references", "in_herb"
+  "taxonName", "references", "in_herb",
+  # jabot_gaps / jabot_coverage
+  "category", "group",
+  "habitat_new", "lifeForm", "lifeForm_new",
+  "n", "n_species",
+  "n_type_species", "n_type_taxa",
+  "pct_type_species",
+  "tooltip", "typeStatus",
+  "vegetationType"
 ))

@@ -31,7 +31,7 @@
 #'   in the default browser after rendering.
 #' @param verbose Logical. If `TRUE` (default), progress messages are printed.
 #' @param dir Character. Output directory. Defaults to
-#'   `"{herbarium}_gap_analysis"`.
+#'   `"<herbarium>_gap_analysis"`.
 #'
 #' @return Invisibly returns a named list with all computed data frames and
 #'   ggplot2 objects. The HTML report (and optional PDF/PNG figures) are written
@@ -52,7 +52,7 @@
 #'    the bundled Rmd template during rendering.
 #'
 #' @note
-#' - Internet access is required unless `jabot_path` point to previously
+#' - Internet access is required unless `jabot_path` points to previously
 #'   downloaded data.
 #' - Synonym resolution via [floraR::flora_search()] can be slow for large
 #'   herbaria; supply `jabot_path` to skip re-downloading JABOT records on
@@ -64,7 +64,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' # Full run (downloads everything) — renders HTML and saves PDF figures
+#' # Full run (downloads everything) - renders HTML and saves PDF figures
 #' jabot_gaps(herbarium = "RB",
 #'            format = c("pdf", "png"),
 #'            dir = "RB_gap_analysis")
@@ -75,11 +75,11 @@
 #'            format = "pdf")
 #' }
 #'
-#' @importFrom dplyr filter mutate group_by summarise arrange desc n_distinct left_join anti_join semi_join bind_rows relocate if_all across
+#' @importFrom dplyr filter mutate group_by summarise arrange desc n_distinct left_join anti_join semi_join bind_rows relocate if_all across where
 #' @importFrom tidyr separate_rows
 #' @importFrom magrittr "%>%"
 #' @importFrom utils head browseURL
-#' @importFrom stats reorder
+#' @importFrom stats reorder na.omit
 #' @importFrom scales comma
 #' @importFrom rmarkdown render
 #' @importFrom floraR flora_search
@@ -102,7 +102,7 @@ jabot_gaps <- function(herbarium = NULL,
                        verbose = TRUE,
                        dir = NULL) {
 
-  # ── Input validation ────────────────────────────────────────────────────────
+  # -- Input validation --------------------------------------------------------
   if (is.null(herbarium))
     stop("'herbarium' must be provided (e.g. herbarium = 'RB').", call. = FALSE)
   herbarium <- toupper(trimws(herbarium))
@@ -122,7 +122,7 @@ jabot_gaps <- function(herbarium = NULL,
   fig_dir <- file.path(dir, "figures")
   if (!dir.exists(fig_dir)) dir.create(fig_dir, recursive = TRUE)
 
-  # ── 1. FFB data ─────────────────────────────────────────────────────────────
+  # -- 1. FFB data -------------------------------------------------------------
   if (verbose) message("\n[1/5] Loading Flora e Funga do Brasil data...")
   ffb <- .load_ffb_data(verbose)
   taxon <- ffb$taxon
@@ -139,7 +139,7 @@ jabot_gaps <- function(herbarium = NULL,
     dplyr::filter(taxonomicStatus != "NOME_ACEITO",
                   taxonRank == "ESPECIE")
 
-  # ── 2. JABOT herbarium records ──────────────────────────────────────────────
+  # -- 2. JABOT herbarium records ----------------------------------------------
   if (verbose) message("[2/5] Loading JABOT records for herbarium '", herbarium, "'...")
   herb_df <- .load_herb_data(herbarium, jabot_path, verbose)
 
@@ -156,7 +156,7 @@ jabot_gaps <- function(herbarium = NULL,
   herb_df$family <- taxon$family[idx]
   herb_df <- herb_df %>% dplyr::relocate(group, .before = kingdom)
 
-  # ── 3. Synonym resolution ───────────────────────────────────────────────────
+  # -- 3. Synonym resolution ---------------------------------------------------
   if (verbose) message("[3/5] Resolving synonyms against FFB...")
   splist <- unique(herb_df$taxonName)
   syns <- splist[splist %in% taxon_non_accepted$taxonName]
@@ -172,7 +172,7 @@ jabot_gaps <- function(herbarium = NULL,
     if (verbose) message("   Resolved ", sum(tf), " synonym(s) to accepted names.")
   }
 
-  # ── 4. Gap computation ──────────────────────────────────────────────────────
+  # -- 4. Gap computation ------------------------------------------------------
   if (verbose) message("[4/5] Computing taxonomic gaps...")
 
   taxon_in_herb <- taxon_accepted[taxon_accepted$taxonName %in% herb_df$taxonName, ]
@@ -210,7 +210,7 @@ jabot_gaps <- function(herbarium = NULL,
 
   n_endemic_missing <- missing_dist %>%
     dplyr::filter(endemism %in% c(TRUE, "TRUE", "Endemic", "Endemica",
-                                  "Endêmica")) %>%
+                                  "End\u00eamica")) %>%
     dplyr::summarise(n = dplyr::n_distinct(id)) %>%
     dplyr::pull(n)
 
@@ -226,7 +226,7 @@ jabot_gaps <- function(herbarium = NULL,
     dplyr::summarise(n_missing = dplyr::n(), .groups = "drop") %>%
     dplyr::arrange(dplyr::desc(n_missing))
 
-  # Summary by genus — flag genera entirely absent from the herb
+  # Summary by genus - flag genera entirely absent from the herb
   genera_in_herb <- unique(taxon_in_herb$genus)
   genus_gap <- taxon_not_in_herb %>%
     dplyr::group_by(genus, family) %>%
@@ -262,14 +262,14 @@ jabot_gaps <- function(herbarium = NULL,
     dplyr::mutate(
       endemism_label = dplyr::case_when(
         endemism %in% c(TRUE, "TRUE", "Endemic",
-                        "Endemica", "Endêmica") ~ "Brazilian endemic",
+                        "Endemica", "End\u00eamica") ~ "Brazilian endemic",
         TRUE                                    ~ "Non-endemic"
       )
     ) %>%
     dplyr::group_by(endemism_label) %>%
     dplyr::summarise(n_missing = dplyr::n_distinct(id), .groups = "drop")
 
-  # ── 5. ggplot2 figures ──────────────────────────────────────────────────────
+  # -- 5. ggplot2 figures ------------------------------------------------------
   if (verbose) message("[5/5] Building figures...")
 
   plots <- .make_gap_plots(herbarium = herbarium,
@@ -298,7 +298,7 @@ jabot_gaps <- function(herbarium = NULL,
     overwrite = TRUE
   )
 
-  # ── 6. Render HTML report ───────────────────────────────────────────────────
+  # -- 6. Render HTML report ---------------------------------------------------
   analysis_list <- list(
     herbarium = herbarium,
     date_run = Sys.Date(),
@@ -352,7 +352,7 @@ jabot_gaps <- function(herbarium = NULL,
 }
 
 
-# ── Internal helpers ──────────────────────────────────────────────────────────
+# -- Internal helpers ----------------------------------------------------------
 
 .make_gap_plots <- function(herbarium,
                             group_gap,
@@ -376,7 +376,7 @@ jabot_gaps <- function(herbarium = NULL,
   col_miss <- "#A4243B"
   col_pres <- "#A3B18A"
 
-  # 1 — Group gap
+  # 1 - Group gap
   group_gap$tooltip <- paste0(
     "Group: ", group_gap$group,
     "<br>Missing taxa: ", scales::comma(group_gap$n_missing)
@@ -391,19 +391,19 @@ jabot_gaps <- function(herbarium = NULL,
     ggplot2::coord_flip() +
     ggplot2::scale_fill_manual(values = pal_terra, guide = "none") +
     ggplot2::labs(
-      title = paste0("Missing taxa by taxonomic group — ", herbarium),
+      title = paste0("Missing taxa by taxonomic group \u2014 ", herbarium),
       subtitle = paste0("Total missing from FFB: ", n_missing),
       x = NULL, y = "Number of missing taxa") +
     .jabot_theme(plot_title_color = "#A4243B")
 
-  # 2 — Top 20 missing families (lollipop)
+  # 2 - Top 20 missing families (lollipop)
   # top_fam <- utils::head(family_gap, 20)
   # top_fam$tooltip <- paste0(
   #   "Family: ", top_fam$family,
   #   "<br>Missing species: ", scales::comma(top_fam$n_missing)
   # )
 
-  # 3 — Top 20 missing genera (bar, coloured by whether genus is absent at all)
+  # 3 - Top 20 missing genera (bar, coloured by whether genus is absent at all)
   top_gen <- utils::head(genus_gap, 20)
   top_gen$tooltip <- paste0(
     "Genus: ", top_gen$genus,
@@ -430,14 +430,14 @@ jabot_gaps <- function(herbarium = NULL,
       guide = "none"
     ) +
     ggplot2::labs(
-      title = paste0("Top 20 genera with missing species — ", herbarium),
+      title = paste0("Top 20 genera with missing species \u2014 ", herbarium),
       subtitle = "Red = genus not represented at all in the herbarium",
       x = NULL, y = "Number of missing species"
     ) +
     .jabot_theme(plot_title_color = "#A4243B") +
     ggplot2::theme(legend.position = "top")
 
-  # 4 — Phytogeographic domain gap
+  # 4 - Phytogeographic domain gap
   domain_gap$tooltip <- paste0(
     "Domain: ", domain_gap$phytogeographicDomain,
     "<br>Missing taxa: ", scales::comma(domain_gap$n_missing)
@@ -454,13 +454,13 @@ jabot_gaps <- function(herbarium = NULL,
                                  high = "#A4243B",
                                  guide = "none") +
     ggplot2::labs(
-      title = paste0("Missing taxa by phytogeographic domain — ", herbarium),
+      title = paste0("Missing taxa by phytogeographic domain \u2014 ", herbarium),
       subtitle = "Based on FFB occurrence records",
       x = NULL,
       y = "Number of missing taxa") +
     .jabot_theme(plot_title_color = "#A4243B")
 
-  # 5 — Endemism breakdown (bar)
+  # 5 - Endemism breakdown (bar)
   endemism_gap$tooltip <- paste0(
     endemism_gap$endemism_label,
     "<br>Missing taxa: ",
@@ -483,11 +483,11 @@ jabot_gaps <- function(herbarium = NULL,
     ggplot2::scale_y_continuous(labels = scales::comma,
                                 expand = ggplot2::expansion(mult = c(0, 0.15))) +
     ggplot2::labs(
-      title = paste0("Missing taxa by endemism status — ", herbarium),
+      title = paste0("Missing taxa by endemism status \u2014 ", herbarium),
       x = NULL, y = "Number of missing taxa") +
     .jabot_theme(plot_title_color = "#A4243B")
 
-  # 6 — Missing taxa by state (ggplot2 choropleth)
+  # 6 - Missing taxa by state (ggplot2 choropleth)
   p_state_map <- tryCatch({
     states_sf <- geobr::read_state(year = 2020, showProgress = FALSE)
     states_sf <- dplyr::left_join(states_sf, state_gap, by = "abbrev_state")
@@ -500,7 +500,7 @@ jabot_gaps <- function(herbarium = NULL,
                                    name = "Missing taxa",
                                    labels = scales::comma) +
       ggplot2::labs(
-        title = paste0("Missing taxa by Brazilian state — ", herbarium),
+        title = paste0("Missing taxa by Brazilian state \u2014 ", herbarium),
         subtitle = "Number of FFB species not represented in the herbarium",
         caption = "Source: Flora e Funga do Brasil / JABOT") +
       ggplot2::theme_void(base_size = 12) +
@@ -513,7 +513,7 @@ jabot_gaps <- function(herbarium = NULL,
         legend.position = "right"
       )
   }, error = function(e) {
-    message("Note: geobr map could not be loaded — state map skipped. ", e$message)
+    message("Note: geobr map could not be loaded \u2014 state map skipped. ", e$message)
     NULL
   })
 
