@@ -30,7 +30,7 @@ network sample used to search for candidate collecting points to these
 herbarium acronyms. \code{NULL} (default) uses \code{all} JABOT-hosted herbaria.}
 
 \item{jabot_path}{Character or \code{NULL}. Path to a directory holding
-previously downloaded JABOT DwC-A files (created by \code{\link{jabot_download}}),
+previously downloaded JABOT DwC-A files (created by \code{jabot_download}),
 shared by both the target herbarium and the network pool. When \code{NULL}
 (default) records are downloaded automatically.}
 
@@ -99,11 +99,11 @@ map, however, is restricted to actual vouchers falling within the
 municipalities/states supplied in \code{geo}.
 
 The function follows the same synonym-resolution pipeline as
-\code{\link{jabot_gaps}}: taxon names recorded as synonyms in FFB are resolved to
-their accepted names via \code{\link{floraR::flora_search}} before comparison.
+\code{jabot_gaps}: taxon names recorded as synonyms in FFB are resolved to
+their accepted names via \code{floraR::flora_search} before comparison.
 }
 \note{
-- Internet access is required unless `jabot_path` points to previously
+- Internet access is required unless \code{jabot_path} points to previously
   downloaded data.
 
 - Downloading the full JABOT network (\code{network_herbaria = NULL}) can be

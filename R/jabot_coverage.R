@@ -5,7 +5,7 @@
 #' @description
 #' Measures how well a JABOT-hosted herbarium represents the
 #' \href{https://floradobrasil.jbrj.gov.br/consulta/}{Flora e Funga do Brasil (FFB)}.
-#' Unlike \code{\link{jabot_gaps}} (which focuses on what is missing), this
+#' Unlike \code{jabot_gaps} (which focuses on what is missing), this
 #' function characterises what is present, computing coverage ratios at
 #' every taxonomic and geographic level:
 #'
@@ -25,7 +25,7 @@
 #' @param herbarium Character. Herbarium acronym in uppercase (e.g. \code{"RB"}).
 #' @param jabot_path Character or \code{NULL}. Path to a directory holding previously
 #'   downloaded JABOT DwC-A files. When \code{NULL} (default) the records are
-#'   downloaded automatically via \code{\link{jabot_download}}.
+#'   downloaded automatically via \code{jabot_download}.
 #' @param format Character vector. Static formats for saving individual figures:
 #'   \code{"pdf"}, \code{"png"}, or both. The HTML report is always generated.
 #' @param fig_width Numeric. Width of saved figures in inches. Default \code{10}.
@@ -43,7 +43,7 @@
 #' Coverage is defined as:
 #' \deqn{\text{coverage} = \frac{N_{\text{in herbarium}}}{N_{\text{FFB total}}} \times 100}
 #'
-#' The function follows the same data-preparation pipeline as \code{\link{jabot_gaps}}:
+#' The function follows the same data-preparation pipeline as \code{jabot_gaps}:
 #' FFB data are parsed, JABOT records fetched, and synonym names resolved before
 #' the comparison is made.
 #'
@@ -54,9 +54,9 @@
 #' - Synonym resolution can be slow for large herbaria; supply \code{jabot_path}
 #'   to avoid re-downloading on repeated runs.
 #'
-#' @seealso \code{\link{jabot_gaps()}}
-#' @seealso \code{\link{jabot_records()}}
-#' @seealso \code{\link{jabot_download()}}
+#' @seealso \code{\link{jabot_gaps}}
+#' @seealso \code{\link{jabot_records}}
+#' @seealso \code{\link{jabot_download}}
 #'
 #' @examples
 #' \dontrun{

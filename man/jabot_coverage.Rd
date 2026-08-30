@@ -20,7 +20,7 @@ jabot_coverage(
 
 \item{jabot_path}{Character or \code{NULL}. Path to a directory holding previously
 downloaded JABOT DwC-A files. When \code{NULL} (default) the records are
-downloaded automatically via \code{\link{jabot_download}}.}
+downloaded automatically via \code{jabot_download}.}
 
 \item{format}{Character vector. Static formats for saving individual figures:
 \code{"pdf"}, \code{"png"}, or both. The HTML report is always generated.}
@@ -44,7 +44,7 @@ Invisibly returns a named list with all computed data frames and
 \description{
 Measures how well a JABOT-hosted herbarium represents the
 \href{https://floradobrasil.jbrj.gov.br/consulta/}{Flora e Funga do Brasil (FFB)}.
-Unlike \code{\link{jabot_gaps}} (which focuses on what is missing), this
+Unlike \code{jabot_gaps} (which focuses on what is missing), this
 function characterises what is present, computing coverage ratios at
 every taxonomic and geographic level:
 
@@ -65,7 +65,7 @@ every taxonomic and geographic level:
 Coverage is defined as:
 \deqn{\text{coverage} = \frac{N_{\text{in herbarium}}}{N_{\text{FFB total}}} \times 100}
 
-The function follows the same data-preparation pipeline as \code{\link{jabot_gaps}}:
+The function follows the same data-preparation pipeline as \code{jabot_gaps}:
 FFB data are parsed, JABOT records fetched, and synonym names resolved before
 the comparison is made.
 }
@@ -91,11 +91,11 @@ jabot_coverage(herbarium = "RB",
 
 }
 \seealso{
-\code{\link{jabot_gaps()}}
+\code{\link{jabot_gaps}}
 
-\code{\link{jabot_records()}}
+\code{\link{jabot_records}}
 
-\code{\link{jabot_download()}}
+\code{\link{jabot_download}}
 }
 \author{
 Domingos Cardoso

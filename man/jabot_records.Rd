@@ -96,7 +96,7 @@ results to disk as a CSV file in the specified directory.
 - Use \code{recordYear} as a character vector to avoid coercion issues.
 
 - This function does not apply filtering for indeterminate ranks
-  (use \code{jabot_indets()} for that).
+  (use \code{jabot_indets} for that).
 }
 \examples{
 \dontrun{

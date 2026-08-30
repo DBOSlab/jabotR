@@ -9,8 +9,6 @@
 coverage](https://codecov.io/gh/DBOSlab/jabotR/graph/badge.svg)](https://app.codecov.io/gh/DBOSlab/jabotR)
 [![Test
 Coverage](https://github.com/DBOSlab/jabotR/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/DBOSlab/jabotR/actions/workflows/test-coverage.yaml)
-[![CRAN
-Downloads](https://cranlogs.r-pkg.org/badges/grand-total/jabotR)](https://cran.r-project.org/package=jabotR)
 [![R-CMD-check](https://github.com/DBOSlab/jabotR/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/DBOSlab/jabotR/actions/workflows/R-CMD-check.yaml)
 [![License:
 MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -445,7 +443,7 @@ files can be reused with `jabot_path`.
 ``` r
 missing_analysis <- jabot_missing(herbarium = "RB",
                                   geo = "Bahia",
-                                  network_herbaria = c("ALCB", "VIC"),
+                                  network_herbaria = c("ALCB", "VIES"),
                                   jabot_path = "jabot_download",
                                   format = "pdf",
                                   verbose = TRUE,

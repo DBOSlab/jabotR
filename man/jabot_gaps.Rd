@@ -21,7 +21,7 @@ jabot_gaps(
 \item{herbarium}{Character. Herbarium acronym in uppercase (e.g. \code{"RB"}).}
 
 \item{jabot_path}{Character or \code{NULL}. Path to a directory holding previously
-downloaded JABOT DwC-A files (created by \code{\link{jabot_download}}).
+downloaded JABOT DwC-A files (created by \code{jabot_download}).
 When \code{NULL} (default) the records are downloaded automatically.}
 
 \item{priority_map}{Logical. If \code{TRUE}, additionally downloads pooled
@@ -29,7 +29,7 @@ occurrence records from the JABOT network (see \code{network_herbaria}) and
 builds a nationwide municipality-level heat map ranking collecting
 priority, i.e. which municipalities already hold the most known
 vouchers of species still missing from \code{herbarium} (see
-\code{\link{jabot_missing}} for the region-scoped version of this analysis).
+\code{jabot_missing} for the region-scoped version of this analysis).
 Default \code{FALSE}, since it requires downloading the full network sample.}
 
 \item{network_herbaria}{Character vector or \code{NULL}. Only used when
@@ -87,7 +87,7 @@ Workflow
    determined specimens.
 
 3. Taxon names that appear as synonyms in FFB are resolved to their accepted
-   names via \code{\link{floraR::flora_search}}.
+   names via \code{floraR::flora_search}.
 
 4. The intersection (\code{taxon_in_herb}) and difference (\code{taxon_not_in_herb})
    between the two sets are computed.
@@ -102,7 +102,7 @@ Workflow
 - Internet access is required unless \code{jabot_path} points to previously
   downloaded data.
 
-- Synonym resolution via \code{\link{floraR::flora_search}} can be slow for large
+- Synonym resolution via \code{floraR::flora_search} can be slow for large
   herbaria; supply \code{jabot_path} to skip re-downloading JABOT records on
   repeated runs.
 
@@ -124,13 +124,13 @@ jabot_gaps(herbarium = "RB",
 
 }
 \seealso{
-\code{\link{jabot_coverage()}}
+\code{\link{jabot_coverage}}
 
-\code{\link{jabot_missing()}}
+\code{\link{jabot_missing}}
 
-\code{\link{jabot_records()}}
+\code{\link{jabot_records}}
 
-\code{\link{jabot_download()}}
+\code{\link{jabot_download}}
 }
 \author{
 Domingos Cardoso
