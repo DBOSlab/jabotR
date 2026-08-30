@@ -4,52 +4,59 @@
 #'
 #' @description
 #' Measures how well a JABOT-hosted herbarium represents the
-#' [Flora e Funga do Brasil (FFB)](https://floradobrasil.jbrj.gov.br/consulta/).
-#' Unlike [jabot_gaps()] (which focuses on what is **missing**), this
-#' function characterises what is **present**, computing coverage ratios at
+#' \href{https://floradobrasil.jbrj.gov.br/consulta/}{Flora e Funga do Brasil (FFB)}.
+#' Unlike \code{\link{jabot_gaps}} (which focuses on what is missing), this
+#' function characterises what is present, computing coverage ratios at
 #' every taxonomic and geographic level:
 #'
 #' - Overall representativeness (% of FFB species held in the herbarium)
-#' - Coverage by **group**, **family**, and **phytogeographic domain**
-#' - **Family-level bar charts** ranked by coverage (best- and worst-covered)
-#' - **Choropleth map** of % coverage by Brazilian state
+#'
+#' - Coverage by group, family, and phytogeographic domain
+#'
+#' - Family-level bar charts ranked by coverage (best- and worst-covered)
+#'
+#' - Choropleth map of % coverage by Brazilian state
+#'
 #' - Summary statistics table
-#' - An **HTML report** (always generated) and optional **PDF** / **PNG**
+#'
+#' - An HTML report (always generated) and optional PDF / PNG
 #'   exports of every individual figure
 #'
-#' @param herbarium Character. Herbarium acronym in uppercase (e.g. `"RB"`).
-#' @param jabot_path Character or `NULL`. Path to a directory holding previously
-#'   downloaded JABOT DwC-A files. When `NULL` (default) the records are
-#'   downloaded automatically via [jabot_download()].
+#' @param herbarium Character. Herbarium acronym in uppercase (e.g. \code{"RB"}).
+#' @param jabot_path Character or \code{NULL}. Path to a directory holding previously
+#'   downloaded JABOT DwC-A files. When \code{NULL} (default) the records are
+#'   downloaded automatically via \code{\link{jabot_download}}.
 #' @param format Character vector. Static formats for saving individual figures:
-#'   `"pdf"`, `"png"`, or both. The HTML report is **always** generated.
-#' @param fig_width Numeric. Width of saved figures in inches. Default `10`.
-#' @param fig_height Numeric. Height of saved figures in inches. Default `6`.
-#' @param open_report Logical. If `TRUE` (default), opens the HTML report in
+#'   \code{"pdf"}, \code{"png"}, or both. The HTML report is always generated.
+#' @param fig_width Numeric. Width of saved figures in inches. Default \code{10}.
+#' @param fig_height Numeric. Height of saved figures in inches. Default \code{6}.
+#' @param open_report Logical. If \code{TRUE} (default), opens the HTML report in
 #'   the default browser after rendering.
-#' @param verbose Logical. If `TRUE` (default), progress messages are printed.
-#' @param dir Character. Output directory. Defaults to
-#'   `"<herbarium>_representativeness"`.
+#' @param verbose Logical. If \code{TRUE} (default), progress messages are printed.
+#' @param dir Character. Output directory. Defaults to \code{"<herbarium>_representativeness"}.
 #'
 #' @return Invisibly returns a named list with all computed data frames and
 #'   ggplot2 objects. The HTML report (and optional figures) are written to
-#'   `dir`.
+#'   \code{dir}.
 #'
 #' @details
 #' Coverage is defined as:
 #' \deqn{\text{coverage} = \frac{N_{\text{in herbarium}}}{N_{\text{FFB total}}} \times 100}
 #'
-#' The function follows the same data-preparation pipeline as
-#' [jabot_gaps()]: FFB data are parsed, JABOT records fetched, and
-#' synonym names resolved before the comparison is made.
+#' The function follows the same data-preparation pipeline as \code{\link{jabot_gaps}}:
+#' FFB data are parsed, JABOT records fetched, and synonym names resolved before
+#' the comparison is made.
 #'
 #' @note
-#' - Internet access is required unless both `ffb_path` and `jabot_path` are
-#'   provided.
-#' - Synonym resolution can be slow for large herbaria; supply `jabot_path` to
-#'   avoid re-downloading on repeated runs.
+#' - Internet access is required unless both \code{ffb_path} and \code{jabot_path}
+#'   are provided.
 #'
-#' @seealso [jabot_gaps()], [jabot_records()], [jabot_download()]
+#' - Synonym resolution can be slow for large herbaria; supply \code{jabot_path}
+#'   to avoid re-downloading on repeated runs.
+#'
+#' @seealso \code{\link{jabot_gaps()}}
+#' @seealso \code{\link{jabot_records()}}
+#' @seealso \code{\link{jabot_download()}}
 #'
 #' @examples
 #' \dontrun{

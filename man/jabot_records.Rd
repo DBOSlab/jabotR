@@ -66,9 +66,9 @@ a file entitled \code{jabot_records_search.csv}.}
 }
 \value{
 A `data.frame` containing occurrence records for the selected taxon
-and criteria from the chosen JABOT herbaria. If `save = TRUE`, the function
-will write the results to a CSV file inside the `dir` directory, and also
-generate or append a `log.txt` file that summarizes the download session
+and criteria from the chosen JABOT herbaria. If \code{save = TRUE}, the function
+will write the results to a CSV file inside the \code{dir} directory, and also
+generate or append a \code{log.txt} file that summarizes the download session
 including total records and breakdowns by herbarium, family, genus, country,
 and state.
 }
@@ -81,19 +81,22 @@ saving of the occurrence data.
 }
 \details{
 This function processes Darwin Core Archive (DwC-A) files from JABOT. You
-may supply a specific path to previously downloaded files using `path`, or let
-the function handle the download automatically. Filters can be applied by taxon
-name, herbarium code, state, and year. The `reorder` argument allows you to
-customize the structure of the returned data. Use `verbose = TRUE` to see
-status updates. Use `save = TRUE` to save results to disk as a CSV file in the
-specified directory.
+may supply a specific path to previously downloaded files using \code{path},
+or let the function handle the download automatically. Filters can be applied
+by taxon name, herbarium code, state, and year. The \code{reorder} argument
+allows you to customize the structure of the returned data. Use
+\code{verbose = TRUE} to see status updates. Use \code{save = TRUE} to save
+results to disk as a CSV file in the specified directory.
 }
 \note{
-- Ensure internet access for downloading data if `path` is not provided.
+- Ensure internet access for downloading data if \code{path} is not provided.
+
 - State names may be full names or standard Brazilian two-letter codes.
-- Use `recordYear` as a character vector to avoid coercion issues.
+
+- Use \code{recordYear} as a character vector to avoid coercion issues.
+
 - This function does not apply filtering for indeterminate ranks
-  (use `jabot_indets()` for that).
+  (use \code{jabot_indets()} for that).
 }
 \examples{
 \dontrun{

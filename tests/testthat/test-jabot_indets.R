@@ -175,6 +175,7 @@ test_that("jabot_indets works with no filters (all default args)", {
   tmpdir <- file.path(tempdir(), "new_test_indets_dir")
   if (dir.exists(tmpdir)) unlink(tmpdir, recursive = TRUE)
 jabot_indets(
+  herbarium = NULL,
   verbose = FALSE,
   save = TRUE,
   dir = tmpdir,

@@ -18,85 +18,96 @@ jabot_gaps(
 )
 }
 \arguments{
-\item{herbarium}{Character. Herbarium acronym in uppercase (e.g. `"RB"`).}
+\item{herbarium}{Character. Herbarium acronym in uppercase (e.g. \code{"RB"}).}
 
-\item{jabot_path}{Character or `NULL`. Path to a directory holding previously
-downloaded JABOT DwC-A files (created by [jabot_download()]). When `NULL`
-(default) the records are downloaded automatically.}
+\item{jabot_path}{Character or \code{NULL}. Path to a directory holding previously
+downloaded JABOT DwC-A files (created by \code{\link{jabot_download}}).
+When \code{NULL} (default) the records are downloaded automatically.}
 
-\item{priority_map}{Logical. If `TRUE`, additionally downloads pooled
-occurrence records from the JABOT network (see `network_herbaria`) and
+\item{priority_map}{Logical. If \code{TRUE}, additionally downloads pooled
+occurrence records from the JABOT network (see \code{network_herbaria}) and
 builds a nationwide municipality-level heat map ranking collecting
 priority, i.e. which municipalities already hold the most known
-vouchers of species still missing from `herbarium` (see
-[jabot_missing()] for the region-scoped version of this analysis).
-Default `FALSE`, since it requires downloading the full network sample.}
+vouchers of species still missing from \code{herbarium} (see
+\code{\link{jabot_missing}} for the region-scoped version of this analysis).
+Default \code{FALSE}, since it requires downloading the full network sample.}
 
-\item{network_herbaria}{Character vector or `NULL`. Only used when
-`priority_map = TRUE`; restricts the pooled network sample to these
-herbarium acronyms. `NULL` (default) uses **all** JABOT-hosted herbaria.}
+\item{network_herbaria}{Character vector or \code{NULL}. Only used when
+\code{priority_map = TRUE}; restricts the pooled network sample to these
+herbarium acronyms. \code{NULL} (default) uses \code{all} JABOT-hosted herbaria.}
 
 \item{format}{Character vector. Which static formats to save individual
-figures. Any combination of `"pdf"` and `"png"` is accepted. The HTML
-report is **always** generated regardless of this argument.}
+figures. Any combination of \code{"pdf"} and \code{"png"} is accepted. The HTML
+report is always generated regardless of this argument.}
 
-\item{fig_width}{Numeric. Width of saved figures in inches. Default `10`.}
+\item{fig_width}{Numeric. Width of saved figures in inches. Default \code{10}.}
 
-\item{fig_height}{Numeric. Height of saved figures in inches. Default `6`.}
+\item{fig_height}{Numeric. Height of saved figures in inches. Default \code{6}.}
 
-\item{open_report}{Logical. If `TRUE` (default), the HTML report is opened
+\item{open_report}{Logical. If \code{TRUE} (default), the HTML report is opened
 in the default browser after rendering.}
 
-\item{verbose}{Logical. If `TRUE` (default), progress messages are printed.}
+\item{verbose}{Logical. If \code{TRUE} (default), progress messages are printed.}
 
-\item{dir}{Character. Output directory. Defaults to
-`"<herbarium>_gap_analysis"`.}
+\item{dir}{Character. Output directory. Defaults to \code{"<herbarium>_gap_analysis"}.}
 }
 \value{
 Invisibly returns a named list with all computed data frames and
   ggplot2 objects. The HTML report (and optional PDF/PNG figures) are written
-  to `dir`.
+  to \code{dir}.
 }
 \description{
-Identifies taxa listed in the
-[Flora e Funga do Brasil (FFB)](https://floradobrasil.jbrj.gov.br/consulta/)
+Identifies taxa listed in the \href{https://floradobrasil.jbrj.gov.br/consulta/}{Flora e Funga do Brasil (FFB)}
 that are absent from a given JABOT-hosted herbarium collection. The function
 downloads or reads pre-downloaded FFB and JABOT data, standardises synonyms,
 and produces a rich set of analyses and visualisations:
 
 - Summary statistics (total FFB taxa, taxa in herbarium, missing, % coverage)
-- Missing taxa broken down by **group**, **family**, **genus**, and
-  **phytogeographic domain**
-- Identification of **genera entirely absent** from the herbarium
-- **Choropleth map** of missing taxa by Brazilian state
+
+- Missing taxa broken down by group, family, genus, and phytogeographic domain
+
+- Identification of genera entirely absent from the herbarium
+
+- Choropleth map of missing taxa by Brazilian state
+
 - Interactive searchable table of the top missing species
-- Optionally, a **municipality-level heat map** ranking collecting
-  priority nationwide (see `priority_map`)
-- An **HTML report** (always generated) and optional **PDF** / **PNG** exports
+
+- Optionally, a municipality-level heat map ranking collecting
+  priority nationwide (see \code{priority_map})
+
+- An HTML report (always generated) and optional PDF / PNG exports
   of every individual figure
 }
 \details{
-**Workflow**
+Workflow
+
 1. FFB accepted species are extracted from the DwC-A taxon table.
+
 2. JABOT records for the target herbarium are retrieved and filtered to
    determined specimens.
+
 3. Taxon names that appear as synonyms in FFB are resolved to their accepted
-   names via [floraR::flora_search()].
-4. The intersection (`taxon_in_herb`) and difference (`taxon_not_in_herb`)
+   names via \code{\link{floraR::flora_search}}.
+
+4. The intersection (\code{taxon_in_herb}) and difference (\code{taxon_not_in_herb})
    between the two sets are computed.
+
 5. The missing taxa are joined with the FFB distribution table to obtain
    state- and domain-level breakdowns.
-6. All analyses are serialised to a temporary `.rds` file, which is read by
+
+6. All analyses are serialised to a temporary \code{.rds} file, which is read by
    the bundled Rmd template during rendering.
 }
 \note{
-- Internet access is required unless `jabot_path` points to previously
+- Internet access is required unless \code{jabot_path} points to previously
   downloaded data.
-- Synonym resolution via [floraR::flora_search()] can be slow for large
-  herbaria; supply `jabot_path` to skip re-downloading JABOT records on
+
+- Synonym resolution via \code{\link{floraR::flora_search}} can be slow for large
+  herbaria; supply \code{jabot_path} to skip re-downloading JABOT records on
   repeated runs.
-- The `rmarkdown`, `ggplot2`, `plotly`, `leaflet`, `DT`, `geobr`, and `sf`
-  packages must be installed.
+
+- The \code{rmarkdown}, \code{ggplot2}, \code{plotly}, \code{leaflet}, \code{DT},
+  \code{geobr}, and \code{sf} packages must be installed.
 }
 \examples{
 \dontrun{
@@ -113,7 +124,13 @@ jabot_gaps(herbarium = "RB",
 
 }
 \seealso{
-[jabot_coverage()], [jabot_missing()], [jabot_records()], [jabot_download()]
+\code{\link{jabot_coverage()}}
+
+\code{\link{jabot_missing()}}
+
+\code{\link{jabot_records()}}
+
+\code{\link{jabot_download()}}
 }
 \author{
 Domingos Cardoso

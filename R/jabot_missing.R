@@ -3,80 +3,88 @@
 #' @author Domingos Cardoso
 #'
 #' @description
-#' Identifies species listed in the
-#' [Flora e Funga do Brasil (FFB)](https://floradobrasil.jbrj.gov.br/consulta/)
+#' Identifies species listed in the \href{https://floradobrasil.jbrj.gov.br/consulta/}{Flora e Funga do Brasil (FFB)}
 #' that are expected to occur in a target Brazilian state and/or municipality
-#' (`geo`) but are absent from a given JABOT-hosted herbarium (`herbarium`),
+#' (\code{geo}) but are absent from a given JABOT-hosted herbarium (\code{herbarium}),
 #' regardless of where in Brazil that herbarium's own specimens were
 #' collected. For each missing species, the function searches the pooled
 #' occurrence records of the entire JABOT network (all herbaria, or a
-#' subset given by `network_herbaria`) for existing vouchers collected within
+#' subset given by \code{network_herbaria}) for existing vouchers collected within
 #' the target region, and produces:
 #'
 #' - Summary statistics (FFB species expected in the region, species already
 #'   held by the herbarium, missing species, % missing, missing species with
 #'   known collecting localities)
+#'
 #' - A ranked table of missing species, with the number of network vouchers
 #'   and municipalities already known for each (collecting priority)
+#'
 #' - Missing species broken down by family
+#'
 #' - An interactive map of candidate collecting localities, built from
 #'   network vouchers of the missing species within the region
+#'
 #' - A municipality-level heat map ranking collecting priority, i.e.
 #'   which municipalities within the region already hold the most known
 #'   vouchers of species still missing from the herbarium, to help target
 #'   future collecting expeditions
+#'
 #' - A full, record-level table of every individual network voucher of
 #'   the missing species found within the region (not aggregated by
 #'   species), each linking out to the physical specimen (image/viewer page)
 #'   when the source herbarium provides one
-#' - An HTML report (always generated) and optional `PDF` / `PNG`
-#'   exports of individual figures
+#'
+#' - An HTML report (always generated) and optional PDF / PNG exports of individual
+#'   figures
 #'
 #' @param herbarium Character. Acronym (in uppercase) of the target/local
-#'   JABOT-hosted herbarium whose gaps are being assessed (e.g. `"HUEFS"`).
+#'   JABOT-hosted herbarium whose gaps are being assessed (e.g. \code{"HUEFS"}).
 #' @param geo Character vector. One or more Brazilian state names/acronyms
 #'   and/or municipality names delimiting the region of interest (e.g.
-#'   `"Bahia"`, `"BA"`, or `c("Feira de Santana", "Tucano")`).
-#' @param network_herbaria Character vector or `NULL`. Restricts the pooled
+#'   \code{"Bahia"}, \code{"BA"}, or \code{c("Feira de Santana", "Tucano")}).
+#' @param network_herbaria Character vector or \code{NULL}. Restricts the pooled
 #'   network sample used to search for candidate collecting points to these
-#'   herbarium acronyms. `NULL` (default) uses `all` JABOT-hosted herbaria.
-#' @param jabot_path Character or `NULL`. Path to a directory holding
-#'   previously downloaded JABOT DwC-A files (created by [jabot_download()]),
-#'   shared by both the target herbarium and the network pool. When `NULL`
+#'   herbarium acronyms. \code{NULL} (default) uses \code{all} JABOT-hosted herbaria.
+#' @param jabot_path Character or \code{NULL}. Path to a directory holding
+#'   previously downloaded JABOT DwC-A files (created by \code{\link{jabot_download}}),
+#'   shared by both the target herbarium and the network pool. When \code{NULL}
 #'   (default) records are downloaded automatically.
 #' @param format Character vector. Static formats for saving individual
-#'   figures: `"pdf"`, `"png"`, or both. The HTML report is always
+#'   figures: \code{"pdf"}, \code{"png"}, or both. The HTML report is always
 #'   generated.
-#' @param fig_width Numeric. Width of saved figures in inches. Default `10`.
-#' @param fig_height Numeric. Height of saved figures in inches. Default `6`.
-#' @param open_report Logical. If `TRUE` (default), opens the HTML report in
+#' @param fig_width Numeric. Width of saved figures in inches. Default \code{10}.
+#' @param fig_height Numeric. Height of saved figures in inches. Default \code{6}.
+#' @param open_report Logical. If \code{TRUE} (default), opens the HTML report in
 #'   the default browser after rendering.
-#' @param verbose Logical. If `TRUE` (default), progress messages are printed.
+#' @param verbose Logical. If \code{TRUE} (default), progress messages are printed.
 #' @param dir Character. Output directory. Defaults to
-#'   `"<herbarium>_missing_<geo>"`.
+#'   \code{"<herbarium>_missing_<geo>"}.
 #'
 #' @return Invisibly returns a named list with all computed data frames and
 #'   ggplot2 objects. The HTML report (and optional figures) are written to
-#'   `dir`.
+#'   \code{dir}.
 #'
 #' @details
 #' Because the Flora e Funga do Brasil reports geographic distribution at the
 #' state level, the expected species checklist for the region is always
-#' resolved at the state(s) intersecting `geo` (a municipality is mapped to
+#' resolved at the state(s) intersecting \code{geo} (a municipality is mapped to
 #' its state via the JABOT records found within it). The candidate collecting
 #' map, however, is restricted to actual vouchers falling within the
-#' municipalities/states supplied in `geo`.
+#' municipalities/states supplied in \code{geo}.
 #'
 #' The function follows the same synonym-resolution pipeline as
-#' [jabot_gaps()]: taxon names recorded as synonyms in FFB are resolved to
-#' their accepted names via [floraR::flora_search()] before comparison.
+#' \code{\link{jabot_gaps}}: taxon names recorded as synonyms in FFB are resolved to
+#' their accepted names via \code{\link{floraR::flora_search}} before comparison.
 #'
 #' @note
 #' - Internet access is required unless `jabot_path` points to previously
 #'   downloaded data.
-#' - Downloading the full JABOT network (`network_herbaria = NULL`) can be
-#'   slow; supply `jabot_path` to avoid re-downloading on repeated runs.
-#' - The `rmarkdown`, `ggplot2`, `plotly`, `leaflet`, `DT`, `stringi` packages
+#'
+#' - Downloading the full JABOT network (\code{network_herbaria = NULL}) can be
+#'   slow; supply \code{jabot_path} to avoid re-downloading on repeated runs.
+#'
+#' - The \code{rmarkdown}, \code{ggplot2}, \code{plotly}, \code{leaflet}, \code{DT},
+#'   \code{stringi} packages
 #'   must be installed.
 #'
 #' @seealso \code{\link{jabot_gaps}}
@@ -349,7 +357,7 @@ jabot_missing <- function(herbarium = NULL,
     sf_obj
   }, error = function(e) {
     if (verbose)
-      message("Note: municipality polygons could not be loaded — ",
+      message("Note: municipality polygons could not be loaded \u2014 ",
              "priority map skipped. ", e$message)
     NULL
   })
@@ -492,7 +500,7 @@ jabot_missing <- function(herbarium = NULL,
     ggplot2::geom_col(show.legend = FALSE) +
     ggplot2::coord_flip() +
     ggplot2::labs(
-      title = paste0("Top families with missing species — ", herbarium,
+      title = paste0("Top families with missing species \u2014 ", herbarium,
                      " (", region_label, ")"),
       subtitle = paste0("Total missing from region: ", n_missing),
       x = NULL, y = "Number of missing species") +
@@ -514,7 +522,7 @@ jabot_missing <- function(herbarium = NULL,
       "Locatable via network pool" = col_pres,
       "No known locality in pool" = col_miss)) +
     ggplot2::labs(
-      title = paste0("Missing species with known network localities — ",
+      title = paste0("Missing species with known network localities \u2014 ",
                      herbarium),
       x = NULL, y = "Number of species") +
     .jabot_theme(plot_title_color = col_miss)
@@ -529,7 +537,7 @@ jabot_missing <- function(herbarium = NULL,
         ggplot2::scale_fill_gradient(low = "#F2D7C9", high = col_miss,
                                      name = "Missing species\nwith known vouchers") +
         ggplot2::labs(
-          title = paste0("Priority municipalities for collecting expeditions — ",
+          title = paste0("Priority municipalities for collecting expeditions \u2014 ",
                          herbarium),
           subtitle = paste0("Missing species already vouchered by other ",
                             "network herbaria, by municipality (", region_label, ")"),
