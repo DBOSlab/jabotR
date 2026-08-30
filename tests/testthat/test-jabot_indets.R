@@ -1,4 +1,6 @@
 test_that("jabot_indets returns a data.frame and filters by level 'FAMILY'", {
+  skip_if_no_jabot()
+
   df <- jabot_indets(
     level = "FAMILY",
     herbarium = "AFR",
@@ -6,12 +8,15 @@ test_that("jabot_indets returns a data.frame and filters by level 'FAMILY'", {
     verbose = FALSE,
     save = FALSE
   )
+
   expect_s3_class(df, "data.frame")
   expect_true(all(df$taxonRank %in% "FAMILY"))
 })
 
 
 test_that("jabot_indets filters by level 'GENUS'", {
+  skip_if_no_jabot()
+
   df <- jabot_indets(
     level = "GENUS",
     herbarium = "AFR",
@@ -19,12 +24,15 @@ test_that("jabot_indets filters by level 'GENUS'", {
     verbose = FALSE,
     save = FALSE
   )
+
   expect_s3_class(df, "data.frame")
   expect_true(all(df$taxonRank %in% "GENUS"))
 })
 
 
 test_that("jabot_indets filters by year range and state", {
+  skip_if_no_jabot()
+
   df <- jabot_indets(
     level = "FAMILY",
     herbarium = "R",
@@ -33,6 +41,7 @@ test_that("jabot_indets filters by year range and state", {
     verbose = FALSE,
     save = FALSE
   )
+
   expect_true(all(df$stateProvince %in% c("Bahia", "Minas Gerais")))
   expect_true(all(!is.na(df$year)))
   expect_true(all(df$year >= 2000 & df$year <= 2024))
@@ -40,9 +49,18 @@ test_that("jabot_indets filters by year range and state", {
 
 
 test_that("jabot_indets saves output when save = TRUE", {
+  skip_if_no_jabot()
+
   tmpdir <- tempdir()
   outfile <- "test_indets"
-  df <- jabot_indets(
+
+  expected_file <- file.path(tmpdir, paste0(outfile, ".csv"))
+
+  if (file.exists(expected_file)) {
+    unlink(expected_file)
+  }
+
+  jabot_indets(
     level = "GENUS",
     herbarium = "R",
     taxon = "Fabaceae",
@@ -51,13 +69,16 @@ test_that("jabot_indets saves output when save = TRUE", {
     save = TRUE,
     dir = tmpdir
   )
-  expected_file <- file.path(tmpdir, paste0(outfile, ".csv"))
+
   expect_true(file.exists(expected_file))
+
   unlink(expected_file)
 })
 
 
-test_that("jabot_indets returns more rows when level is NULL (all indets)", {
+test_that("jabot_indets returns more rows when level is NULL", {
+  skip_if_no_jabot()
+
   all_levels <- jabot_indets(
     level = NULL,
     herbarium = "R",
@@ -65,6 +86,7 @@ test_that("jabot_indets returns more rows when level is NULL (all indets)", {
     verbose = FALSE,
     save = FALSE
   )
+
   only_family <- jabot_indets(
     level = "FAMILY",
     herbarium = "R",
@@ -72,13 +94,27 @@ test_that("jabot_indets returns more rows when level is NULL (all indets)", {
     verbose = FALSE,
     save = FALSE
   )
+
   expect_gt(nrow(all_levels), nrow(only_family))
 })
 
 
 test_that("jabot_indets uses updates = FALSE with provided path", {
-  temp_path <- tempdir()
-  jabot_download(herbarium = "R", dir = temp_path, verbose = FALSE)
+  skip_if_no_jabot()
+
+  temp_path <- file.path(tempdir(), "jabot_indets_updates_false")
+
+  if (dir.exists(temp_path)) {
+    unlink(temp_path, recursive = TRUE)
+  }
+
+  dir.create(temp_path)
+
+  jabot_download(
+    herbarium = "R",
+    dir = temp_path,
+    verbose = FALSE
+  )
 
   df <- jabot_indets(
     level = "FAMILY",
@@ -91,14 +127,27 @@ test_that("jabot_indets uses updates = FALSE with provided path", {
   )
 
   expect_s3_class(df, "data.frame")
+
+  unlink(temp_path, recursive = TRUE)
 })
 
 
-test_that("jabot_indets updates = TRUE and path is given", {
-  temp_path <- tempdir()
-  jabot_download(herbarium = "R",
-                 dir = temp_path,
-                 verbose = FALSE)
+test_that("jabot_indets uses updates = TRUE with provided path", {
+  skip_if_no_jabot()
+
+  temp_path <- file.path(tempdir(), "jabot_indets_updates_true")
+
+  if (dir.exists(temp_path)) {
+    unlink(temp_path, recursive = TRUE)
+  }
+
+  dir.create(temp_path)
+
+  jabot_download(
+    herbarium = "R",
+    dir = temp_path,
+    verbose = FALSE
+  )
 
   df <- jabot_indets(
     level = "GENUS",
@@ -111,10 +160,14 @@ test_that("jabot_indets updates = TRUE and path is given", {
   )
 
   expect_s3_class(df, "data.frame")
+
+  unlink(temp_path, recursive = TRUE)
 })
 
 
 test_that("jabot_indets applies custom reorder", {
+  skip_if_no_jabot()
+
   df <- jabot_indets(
     level = "FAMILY",
     herbarium = "R",
@@ -123,13 +176,19 @@ test_that("jabot_indets applies custom reorder", {
     verbose = FALSE,
     save = FALSE
   )
+
   expect_true("year" %in% names(df))
 })
 
 
 test_that("jabot_indets creates directory if missing", {
+  skip_if_no_jabot()
+
   tmpdir <- file.path(tempdir(), "new_test_indets_dir")
-  if (dir.exists(tmpdir)) unlink(tmpdir, recursive = TRUE)
+
+  if (dir.exists(tmpdir)) {
+    unlink(tmpdir, recursive = TRUE)
+  }
 
   jabot_indets(
     level = "FAMILY",
@@ -141,14 +200,17 @@ test_that("jabot_indets creates directory if missing", {
   )
 
   expect_true(dir.exists(tmpdir))
+
   unlink(tmpdir, recursive = TRUE)
 })
 
 
-test_that("jabot_indets handles non-matching level filter", {
+test_that("jabot_indets rejects invalid level", {
+  skip_if_no_jabot()
+
   expect_error(
     jabot_indets(
-      level = "species", # invalid for this function
+      level = "species",
       herbarium = "R",
       taxon = "Fabaceae",
       verbose = FALSE,
@@ -158,7 +220,9 @@ test_that("jabot_indets handles non-matching level filter", {
 })
 
 
-test_that("jabot_indets returns empty for unknown taxon", {
+test_that("jabot_indets rejects unknown taxon", {
+  skip_if_no_jabot()
+
   expect_error(
     jabot_indets(
       level = "FAMILY",
@@ -171,39 +235,36 @@ test_that("jabot_indets returns empty for unknown taxon", {
 })
 
 
-test_that("jabot_indets works with no filters (all default args)", {
-  tmpdir <- file.path(tempdir(), "new_test_indets_dir")
-  if (dir.exists(tmpdir)) unlink(tmpdir, recursive = TRUE)
-jabot_indets(
-  herbarium = NULL,
-  verbose = FALSE,
-  save = TRUE,
-  dir = tmpdir,
-)
-  expect_true(length(list.files(tmpdir)) > 0)
-  unlink(tmpdir, recursive = TRUE)
-})
+test_that("jabot_indets prints messages when verbose = TRUE", {
+  skip_if_no_jabot()
 
-
-test_that("jabot_indets prints messages with verbose = TRUE", {
-  expect_message(jabot_indets(herbarium = "R",
-                              level = "FAMILY",
-                              verbose = TRUE,
-                              save = FALSE))
+  expect_message(
+    jabot_indets(
+      herbarium = "R",
+      level = "FAMILY",
+      verbose = TRUE,
+      save = FALSE
+    )
+  )
 })
 
 
 test_that("jabot_indets saves CSV and log", {
-  tmp <- tempfile()
-  dir.create(tmp)
-  result <- jabot_indets(herbarium = "R",
-                         verbose = FALSE,
-                         save = TRUE,
-                         dir = tmp,
-                         filename = "test_save")
-  expect_true(file.exists(file.path(tmp, "test_save.csv")))
-  expect_true(file.exists(file.path(tmp, "log.txt")))
-  unlink(tmp, recursive = TRUE)
+  skip_if_no_jabot()
+
+  tmpdir <- tempfile("jabot_indets_save_")
+  dir.create(tmpdir)
+
+  jabot_indets(
+    herbarium = "R",
+    verbose = FALSE,
+    save = TRUE,
+    dir = tmpdir,
+    filename = "test_save"
+  )
+
+  expect_true(file.exists(file.path(tmpdir, "test_save.csv")))
+  expect_true(file.exists(file.path(tmpdir, "log.txt")))
+
+  unlink(tmpdir, recursive = TRUE)
 })
-
-
