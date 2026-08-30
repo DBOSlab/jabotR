@@ -9,7 +9,7 @@
 #' (`geo`) but are absent from a given JABOT-hosted herbarium (`herbarium`),
 #' regardless of where in Brazil that herbarium's own specimens were
 #' collected. For each missing species, the function searches the pooled
-#' occurrence records of the **entire JABOT network** (all herbaria, or a
+#' occurrence records of the entire JABOT network (all herbaria, or a
 #' subset given by `network_herbaria`) for existing vouchers collected within
 #' the target region, and produces:
 #'
@@ -18,30 +18,34 @@
 #'   known collecting localities)
 #' - A ranked table of missing species, with the number of network vouchers
 #'   and municipalities already known for each (collecting priority)
-#' - Missing species broken down by **family**
-#' - An **interactive map** of candidate collecting localities, built from
+#' - Missing species broken down by family
+#' - An interactive map of candidate collecting localities, built from
 #'   network vouchers of the missing species within the region
-#' - A **municipality-level heat map** ranking collecting priority — i.e.
+#' - A municipality-level heat map ranking collecting priority, i.e.
 #'   which municipalities within the region already hold the most known
 #'   vouchers of species still missing from the herbarium, to help target
 #'   future collecting expeditions
-#' - An **HTML report** (always generated) and optional **PDF** / **PNG**
+#' - A full, record-level table of every individual network voucher of
+#'   the missing species found within the region (not aggregated by
+#'   species), each linking out to the physical specimen (image/viewer page)
+#'   when the source herbarium provides one
+#' - An HTML report (always generated) and optional `PDF` / `PNG`
 #'   exports of individual figures
 #'
 #' @param herbarium Character. Acronym (in uppercase) of the target/local
 #'   JABOT-hosted herbarium whose gaps are being assessed (e.g. `"HUEFS"`).
 #' @param geo Character vector. One or more Brazilian state names/acronyms
 #'   and/or municipality names delimiting the region of interest (e.g.
-#'   `"Bahia"`, `"BA"`, or `c("Feira de Santana", "Ilhéus")`).
+#'   `"Bahia"`, `"BA"`, or `c("Feira de Santana", "Tucano")`).
 #' @param network_herbaria Character vector or `NULL`. Restricts the pooled
 #'   network sample used to search for candidate collecting points to these
-#'   herbarium acronyms. `NULL` (default) uses **all** JABOT-hosted herbaria.
+#'   herbarium acronyms. `NULL` (default) uses `all` JABOT-hosted herbaria.
 #' @param jabot_path Character or `NULL`. Path to a directory holding
 #'   previously downloaded JABOT DwC-A files (created by [jabot_download()]),
 #'   shared by both the target herbarium and the network pool. When `NULL`
 #'   (default) records are downloaded automatically.
 #' @param format Character vector. Static formats for saving individual
-#'   figures: `"pdf"`, `"png"`, or both. The HTML report is **always**
+#'   figures: `"pdf"`, `"png"`, or both. The HTML report is always
 #'   generated.
 #' @param fig_width Numeric. Width of saved figures in inches. Default `10`.
 #' @param fig_height Numeric. Height of saved figures in inches. Default `6`.
@@ -49,7 +53,7 @@
 #'   the default browser after rendering.
 #' @param verbose Logical. If `TRUE` (default), progress messages are printed.
 #' @param dir Character. Output directory. Defaults to
-#'   `"<herbarium>_missed_spp_<geo>"`.
+#'   `"<herbarium>_missing_<geo>"`.
 #'
 #' @return Invisibly returns a named list with all computed data frames and
 #'   ggplot2 objects. The HTML report (and optional figures) are written to
@@ -57,7 +61,7 @@
 #'
 #' @details
 #' Because the Flora e Funga do Brasil reports geographic distribution at the
-#' **state** level, the expected species checklist for the region is always
+#' state level, the expected species checklist for the region is always
 #' resolved at the state(s) intersecting `geo` (a municipality is mapped to
 #' its state via the JABOT records found within it). The candidate collecting
 #' map, however, is restricted to actual vouchers falling within the
@@ -75,22 +79,25 @@
 #' - The `rmarkdown`, `ggplot2`, `plotly`, `leaflet`, `DT`, `stringi` packages
 #'   must be installed.
 #'
-#' @seealso [jabot_gaps()], [jabot_coverage()], [jabot_records()], [jabot_download()]
+#' @seealso \code{\link{jabot_gaps}}
+#' @seealso \code{\link{jabot_coverage}}
+#' @seealso \code{\link{jabot_records}}
+#' @seealso \code{\link{jabot_download}}
 #'
 #' @examples
 #' \dontrun{
 #' # Missing species expected in Bahia state but absent from HUEFS herbarium
-#' jabot_missed_spp(herbarium = "HUEFS",
+#' jabot_missing(herbarium = "HUEFS",
 #'                  geo = "Bahia",
 #'                  format = "pdf")
 #'
 #' # Restrict the candidate-locality search to a couple of municipalities
-#' jabot_missed_spp(herbarium = "HUEFS",
-#'                  geo = c("Feira de Santana", "Ilhéus"),
+#' jabot_missing(herbarium = "HUEFS",
+#'                  geo = c("Feira de Santana", "Tucano"),
 #'                  jabot_path = "jabot_download")
 #' }
 #'
-#' @importFrom dplyr filter mutate group_by summarise arrange desc n_distinct left_join relocate first bind_rows
+#' @importFrom dplyr filter mutate group_by summarise arrange desc n_distinct left_join relocate first bind_rows distinct
 #' @importFrom tidyr replace_na
 #' @importFrom magrittr "%>%"
 #' @importFrom utils head browseURL
@@ -108,7 +115,7 @@
 #'
 #' @export
 
-jabot_missed_spp <- function(herbarium = NULL,
+jabot_missing <- function(herbarium = NULL,
                              geo = NULL,
                              network_herbaria = NULL,
                              jabot_path = NULL,
@@ -155,7 +162,7 @@ jabot_missed_spp <- function(herbarium = NULL,
   region_label <- gsub("_+", "_", region_label)
   region_label <- gsub("^_|_$", "", region_label)
 
-  if (is.null(dir)) dir <- paste0(herbarium, "_missed_spp_", region_label)
+  if (is.null(dir)) dir <- paste0(herbarium, "_missing_", region_label)
   dir <- .arg_check_dir(dir)
   if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
 
@@ -200,6 +207,23 @@ jabot_missed_spp <- function(herbarium = NULL,
   if (nrow(pool_geo) == 0)
     stop("No JABOT records were found for the given 'geo'. Check the ",
         "spelling of the state/municipality names.", call. = FALSE)
+
+  # Attach a clickable link to the physical specimen (from the multimedia
+  # DwC-A extension, when the source herbarium provides one). This re-parses
+  # (offline, no re-download) only the dwca folders relevant to the region.
+  multimedia_links <- tryCatch({
+    dwca_path <- if (is.null(jabot_path)) "jabot_download" else jabot_path
+    mm_dwca <- jabot_parse(path = dwca_path,
+                           herbarium = unique(pool_geo$collectionCode),
+                           verbose = FALSE)
+    .merge_multimedia_txt(mm_dwca)
+  }, error = function(e) {
+    if (verbose)
+      message("Note: specimen links could not be loaded. ", e$message)
+    data.frame(occurrenceID = character(0), specimenLink = character(0))
+  })
+
+  pool_geo <- dplyr::left_join(pool_geo, multimedia_links, by = "occurrenceID")
 
   # States intersecting 'geo' (explicit states + states inferred from matched
   # municipalities), used to resolve the FFB checklist for the region
@@ -286,6 +310,19 @@ jabot_missed_spp <- function(herbarium = NULL,
 
   n_missing_locatable <- sum(taxon_missing$locatable)
 
+  # Full list of individual network records (one row per specimen, not
+  # aggregated by species) for the missing species, each with a link to the
+  # physical specimen when the source herbarium provides one
+  record_cols <- c("family", "taxonName", "collectionCode", "recordedBy",
+                   "recordNumber", "eventDate", "municipality", "stateProvince",
+                   "decimalLatitude", "decimalLongitude", "specimenLink")
+  record_cols <- record_cols[record_cols %in% names(missing_pool_records)]
+  missing_pool_records_full <- missing_pool_records[, record_cols, drop = FALSE]
+  names(missing_pool_records_full)[names(missing_pool_records_full) == "collectionCode"] <- "herbarium"
+  missing_pool_records_full <- missing_pool_records_full[
+    order(missing_pool_records_full$taxonName, missing_pool_records_full$herbarium), ]
+  rownames(missing_pool_records_full) <- NULL
+
   family_gap <- taxon_missing %>%
     dplyr::group_by(family) %>%
     dplyr::summarise(n_missing = dplyr::n(), .groups = "drop") %>%
@@ -320,7 +357,7 @@ jabot_missed_spp <- function(herbarium = NULL,
   # -- 7. Figures ----------------------------------------------------------------
   if (verbose) message("[7/7] Building figures...")
 
-  plots <- .make_missed_spp_plots(herbarium = herbarium,
+  plots <- .make_missing_plots(herbarium = herbarium,
                                   region_label = region_label_display,
                                   family_gap = family_gap,
                                   evidence_gap = evidence_gap,
@@ -328,7 +365,7 @@ jabot_missed_spp <- function(herbarium = NULL,
                                   n_missing = n_missing)
 
   if (!is.null(format)) {
-    .save_missed_spp_figures(plots, fig_dir, format, fig_width, fig_height, verbose)
+    .save_missing_figures(plots, fig_dir, format, fig_width, fig_height, verbose)
   }
 
   # Load jabotR logo
@@ -358,6 +395,7 @@ jabot_missed_spp <- function(herbarium = NULL,
     evidence_gap = evidence_gap,
     taxon_missing = taxon_missing,
     missing_pool_points = missing_pool_points,
+    missing_pool_records = missing_pool_records_full,
     municipality_priority = municipality_priority,
     muni_sf = muni_sf,
     plots = plots
@@ -366,13 +404,13 @@ jabot_missed_spp <- function(herbarium = NULL,
   tmp_rds <- tempfile(fileext = ".rds")
   saveRDS(analysis_list, tmp_rds)
 
-  rmd_template <- system.file("rmd/jabot_missed_spp_report.Rmd",
+  rmd_template <- system.file("rmd/jabot_missing_report.Rmd",
                               package = "jabotR")
   if (!nzchar(rmd_template))
     stop("Rmd template not found. Reinstall the jabotR package.", call. = FALSE)
 
   html_out <- file.path(normalizePath(dir),
-                        paste0(herbarium, "_missed_spp_", region_label, ".html"))
+                        paste0(herbarium, "_missing_", region_label, ".html"))
 
   if (verbose) message("Rendering HTML report...")
   rmarkdown::render(
@@ -429,11 +467,11 @@ jabot_missed_spp <- function(herbarium = NULL,
   )
 }
 
-.make_missed_spp_plots <- function(herbarium,
+.make_missing_plots <- function(herbarium,
                                    region_label,
                                    family_gap,
                                    evidence_gap,
-                                   muni_sf,
+                                   muni_sf = NULL,
                                    n_missing) {
 
   col_miss <- "#1D4E89"
@@ -515,7 +553,7 @@ jabot_missed_spp <- function(herbarium = NULL,
   )
 }
 
-.save_missed_spp_figures <- function(plots, fig_dir, format, width, height, verbose) {
+.save_missing_figures <- function(plots, fig_dir, format, width, height, verbose) {
   names_map <- list(
     family = "01_missing_family",
     evidence = "02_missing_evidence",

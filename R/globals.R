@@ -18,5 +18,10 @@ utils::globalVariables(c(
   "n_type_species", "n_type_taxa",
   "pct_type_species",
   "tooltip", "typeStatus",
-  "vegetationType"
+  "vegetationType",
+  # jabot_missing
+  "muni_key", "municipality",
+  "n_missing_species", "status", "occurrenceID",
+  "collectionCode", "n_records", "n_municipalities",
+  "herbaria"
 ))

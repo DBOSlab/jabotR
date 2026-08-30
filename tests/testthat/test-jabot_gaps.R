@@ -196,10 +196,11 @@ test_that(".make_gap_plots returns ggplot objects and tolerates map failure", {
     "state map skipped"
   )
 
-  expect_named(plots, c("group", "genus", "domain", "endemism", "state"))
+  expect_named(plots, c("group", "genus", "domain", "endemism", "state", "priority_map"))
   expect_true(all(vapply(plots[c("group", "genus", "domain", "endemism")],
                          inherits, logical(1), what = "ggplot")))
   expect_null(plots$state)
+  expect_null(plots$priority_map)
 })
 
 

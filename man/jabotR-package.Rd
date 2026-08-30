@@ -6,7 +6,7 @@
 \alias{jabotR-package}
 \title{jabotR: An R Package for Exploring JABOT Online Plant Specimen Collections}
 \description{
-Provides tools to access and analyze plant specimen records from JABOT, a botanical data repository maintained by the Rio de Janeiro Botanical Garden. Users can retrieve, filter, and summarize specimen data using taxonomic, geographic, or temporal criteria. The package supports downloading structured Darwin Core (DwC-A) archives and integrates with tidyverse workflows for downstream analysis and visualization. Three analytical functions — jabot_gaps(), jabot_coverage(), and jabot_missed_spp() — compare any JABOT-hosted herbarium against the Flora e Funga do Brasil and produce self-contained HTML reports with interactive figures and tables. jabot_missed_spp() further narrows the comparison to a target Brazilian state/municipality and maps candidate collecting localities drawn from the pooled JABOT network.
+Provides tools to access and analyze plant specimen records from JABOT, a botanical data repository maintained by the Rio de Janeiro Botanical Garden. Users can retrieve, filter, and summarize specimen data using taxonomic, geographic, or temporal criteria. The package supports downloading structured Darwin Core (DwC-A) archives and integrates with tidyverse workflows for downstream analysis and visualization. Three analytical functions - jabot_gaps(), jabot_coverage(), and jabot_missing() - compare any JABOT-hosted herbarium against the Flora e Funga do Brasil and produce self-contained HTML reports with interactive figures and tables. jabot_missing() further narrows the comparison to a target Brazilian state/municipality and maps candidate collecting localities drawn from the pooled JABOT network.
 }
 \seealso{
 Useful links:

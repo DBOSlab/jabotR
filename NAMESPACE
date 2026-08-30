@@ -4,7 +4,7 @@ export(jabot_coverage)
 export(jabot_download)
 export(jabot_gaps)
 export(jabot_indets)
-export(jabot_missed_spp)
+export(jabot_missing)
 export(jabot_parse)
 export(jabot_records)
 export(jabot_summary)
@@ -19,6 +19,7 @@ importFrom(dplyr,
   arrange,
   bind_rows,
   desc,
+  distinct,
   filter,
   first,
   full_join,

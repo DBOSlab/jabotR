@@ -14,7 +14,7 @@ output:
     toc_depth: 3
     number_sections: false
     df_print: paged
-    css: !expr system.file("rmd/jabot_missed_spp_report.css", package = "jabotR")
+    css: !expr system.file("rmd/jabot_missing_report.css", package = "jabotR")
 params:
   data_path: NULL
   herbarium: "HERB"
@@ -299,6 +299,67 @@ DT::datatable(
     "locatable",
     backgroundColor = DT::styleEqual(c(TRUE, FALSE), c("#dbeafe", "#fde8ea"))
   )
+```
+
+---
+
+## Full Record-Level List of Network Vouchers
+
+Unlike the species-level table above, this table lists every **individual**
+JABOT network specimen record (voucher) of the missing species found within
+`r region` — one row per specimen, not aggregated. Where the source herbarium
+provides specimen images/viewer pages, a link is included to view the actual
+physical specimen.
+
+```{r table-records}
+recs <- d$missing_pool_records
+
+if (is.null(recs) || nrow(recs) == 0) {
+  htmltools::p(
+    "No individual network records were found for the missing species ",
+    "within this region.",
+    style = "color: #6c757d; font-style: italic;"
+  )
+} else {
+  if ("specimenLink" %in% names(recs)) {
+    recs$specimenLink <- ifelse(
+      !is.na(recs$specimenLink) & nzchar(recs$specimenLink),
+      paste0('<a href="', recs$specimenLink, '" target="_blank">View specimen</a>'),
+      ""
+    )
+  }
+
+  display_cols <- c("family", "taxonName", "herbarium", "recordedBy",
+                    "recordNumber", "eventDate", "municipality",
+                    "stateProvince", "specimenLink")
+  display_cols <- display_cols[display_cols %in% names(recs)]
+  recs <- recs[, display_cols, drop = FALSE]
+
+  DT::datatable(
+    recs,
+    colnames = c("Family", "Taxon", "Herbarium", "Collector", "Coll. number",
+                "Date", "Municipality", "State", "Specimen")[seq_along(display_cols)],
+    rownames = FALSE,
+    escape = FALSE,
+    filter = list(position = "top", clear = TRUE, plain = FALSE),
+    extensions = c("Buttons"),
+    caption = htmltools::tags$caption(
+      style = "caption-side: top; text-align: left; font-weight: bold;",
+      paste0("Table 3. All ", scales::comma(nrow(recs)),
+             " individual network records of missing species within ",
+             region, ".")
+    ),
+    options = list(
+      pageLength = 20,
+      dom = "Bfrtip",
+      buttons = c("copy", "csv", "excel"),
+      scrollX = TRUE,
+      search = list(regex = TRUE, caseInsensitive = TRUE),
+      lengthMenu = list(c(10, 20, 50, 100, -1),
+                        c("10", "20", "50", "100", "All"))
+    )
+  )
+}
 ```
 
 ---

@@ -27,9 +27,9 @@
 #' @param priority_map Logical. If `TRUE`, additionally downloads pooled
 #'   occurrence records from the JABOT network (see `network_herbaria`) and
 #'   builds a nationwide municipality-level heat map ranking collecting
-#'   priority — i.e. which municipalities already hold the most known
+#'   priority, i.e. which municipalities already hold the most known
 #'   vouchers of species still missing from `herbarium` (see
-#'   [jabot_missed_spp()] for the region-scoped version of this analysis).
+#'   [jabot_missing()] for the region-scoped version of this analysis).
 #'   Default `FALSE`, since it requires downloading the full network sample.
 #' @param network_herbaria Character vector or `NULL`. Only used when
 #'   `priority_map = TRUE`; restricts the pooled network sample to these
@@ -72,7 +72,7 @@
 #' - The `rmarkdown`, `ggplot2`, `plotly`, `leaflet`, `DT`, `geobr`, and `sf`
 #'   packages must be installed.
 #'
-#' @seealso [jabot_coverage()], [jabot_missed_spp()], [jabot_records()], [jabot_download()]
+#' @seealso [jabot_coverage()], [jabot_missing()], [jabot_records()], [jabot_download()]
 #'
 #' @examples
 #' \dontrun{
@@ -414,7 +414,7 @@ jabot_gaps <- function(herbarium = NULL,
                             domain_gap,
                             endemism_gap,
                             state_gap,
-                            muni_sf,
+                            muni_sf = NULL,
                             n_missing) {
 
   pal_terra <- c(
@@ -445,7 +445,7 @@ jabot_gaps <- function(herbarium = NULL,
     ggplot2::coord_flip() +
     ggplot2::scale_fill_manual(values = pal_terra, guide = "none") +
     ggplot2::labs(
-      title = paste0("Missing taxa by taxonomic group \u2014 ", herbarium),
+      title = paste0("Missing taxa by taxonomic group — ", herbarium),
       subtitle = paste0("Total missing from FFB: ", n_missing),
       x = NULL, y = "Number of missing taxa") +
     .jabot_theme(plot_title_color = "#A4243B")
@@ -484,7 +484,7 @@ jabot_gaps <- function(herbarium = NULL,
       guide = "none"
     ) +
     ggplot2::labs(
-      title = paste0("Top 20 genera with missing species \u2014 ", herbarium),
+      title = paste0("Top 20 genera with missing species — ", herbarium),
       subtitle = "Red = genus not represented at all in the herbarium",
       x = NULL, y = "Number of missing species"
     ) +
@@ -508,7 +508,7 @@ jabot_gaps <- function(herbarium = NULL,
                                  high = "#A4243B",
                                  guide = "none") +
     ggplot2::labs(
-      title = paste0("Missing taxa by phytogeographic domain \u2014 ", herbarium),
+      title = paste0("Missing taxa by phytogeographic domain — ", herbarium),
       subtitle = "Based on FFB occurrence records",
       x = NULL,
       y = "Number of missing taxa") +
@@ -537,7 +537,7 @@ jabot_gaps <- function(herbarium = NULL,
     ggplot2::scale_y_continuous(labels = scales::comma,
                                 expand = ggplot2::expansion(mult = c(0, 0.15))) +
     ggplot2::labs(
-      title = paste0("Missing taxa by endemism status \u2014 ", herbarium),
+      title = paste0("Missing taxa by endemism status — ", herbarium),
       x = NULL, y = "Number of missing taxa") +
     .jabot_theme(plot_title_color = "#A4243B")
 
@@ -554,7 +554,7 @@ jabot_gaps <- function(herbarium = NULL,
                                     name = "Missing taxa",
                                     labels = scales::comma) +
       ggplot2::labs(
-        title = paste0("Missing taxa by Brazilian state \u2014 ", herbarium),
+        title = paste0("Missing taxa by Brazilian state — ", herbarium),
         subtitle = "Number of FFB species not represented in the herbarium",
         caption = "Source: Flora e Funga do Brasil / JABOT") +
       ggplot2::theme_void(base_size = 12) +
@@ -567,7 +567,7 @@ jabot_gaps <- function(herbarium = NULL,
         legend.position = "right"
       )
   }, error = function(e) {
-    message("Note: geobr map could not be loaded \u2014 state map skipped. ", e$message)
+    message("Note: geobr map could not be loaded — state map skipped. ", e$message)
     NULL
   })
 
@@ -581,7 +581,7 @@ jabot_gaps <- function(herbarium = NULL,
         ggplot2::scale_fill_gradient(low = "#F2D7C9", high = "#A4243B",
                                      name = "Missing species\nwith known vouchers") +
         ggplot2::labs(
-          title = paste0("Priority municipalities for collecting expeditions \u2014 ",
+          title = paste0("Priority municipalities for collecting expeditions — ",
                          herbarium),
           subtitle = "Missing species already vouchered by other network herbaria",
           caption = "Source: Flora e Funga do Brasil / JABOT") +

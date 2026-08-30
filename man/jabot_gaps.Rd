@@ -27,9 +27,9 @@ downloaded JABOT DwC-A files (created by [jabot_download()]). When `NULL`
 \item{priority_map}{Logical. If `TRUE`, additionally downloads pooled
 occurrence records from the JABOT network (see `network_herbaria`) and
 builds a nationwide municipality-level heat map ranking collecting
-priority — i.e. which municipalities already hold the most known
+priority, i.e. which municipalities already hold the most known
 vouchers of species still missing from `herbarium` (see
-[jabot_missed_spp()] for the region-scoped version of this analysis).
+[jabot_missing()] for the region-scoped version of this analysis).
 Default `FALSE`, since it requires downloading the full network sample.}
 
 \item{network_herbaria}{Character vector or `NULL`. Only used when
@@ -113,7 +113,7 @@ jabot_gaps(herbarium = "RB",
 
 }
 \seealso{
-[jabot_coverage()], [jabot_missed_spp()], [jabot_records()], [jabot_download()]
+[jabot_coverage()], [jabot_missing()], [jabot_records()], [jabot_download()]
 }
 \author{
 Domingos Cardoso

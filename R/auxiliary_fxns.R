@@ -1542,14 +1542,14 @@
 #' @keywords internal
 #' @noRd
 .br_states <- function() {
-  c("Acre" = "AC", "Alagoas" = "AL", "Amapá" = "AP", "Amazonas" = "AM",
-    "Bahia" = "BA", "Ceará" = "CE", "Distrito Federal" = "DF",
-    "Espírito Santo" = "ES", "Goiás" = "GO", "Maranhão" = "MA",
+  c("Acre" = "AC", "Alagoas" = "AL", "Amap\u00e1" = "AP", "Amazonas" = "AM",
+    "Bahia" = "BA", "Cear\u00e1" = "CE", "Distrito Federal" = "DF",
+    "Esp\u00edrito Santo" = "ES", "Goi\u00e1s" = "GO", "Maranh\u00e3o" = "MA",
     "Mato Grosso" = "MT", "Mato Grosso do Sul" = "MS", "Minas Gerais" = "MG",
-    "Pará" = "PA", "Paraíba" = "PB", "Paraná" = "PR", "Pernambuco" = "PE",
-    "Piauí" = "PI", "Rio de Janeiro" = "RJ", "Rio Grande do Norte" = "RN",
-    "Rio Grande do Sul" = "RS", "Rondônia" = "RO", "Roraima" = "RR",
-    "Santa Catarina" = "SC", "São Paulo" = "SP", "Sergipe" = "SE",
+    "Par\u00e1" = "PA", "Para\u00edba" = "PB", "Paran\u00e1" = "PR", "Pernambuco" = "PE",
+    "Piau\u00ed" = "PI", "Rio de Janeiro" = "RJ", "Rio Grande do Norte" = "RN",
+    "Rio Grande do Sul" = "RS", "Rond\u00f4nia" = "RO", "Roraima" = "RR",
+    "Santa Catarina" = "SC", "S\u00e3o Paulo" = "SP", "Sergipe" = "SE",
     "Tocantins" = "TO")
 }
 
@@ -1586,6 +1586,43 @@
                      .groups = "drop") %>%
     dplyr::relocate(municipality, .after = muni_key) %>%
     dplyr::arrange(dplyr::desc(n_missing_species))
+}
+
+#' Extract a specimen link from each herbarium's multimedia.txt DwC-A
+#' extension (when present), joined against the DwC-A core 'id', which
+#' JABOT/GBIF IPT archives set equal to occurrenceID. Prefers the
+#' human-readable viewer page ('references'); falls back to the direct
+#' image URL ('identifier') when no viewer page is provided.
+#'
+#' @keywords internal
+#' @noRd
+.merge_multimedia_txt <- function(dwca_files) {
+  links <- lapply(dwca_files, function(x) {
+    mm <- x[["data"]][["multimedia.txt"]]
+    if (is.null(mm) || nrow(mm) == 0 || !"id" %in% names(mm)) return(NULL)
+
+    link <- if ("references" %in% names(mm)) as.character(mm$references) else NA_character_
+    tf <- is.na(link) | !nzchar(trimws(link))
+    if (any(tf) && "identifier" %in% names(mm)) {
+      img <- as.character(mm$identifier[tf])
+      has_scheme <- !is.na(img) & grepl("^https?://", img)
+      img[!is.na(img) & nzchar(img) & !has_scheme] <-
+        paste0("https://", img[!is.na(img) & nzchar(img) & !has_scheme])
+      link[tf] <- img
+    }
+
+    data.frame(occurrenceID = as.character(mm$id),
+              specimenLink = link,
+              stringsAsFactors = FALSE)
+  })
+
+  links <- dplyr::bind_rows(links)
+  if (nrow(links) == 0) {
+    return(data.frame(occurrenceID = character(0), specimenLink = character(0)))
+  }
+
+  links <- links[!is.na(links$specimenLink) & nzchar(links$specimenLink), ]
+  dplyr::distinct(links, occurrenceID, .keep_all = TRUE)
 }
 
 #' Load municipality polygons for one/more Brazilian states, or the whole country

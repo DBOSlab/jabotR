@@ -24,7 +24,7 @@ knitr::opts_chunk$set(
 <!-- badges: end -->
 
 
-`jabotR` is an R package for accessing and analyzing plant specimen data from the [JABOT online herbarium collections](https://jabot.jbrj.gov.br/v3/consulta.php), hosted by the [Rio de Janeiro Botanical Garden](https://www.gov.br/jbrj/pt-br). It provides tools for summarizing JABOT collections, downloading and parsing specimen records in Darwin Core Archive (DwC-A) format, retrieving and filtering occurrence records, identifying indeterminate specimens, and evaluating taxonomic gaps and collection representativeness against the Flora e Funga do Brasil (FFB).
+`jabotR` is an R package for accessing and analyzing plant specimen data from the [JABOT online herbarium collections](https://jabot.jbrj.gov.br/v3/consulta.php), hosted by the [Rio de Janeiro Botanical Garden](https://www.gov.br/jbrj/pt-br). It provides tools for summarizing JABOT collections, downloading and parsing specimen records in Darwin Core Archive (DwC-A) format, retrieving and filtering occurrence records, identifying indeterminate specimens, and evaluating taxonomic gaps, collection representativeness, and regionally missing species with collecting-priority maps against the Flora e Funga do Brasil (FFB).
 
 
 ## Installation
@@ -48,7 +48,7 @@ library(jabotR)
 
 ## Usage
 
-A general description of the main functions available in `jabotR` is provided below. These functions support a workflow from summarizing and downloading original JABOT collections to parsing specimen records, filtering occurrence data, retrieving indeterminate specimens, and evaluating taxonomic gaps and herbarium representativeness.\
+A general description of the main functions available in `jabotR` is provided below. These functions support a workflow from summarizing and downloading original JABOT collections to parsing specimen records, filtering occurrence data, retrieving indeterminate specimens, and evaluating taxonomic gaps, herbarium representativeness, and regionally missing species with collecting-priority maps.\
 \
 
 #### _1. `jabot_summary`: Summarizing JABOT collections_
@@ -252,6 +252,16 @@ gap_analysis <- jabot_gaps(herbarium = "RB",
                            dir = "RB_gap_analysis")
 ```
 \
+Setting `priority_map = TRUE` additionally downloads pooled JABOT network records (see `network_herbaria` to restrict the sample) and adds a nationwide municipality-level heat map ranking collecting priority for the herbarium's missing species — i.e. which municipalities already hold the most known vouchers of species still missing from the herbarium (see `jabot_missing()` below for a region-scoped version of this analysis).\
+
+```r
+gap_analysis <- jabot_gaps(herbarium = "RB",
+                           priority_map = TRUE,
+                           verbose = TRUE,
+                           open_report = TRUE,
+                           dir = "RB_gap_analysis")
+```
+\
 The HTML report is always generated. When `format` is specified, individual figures are additionally saved in the requested static format.\
 \
 
@@ -294,6 +304,46 @@ coverage_analysis <- jabot_coverage(herbarium = "RB",
 ```
 \
 The HTML report is always generated. When `format` is specified, individual figures are additionally saved as PDF or PNG files.\
+\
+
+#### _8. `jabot_missing`: Locating missing species and collecting priorities within a target region_
+
+`jabot_missing()` identifies species listed in the Flora e Funga do Brasil (FFB) that are expected to occur in a target Brazilian state and/or municipality (`geo`) but are absent from a given JABOT-hosted herbarium (`herbarium`), regardless of where in Brazil that herbarium's own specimens were collected. Unlike `jabot_gaps()`, which compares a herbarium against the whole of Brazil, `jabot_missing()` narrows the comparison to a specific region and searches the pooled occurrence records of the JABOT network (all herbaria, or a subset given by `network_herbaria`) for existing vouchers of the missing species collected within that region — helping prioritize where new collecting expeditions could target them.
+
+The analysis includes summary statistics, a ranked table of missing species with known network vouchers and municipalities, missing species by family, an interactive map of candidate collecting localities, a municipality-level heat map ranking collecting priority, a full record-level table of every individual network voucher (each linking out to the physical specimen when the source herbarium provides one), graphical summaries and an HTML report.
+
+A missing-species analysis for Bahia state can be performed with:\
+
+```r
+missing_analysis <- jabot_missing(herbarium = "RB",
+                                  geo = "Bahia",
+                                  verbose = TRUE,
+                                  open_report = TRUE,
+                                  dir = "RB_missing_Bahia")
+```
+\
+The search can instead be narrowed to one or more municipalities; FFB's state-level checklist is resolved from the state(s) intersecting `geo`, while the candidate collecting map stays restricted to the given municipalities.\
+
+```r
+missing_analysis <- jabot_missing(herbarium = "RB",
+                                  geo = c("Feira de Santana", "Ilhéus"),
+                                  verbose = TRUE,
+                                  open_report = TRUE)
+```
+\
+By default, the pooled network sample includes all JABOT-hosted herbaria. `network_herbaria` restricts the candidate collecting-locality search to a specific subset, individual figures can additionally be exported as PDF, PNG, or both, and previously downloaded JABOT DwC-A files can be reused with `jabot_path`.\
+
+```r
+missing_analysis <- jabot_missing(herbarium = "RB",
+                                  geo = "Bahia",
+                                  network_herbaria = c("ALCB", "VIC"),
+                                  jabot_path = "jabot_download",
+                                  format = "pdf",
+                                  verbose = TRUE,
+                                  open_report = TRUE)
+```
+\
+The HTML report is always generated. When `format` is specified, individual figures are additionally saved in the requested static format.\
 \
 
 ## Documentation
