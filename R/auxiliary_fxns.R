@@ -5,26 +5,68 @@
 #_______________________________________________________________________________
 # Function to get raw metadata from JABOT repository ####
 
+.read_ipt_dcat <- function(url) {
+
+  tryCatch(
+    readLines(
+      url,
+      encoding = "UTF-8",
+      warn = FALSE
+    ),
+    warning = function(w) {
+      stop(
+        paste0(
+          "Unable to access the JBRJ IPT service at:\n",
+          url,
+          "\n\n",
+          "The server may be temporarily unavailable or returning an HTTP error.\n",
+          "Please try again later."
+        ),
+        call. = FALSE
+      )
+    },
+    error = function(e) {
+      stop(
+        paste0(
+          "Unable to access the JBRJ IPT service at:\n",
+          url,
+          "\n\n",
+          "The server may be temporarily unavailable or returning an HTTP error.\n",
+          "Please try again later."
+        ),
+        call. = FALSE
+      )
+    }
+  )
+}
+
 .get_ipt_info <- function(herbarium) {
 
-  ipt_metadata <- readLines("https://ipt.jbrj.gov.br/jabot/dcat",
-                            encoding = "UTF-8",
-                            warn = F)
+  url <- "https://ipt.jbrj.gov.br/jabot/dcat"
 
-  pos = which(grepl("dcat[:]downloadURL\\s", ipt_metadata))
+  ipt_metadata <- .read_ipt_dcat(url)
+
+  pos <- which(grepl("dcat[:]downloadURL\\s", ipt_metadata))
   URLs <- gsub(".*\\s[<]|[>]\\s;$", "", ipt_metadata[pos])
   herb_URLs <- gsub(".*r[=]|[>]\\s;$", "", URLs)
   herb_code <- toupper(gsub("_.*", "", herb_URLs))
 
-  ini = which(grepl("a dcat:Dataset ;", ipt_metadata))
-  end = which(grepl("dcat:mediaType \"application/zip\" ;", ipt_metadata))
-  temp <- list()
-  for (i in seq_along(ini)) {
-    temp[[i]] = paste0(ipt_metadata[ini[i]:end[i]], collapse = " | ")
-  }
-  ipt_metadata = temp
+  ini <- which(grepl("a dcat:Dataset ;", ipt_metadata))
+  end <- which(grepl('dcat:mediaType "application/zip" ;', ipt_metadata))
 
-  ipt_metadata <- lapply(ipt_metadata, function(x) strsplit(x, "\\s[|]\\s")[[1]])
+  temp <- vector("list", length(ini))
+
+  for (i in seq_along(ini)) {
+    temp[[i]] <- paste0(
+      ipt_metadata[ini[i]:end[i]],
+      collapse = " | "
+    )
+  }
+
+  ipt_metadata <- lapply(
+    temp,
+    function(x) strsplit(x, "\\s[|]\\s")[[1]]
+  )
 
   rb <- .get_ipt_info_rb()
 
@@ -33,42 +75,53 @@
   herb_code <- append(herb_code, rb[[3]])
 
   if (!is.null(herbarium)) {
-    ipt_metadata <- ipt_metadata[herb_code %in% herbarium]
-    herb_URLs <- herb_URLs[herb_code %in% herbarium]
-    herb_code <- herb_code[herb_code %in% herbarium]
+    keep <- herb_code %in% herbarium
+
+    ipt_metadata <- ipt_metadata[keep]
+    herb_URLs <- herb_URLs[keep]
+    herb_code <- herb_code[keep]
   }
-  return(list(ipt_metadata, herb_URLs, herb_code))
+
+  list(ipt_metadata, herb_URLs, herb_code)
 }
 
 
 .get_ipt_info_rb <- function() {
 
-  ipt_metadata <- readLines("https://ipt.jbrj.gov.br/jbrj/dcat",
-                            encoding = "UTF-8",
-                            warn = F)
+  url <- "https://ipt.jbrj.gov.br/jbrj/dcat"
 
-  pos = which(grepl("dcat[:]downloadURL\\s", ipt_metadata))
+  ipt_metadata <- .read_ipt_dcat(url)
+
+  pos <- which(grepl("dcat[:]downloadURL\\s", ipt_metadata))
   URLs <- gsub(".*\\s[<]|[>]\\s;$", "", ipt_metadata[pos])
   herb_URLs <- gsub(".*r[=]|[>]\\s;$", "", URLs)
   herb_code <- toupper(gsub("_.*", "", herb_URLs))
 
-  ini = which(grepl("a dcat:Dataset ;", ipt_metadata))
-  end = which(grepl("dcat:mediaType \"application/zip\" ;", ipt_metadata))
-  temp <- list()
-  for (i in seq_along(ini)) {
-    temp[[i]] = paste0(ipt_metadata[ini[i]:end[i]], collapse = " | ")
-  }
-  ipt_metadata = temp
+  ini <- which(grepl("a dcat:Dataset ;", ipt_metadata))
+  end <- which(grepl('dcat:mediaType "application/zip" ;', ipt_metadata))
 
-  ipt_metadata <- lapply(ipt_metadata, function(x) strsplit(x, "\\s[|]\\s")[[1]])
-  tf <- herb_URLs %in% "jbrj_rb"
-  ipt_metadata <- ipt_metadata[tf]
-  herb_URLs <- herb_URLs[tf]
+  temp <- vector("list", length(ini))
+
+  for (i in seq_along(ini)) {
+    temp[[i]] <- paste0(
+      ipt_metadata[ini[i]:end[i]],
+      collapse = " | "
+    )
+  }
+
+  ipt_metadata <- lapply(
+    temp,
+    function(x) strsplit(x, "\\s[|]\\s")[[1]]
+  )
+
+  keep <- herb_URLs %in% "jbrj_rb"
+
+  ipt_metadata <- ipt_metadata[keep]
+  herb_URLs <- herb_URLs[keep]
   herb_code <- "RB"
 
-  return(list(ipt_metadata, herb_URLs, herb_code))
+  list(ipt_metadata, herb_URLs, herb_code)
 }
-
 
 #_______________________________________________________________________________
 # Function to get summary information of each JABOT-associated collection ####
