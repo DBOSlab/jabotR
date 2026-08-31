@@ -11,7 +11,7 @@
 #'             herbarium = NULL,
 #'             verbose = TRUE)
 #'
-#' @param path Pathway to the computer's directory, where the REFLORA-downloaded
+#' @param path Pathway to the computer's directory, where the JABOT-downloaded
 #' dwca folders are.
 #'
 #' @param herbarium A vector of specific herbarium acronyms (collection code) in

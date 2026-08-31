@@ -9,7 +9,7 @@ jabot_parse(path = NULL,
             verbose = TRUE)
 }
 \arguments{
-\item{path}{Pathway to the computer's directory, where the REFLORA-downloaded
+\item{path}{Pathway to the computer's directory, where the JABOT-downloaded
 dwca folders are.}
 
 \item{herbarium}{A vector of specific herbarium acronyms (collection code) in
