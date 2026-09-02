@@ -40,7 +40,6 @@
 #' @importFrom utils download.file unzip write.csv
 #'
 #' @export
-#'
 
 jabot_download <- function(herbarium = NULL,
                            verbose = TRUE,

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+
+  <title>Caderno de campo — Gerar planilhas de coleta</title>
+
+  <link rel="stylesheet" href="styles.css">
+
+  <script src="vendor/xlsx.full.min.js" defer></script>
+  <script src="jabot-translations.js" defer></script>
+  <script src="jabot-language.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+
+<body>
+  <div id="jabot-specimen-app">
+    <div class="jb-shell">
+
+      <section class="jb-card jb-hero" aria-label="Introdução do caderno de campo">
+        <div class="jb-hero-inner">
+
+          <div class="jb-hero-top">
+            <div class="jb-brand">
+              <span class="jb-kicker">Caderno de campo · jabotR herbário</span>
+            </div>
+
+            <img
+              class="jb-logo"
+              src="jabotr_hex_sticker.png"
+              alt="Logo do jabotR"
+            >
+          </div>
+
+          <h1 class="jb-title">Caderno de campo — Gerar planilhas de coleta</h1>
+
+          <p class="jb-subtitle">
+            Organize os dados por evento de coleta. Cada evento reúne um cabeçalho compartilhado
+            e seus espécimes; ao final, gere a planilha no padrão Jabot.
+          </p>
+
+          <div class="jb-how-grid" aria-label="Como usar">
+            <div class="jb-how-item">
+              <strong>1. Cabeçalho</strong>
+              <span>Preencha data, localidade, coordenadas, habitat e coletores.</span>
+            </div>
+
+            <div class="jb-how-item">
+              <strong>2. Espécimes</strong>
+              <span>Adicione os espécimes ao evento de coleta correspondente.</span>
+            </div>
+
+            <div class="jb-how-item">
+              <strong>3. Revisão</strong>
+              <span>Abra “Detalhes” para conferir e completar a ficha de cada espécime.</span>
+            </div>
+
+            <div class="jb-how-item">
+              <strong>4. Exportação</strong>
+              <span>Gere a planilha Jabot ao concluir o preenchimento.</span>
+            </div>
+          </div>
+
+          <div class="jb-actions" aria-label="Ações iniciais">
+            <button class="jb-btn jb-btn--soft" type="button" data-action="download-empty">
+              Baixar planilha vazia
+            </button>
+
+            <button class="jb-btn jb-btn--soft" type="button" data-action="save-draft">
+              Salvar rascunho
+            </button>
+
+            <button class="jb-btn jb-btn--soft" type="button" data-action="load-draft">
+              Carregar rascunho
+            </button>
+
+
+            <button class="jb-btn jb-btn--soft" type="button" data-action="export-fieldbook-pdf">
+              Gerar caderno de campo (PDF)
+            </button>
+
+            <button class="jb-btn jb-btn--accent" type="button" data-action="add-event-top">
+              Adicionar evento de coleta
+            </button>
+          </div>
+
+        </div>
+      </section>
+
+      <section class="jb-overview" aria-label="Resumo do preenchimento">
+        <div class="jb-card jb-metric">
+          <label>Eventos de coleta</label>
+          <strong id="metric-events">1</strong>
+        </div>
+
+        <div class="jb-card jb-metric">
+          <label>Espécimes</label>
+          <strong id="metric-specimens">1</strong>
+        </div>
+
+        <div class="jb-card jb-metric">
+          <label>Cabeçalhos preenchidos</label>
+          <strong id="metric-headers">0%</strong>
+        </div>
+
+        <div class="jb-card jb-metric">
+          <label>Colunas Jabot</label>
+          <strong>58</strong>
+        </div>
+      </section>
+
+      <aside id="validation-panel" class="jb-alert" aria-live="polite"></aside>
+
+      <main id="event-list" class="jb-day-list" aria-live="polite"></main>
+
+      <section class="jb-final-actions" aria-label="Produtos finais">
+        <button class="jb-btn jb-btn--primary" type="button" data-action="export-filled">
+          Gerar planilha Jabot
+        </button>
+
+        <button class="jb-btn jb-btn--accent" type="button" data-action="export-fieldbook-pdf">
+          Gerar caderno de campo (PDF)
+        </button>
+      </section>
+
+    </div>
+
+    <div id="jb-tooltip" class="jb-tooltip-floating" role="tooltip"></div>
+    <div id="jb-toast" class="jb-toast" role="status" aria-live="polite"></div>
+  </div>
+</body>
+</html>

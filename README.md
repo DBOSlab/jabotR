@@ -21,9 +21,10 @@ collections](https://jabot.jbrj.gov.br/v3/consulta.php), hosted by the
 provides tools for summarizing JABOT collections, downloading and
 parsing specimen records in Darwin Core Archive (DwC-A) format,
 retrieving and filtering occurrence records, identifying indeterminate
-specimens, and evaluating taxonomic gaps, collection representativeness,
-and regionally missing species with collecting-priority maps against the
-Flora e Funga do Brasil (FFB).
+specimens, evaluating taxonomic gaps, collection representativeness, and
+regionally missing species with collecting-priority maps against the
+Flora e Funga do Brasil (FFB), and organizing new field data with an
+offline field notebook that exports ready-to-use JABOT spreadsheets.
 
 ## Installation
 
@@ -51,9 +52,10 @@ library(jabotR)
 A general description of the main functions available in `jabotR` is
 provided below. These functions support a workflow from summarizing and
 downloading original JABOT collections to parsing specimen records,
-filtering occurrence data, retrieving indeterminate specimens, and
+filtering occurrence data, retrieving indeterminate specimens,
 evaluating taxonomic gaps, herbarium representativeness, and regionally
-missing species with collecting-priority maps.  
+missing species with collecting-priority maps, and organizing new field
+data for submission to JABOT.  
   
 
 #### *1. `jabot_summary`: Summarizing JABOT collections*
@@ -454,6 +456,41 @@ missing_analysis <- jabot_missing(herbarium = "RB",
 The HTML report is always generated. When `format` is specified,
 individual figures are additionally saved in the requested static
 format.  
+  
+
+#### *9. `jabot_fieldbook`: Organizing field data and generating JABOT spreadsheets*
+
+`jabot_fieldbook()` opens an interactive field notebook, distributed
+with the package, in the user’s default web browser. It works entirely
+offline (no Shiny, no internet connection) and lets users organize
+collection-event and specimen data, export a standardized 58-column
+JABOT spreadsheet ready for submission, and generate a printable field
+notebook in PDF format. The interface is available in Portuguese and
+English.
+
+``` r
+library(jabotR)
+
+jabot_fieldbook()
+```
+
+  
+Setting `browser = FALSE` returns the local path to the application
+instead of opening it.
+
+``` r
+app_path <- jabot_fieldbook(browser = FALSE)
+```
+
+  
+Within the field notebook, data are organized by collection event, each
+with a shared header (date, locality, coordinates, habitat, collectors)
+and one or more specimens. Drafts can be saved to and reloaded from the
+browser at any time, and the completed data can be exported as an empty
+template, a filled JABOT spreadsheet, or a printable field notebook
+(PDF). See the [How-To
+article](https://dboslab.github.io/jabotR-website/articles/jabot_fieldbook.html)
+for a complete walkthrough.  
   
 
 ## Documentation

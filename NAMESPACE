@@ -2,6 +2,7 @@
 
 export(jabot_coverage)
 export(jabot_download)
+export(jabot_fieldbook)
 export(jabot_gaps)
 export(jabot_indets)
 export(jabot_missing)
