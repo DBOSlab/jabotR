@@ -75,6 +75,7 @@ body[data-bs-theme="dark"] #jabot-specimen-app {
 .jb-hero-inner { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: start; text-align: left; gap: 16px; }
 .jb-brand { display: flex; align-items: center; justify-content: flex-start; gap: 12px; flex-wrap: wrap; }
 .jb-kicker { display: inline-flex; align-items: center; width: fit-content; padding: 8px 14px; border-radius: 999px; background: var(--accent-2); border: 1px solid var(--border); color: var(--primary-2); font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.jb-jabotr-name {text-transform: none;font-family: Arial, Helvetica, sans-serif;font-weight: 500;letter-spacing: 0;0}
 .jb-title { margin: 0; max-width: 920px; color: var(--heading); font-size: clamp(1.9rem, 3.2vw, 3.25rem); line-height: 1.05; letter-spacing: -.045em; font-weight: 800; }
 .jb-subtitle { max-width: 920px; margin: 0; color: var(--muted); font-size: clamp(.98rem, 1.08vw, 1.12rem); line-height: 1.65; }
 .jb-how-grid { width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 4px; }
@@ -175,7 +176,7 @@ details.jb-details > summary::-webkit-details-marker { display:none; }
 .jb-mobile-specimen-subtitle { margin:4px 0 0; color:var(--muted); font-size:.88rem; }
 .jb-mobile-specimen-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:10px; }
 .jb-mobile-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
-
+.jb-jabotr-name {margin-left: 0.25em; text-transform: none;font-family: Arial, Helvetica, sans-serif;font-weight: 500;letter-spacing: 0;}
 @media (max-width:1180px) {
   .jb-shell { width:min(100%,1020px); }
   .jb-overview { grid-template-columns:repeat(2,minmax(0,1fr)); }

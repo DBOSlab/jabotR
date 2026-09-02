@@ -1284,6 +1284,86 @@
     return rows;
   }
 
+function collectionFileBaseName() {
+  const rows = flattenRows();
+
+  const firstEvent = state.events.find(eventItem =>
+    isFilled(eventItem.header.collector)
+  );
+
+  const collector = firstEvent?.header.collector || "Coleta";
+
+function formatCollectorName(value) {
+  const text = String(value || "")
+    .trim()
+    .replace(/\s+/g, " ");
+
+  if (!text) {
+    return "Coleta";
+  }
+
+  if (text.includes(",")) {
+    const parts = text.split(",");
+
+    const surname = parts[0]
+      .trim()
+      .replace(/[^A-Za-zÀ-ÿ'-]/g, "");
+
+    const namesPart = parts
+      .slice(1)
+      .join(" ")
+      .trim();
+
+    const firstInitial = namesPart
+      .replace(/[^A-Za-zÀ-ÿ]/g, "")
+      .charAt(0)
+      .toUpperCase();
+
+    return `${firstInitial}${surname}`;
+  }
+
+  const words = text
+    .split(/\s+/)
+    .filter(Boolean);
+
+  if (words.length === 1) {
+    return words[0]
+      .replace(/[^A-Za-zÀ-ÿ0-9'-]/g, "");
+  }
+
+  const firstName = words[0]
+    .replace(/[^A-Za-zÀ-ÿ]/g, "");
+
+  const surname = words[words.length - 1]
+    .replace(/[^A-Za-zÀ-ÿ'-]/g, "");
+
+  const firstInitial = firstName
+    .charAt(0)
+    .toUpperCase();
+
+  return `${firstInitial}${surname}`;
+}
+
+  const collectorName = formatCollectorName(collector);
+
+  const numbers = rows
+    .map(row => String(row.number ?? "").trim())
+    .filter(Boolean);
+
+  if (!numbers.length) {
+    return collectorName;
+  }
+
+  const firstNumber = numbers[0];
+  const lastNumber = numbers[numbers.length - 1];
+
+  if (firstNumber === lastNumber) {
+    return `${collectorName}${firstNumber}`;
+  }
+
+  return `${collectorName}${firstNumber}-${lastNumber}`;
+}
+
   function validateRows(rows) {
     const warnings = [];
 
@@ -1351,16 +1431,6 @@
               "validation.noNumber",
               { label, n },
               `${label}, espécime ${n}: número de coleta não preenchido.`
-            )
-          );
-        }
-
-        if (!specimen.family && !specimen.genus && !specimen.sp1) {
-          warnings.push(
-            t(
-              "validation.noTaxon",
-              { label, n },
-              `${label}, espécime ${n}: preencha família, gênero ou espécie.`
             )
           );
         }
@@ -1477,7 +1547,10 @@
     setWorksheetWidths(ws);
 
     XLSX.utils.book_append_sheet(wb, ws, "Plan1");
-    XLSX.writeFile(wb, "jabotR_especimes_preenchidos.xlsx");
+    XLSX.writeFile(
+  wb,
+  `${collectionFileBaseName()}.xlsx`
+);
 
     autosave();
 
@@ -1571,29 +1644,32 @@
     return `${day} de ${monthNames[month - 1]}${Number.isInteger(year) ? ` de ${year}` : ""}`;
   }
 
-  function fieldbookLocation(header, locale) {
-    const parts = [
-      header.uc,
-      header.gazetteer,
-      header.minorarea,
-      header.majorarea,
-      header.country
-    ]
-      .map(value => String(value ?? "").trim())
-      .filter(Boolean);
+function fieldbookLocation(header, locale) {
+  const parts = [
+    header.uc,
+    header.gazetteer,
+    header.locnotes,
+    header.habitat,
+    header.minorarea,
+    header.majorarea,
+    header.country
+  ]
+    .map(value => String(value ?? "").trim())
+    .filter(Boolean);
 
-    const unique = parts.filter(
-      (value, index, array) =>
-        array.findIndex(
-          item => item.toLocaleLowerCase() === value.toLocaleLowerCase()
-        ) === index
-    );
+  const unique = parts.filter(
+    (value, index, array) =>
+      array.findIndex(
+        item =>
+          item.toLocaleLowerCase() ===
+          value.toLocaleLowerCase()
+      ) === index
+  );
 
-    return unique.length
-      ? unique.join(", ")
-      : locale.localityMissing;
-  }
-
+  return unique.length
+    ? unique.join(", ")
+    : locale.localityMissing;
+}
   function scientificNameHTML(specimen) {
     const pieces = [];
 
@@ -1708,64 +1784,78 @@
     `;
   }
 
-  function fieldbookEventHTML(eventItem, eventIndex, locale) {
-    const specimens = eventItem.specimens.filter(
-      specimen => !isSpecimenEmpty(specimen)
-    );
+function fieldbookEventHTML(eventItem, eventIndex, locale) {
+  const specimens = eventItem.specimens.filter(
+    specimen => !isSpecimenEmpty(specimen)
+  );
 
-    const collector =
-      String(eventItem.header.collector ?? "").trim() ||
-      locale.noCollector;
+  const collector =
+    String(eventItem.header.collector ?? "").trim() ||
+    locale.noCollector;
 
-    const additionalCollectors =
-      String(eventItem.header.addcoll ?? "").trim();
+  const additionalCollectors =
+    String(eventItem.header.addcoll ?? "").trim();
 
-    return `
-      <section class="fb-event">
-        <header class="fb-event-header">
-          <div class="fb-event-number">
-            ${escapeHtml(locale.collectionEvent)} ${eventIndex + 1}
+  const latitude =
+    String(eventItem.header.latitude ?? "").trim();
+
+  const longitude =
+    String(eventItem.header.longitude ?? "").trim();
+
+  const location =
+    String(fieldbookLocation(eventItem.header, locale) || "").trim();
+
+  const locationWithCoordinates =
+    latitude && longitude
+      ? `${location}, ${latitude}, ${longitude}`
+      : location;
+
+  return `
+    <section class="fb-event">
+      <header class="fb-event-header">
+        <div class="fb-event-number">
+          ${escapeHtml(locale.collectionEvent)} ${eventIndex + 1}
+        </div>
+
+        <div class="fb-date">
+          ${escapeHtml(formatFieldbookDate(eventItem.header, locale))}
+        </div>
+
+        <div class="fb-location">
+          ${escapeHtml(locationWithCoordinates)}
+        </div>
+
+        <div class="fb-collectors">
+          <div>
+            <strong>${escapeHtml(locale.collector)} —</strong>
+            ${escapeHtml(collector)}
           </div>
 
-          <div class="fb-date">
-            ${escapeHtml(formatFieldbookDate(eventItem.header, locale))}
-          </div>
-
-          <div class="fb-location">
-            ${escapeHtml(fieldbookLocation(eventItem.header, locale))}
-          </div>
-
-          <div class="fb-collectors">
-            <div>
-              <strong>${escapeHtml(locale.collector)} —</strong>
-              ${escapeHtml(collector)}
-            </div>
-
-            ${
-              additionalCollectors
-                ? `
+          ${
+            additionalCollectors
+              ? `
                   <div>
                     <strong>${escapeHtml(locale.additionalCollectors)} —</strong>
                     ${escapeHtml(additionalCollectors)}
                   </div>
                 `
-                : ""
-            }
-          </div>
-        </header>
-
-        <div class="fb-specimen-list">
-          ${
-            specimens.length
-              ? specimens
-                  .map(specimen => fieldbookSpecimenHTML(specimen, locale))
-                  .join("")
-              : `<p class="fb-empty">${escapeHtml(locale.noSpecimens)}</p>`
+              : ""
           }
         </div>
-      </section>
-    `;
-  }
+      </header>
+
+      <div class="fb-specimen-list">
+        ${
+          specimens.length
+            ? specimens
+                .map(specimen => fieldbookSpecimenHTML(specimen, locale))
+                .join("")
+            : `<p class="fb-empty">${escapeHtml(locale.noSpecimens)}</p>`
+        }
+      </div>
+    </section>
+  `;
+}
 
   function buildFieldbookPrintHTML() {
     const locale = fieldbookPdfLocale();
@@ -1797,7 +1887,7 @@
 <html lang="${language === "en" ? "en" : "pt-BR"}">
 <head>
   <meta charset="UTF-8">
-  <title>${escapeHtml(locale.printTitle)}</title>
+  <title>${escapeHtml(collectionFileBaseName())}</title>
 
   <style>
     /*
