@@ -3,13 +3,26 @@
 
 
 #_______________________________________________________________________________
+# Shared HTTP headers for the JBRJ IPT metadata and archive requests.
+.ipt_http_headers <- function() {
+  c(`User-Agent` = "Mozilla/5.0 (compatible; floraR/1; Linux)")
+}
+
+
+#_______________________________________________________________________________
 # Function to get raw metadata from JABOT repository ####
 
 .read_ipt_dcat <- function(url) {
 
+  ipt_connection <- base::url(
+    url,
+    headers = .ipt_http_headers()
+  )
+  on.exit(close(ipt_connection), add = TRUE)
+
   tryCatch(
     readLines(
-      url,
+      ipt_connection,
       encoding = "UTF-8",
       warn = FALSE
     ),
@@ -38,6 +51,36 @@
       )
     }
   )
+}
+
+#_______________________________________________________________________________
+# Function to get a herbarium's IPT resource page ####
+
+.read_ipt_resource_page <- function(url) {
+
+  # The version, publish date and record count needed by .get_herb_info()
+  # sit within the first few hundred lines of the resource page (inside the
+  # "latestVersion" table row). The rest of the page is a full historical
+  # version table that can run past 100 KB and is never used, so read a
+  # bounded number of lines first and only fall back to a full read if that
+  # turns out not to be enough (e.g. an unusually long bilingual description
+  # pushes the table further down the page).
+  ipt_connection <- base::url(
+    url,
+    headers = .ipt_http_headers()
+  )
+  on.exit(close(ipt_connection), add = TRUE)
+  page <- readLines(ipt_connection,
+                    encoding = "UTF-8",
+                    warn = FALSE)
+
+  if (!any(grepl("latestVersion", page))) {
+    page <- readLines(ipt_connection,
+                      encoding = "UTF-8",
+                      warn = FALSE)
+  }
+
+  page
 }
 
 .get_ipt_info <- function(herbarium) {
@@ -134,9 +177,7 @@
     herb_url <- paste0("https://ipt.jbrj.gov.br/jabot/resource?r=", herb_URLs[i])
   }
 
-  version <- readLines(herb_url,
-                       encoding = "UTF-8",
-                       warn = F)
+  version <- .read_ipt_resource_page(herb_url)
 
   ini = which(grepl("latestVersion", version))[1]
   end = which(grepl("\\d{4}-\\d{2}-\\d{2}", version))[1]+1

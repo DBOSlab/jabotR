@@ -125,25 +125,25 @@
   ];
 
   const SPECIMEN_EXTRA_FIELDS = [
-    { name: "numtombo", label: "numtombo", span: 2 },
-    { name: "sufixo", label: "sufixo", span: 2 },
-    { name: "author1", label: "author1", span: 3 },
-    { name: "rank1", label: "rank1", span: 2 },
-    { name: "sp2", label: "sp2", span: 3 },
-    { name: "author2", label: "author2", span: 3 },
-    { name: "rank2", label: "rank2", span: 2 },
-    { name: "sp3", label: "sp3", span: 3 },
-    { name: "author3", label: "author3", span: 3 },
-    { name: "vernacular", label: "vernacular", span: 3 },
-    { name: "typestat", label: "typestat", span: 3 },
-    { name: "flor", label: "flor", span: 3 },
-    { name: "fruto", label: "fruto", span: 3 },
-    { name: "fuste", label: "fuste", span: 3 },
-    { name: "altura", label: "altura", span: 2, numeric: true },
-    { name: "unidmedaltura", label: "unidmedaltura", span: 2 },
-    { name: "habito", label: "habito", span: 3 },
-    { name: "usos", label: "usos", span: 4 },
-    { name: "uso_especifico", label: "uso_especifico", span: 4 }
+    { name: "numtombo", label: "Nº de tombo", span: 2 },
+    { name: "sufixo", label: "Sufixo", span: 2 },
+    { name: "author1", label: "Autor 1", span: 3 },
+    { name: "rank1", label: "Categoria infraespecífica 1", span: 2 },
+    { name: "sp2", label: "Epíteto infraespecífico 1", span: 3 },
+    { name: "author2", label: "Autor 2", span: 3 },
+    { name: "rank2", label: "Categoria infraespecífica 2", span: 2 },
+    { name: "sp3", label: "Epíteto infraespecífico 2", span: 3 },
+    { name: "author3", label: "Autor 3", span: 3 },
+    { name: "vernacular", label: "Nome vernacular", span: 3 },
+    { name: "typestat", label: "Status de tipo", span: 3 },
+    { name: "flor", label: "Flores", span: 3 },
+    { name: "fruto", label: "Frutos", span: 3 },
+    { name: "fuste", label: "Fuste", span: 3 },
+    { name: "altura", label: "Altura", span: 2, numeric: true },
+    { name: "unidmedaltura", label: "Unidade da altura", span: 2 },
+    { name: "habito", label: "Hábito", span: 3 },
+    { name: "usos", label: "Usos", span: 4 },
+    { name: "uso_especifico", label: "Uso específico", span: 4 }
   ];
 
   const DETAIL_GROUPS = [
