@@ -146,21 +146,24 @@
     { name: "uso_especifico", label: "Uso específico", span: 4 }
   ];
 
+  // Fields kept in the data model (and exported as empty JABOT columns) but
+  // intentionally not shown in the specimen record: typestat, numtombo,
+  // sufixo, flor, fruto, fuste, altura, unidmedaltura, habito.
   const DETAIL_GROUPS = [
     {
       title: "Identificação taxonômica",
       fields: [
         "family", "genus", "cf", "sp1", "author1", "rank1", "sp2",
-        "author2", "rank2", "sp3", "author3", "vernacular", "typestat"
+        "author2", "rank2", "sp3", "author3", "vernacular"
       ]
     },
     {
       title: "Coleta e determinação",
-      fields: ["number", "detby", "detdd", "detmm", "detyy", "numtombo", "sufixo"]
+      fields: ["number", "detby", "detdd", "detmm", "detyy"]
     },
     {
       title: "Descrição do indivíduo",
-      fields: ["flor", "fruto", "fuste", "altura", "unidmedaltura", "habito", "notes"]
+      fields: ["notes"]
     },
     {
       title: "Uso e observações complementares",
@@ -1284,85 +1287,63 @@
     return rows;
   }
 
-function collectionFileBaseName() {
-  const rows = flattenRows();
+  function collectorSurname(value) {
+    const text = String(value || "").trim().replace(/\s+/g, " ");
 
-  const firstEvent = state.events.find(eventItem =>
-    isFilled(eventItem.header.collector)
-  );
+    if (!text) {
+      return "";
+    }
 
-  const collector = firstEvent?.header.collector || "Coleta";
+    const surname = text.includes(",")
+      ? text.split(",")[0]
+      : text.split(" ").pop();
 
-function formatCollectorName(value) {
-  const text = String(value || "")
-    .trim()
-    .replace(/\s+/g, " ");
-
-  if (!text) {
-    return "Coleta";
+    return surname
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^A-Za-z0-9'-]/g, "");
   }
 
-  if (text.includes(",")) {
-    const parts = text.split(",");
+  // Ex.: Cardoso2020-2052 (sobrenome do coletor + menor-maior número de coleta)
+  function mainCollector() {
+    const firstEvent = state.events.find(eventItem =>
+      isFilled(eventItem.header.collector)
+    );
 
-    const surname = parts[0]
-      .trim()
-      .replace(/[^A-Za-zÀ-ÿ'-]/g, "");
-
-    const namesPart = parts
-      .slice(1)
-      .join(" ")
-      .trim();
-
-    const firstInitial = namesPart
-      .replace(/[^A-Za-zÀ-ÿ]/g, "")
-      .charAt(0)
-      .toUpperCase();
-
-    return `${firstInitial}${surname}`;
+    return String(firstEvent?.header.collector ?? "").trim();
   }
 
-  const words = text
-    .split(/\s+/)
-    .filter(Boolean);
+  // Menor e maior número de coleta preenchidos (numérico quando possível).
+  function collectionNumberRange() {
+    const numbers = flattenRows()
+      .map(row => String(row.number ?? "").trim())
+      .filter(Boolean);
 
-  if (words.length === 1) {
-    return words[0]
-      .replace(/[^A-Za-zÀ-ÿ0-9'-]/g, "");
+    if (!numbers.length) {
+      return null;
+    }
+
+    const allNumeric = numbers.every(value => /^\d+$/.test(value));
+    const ordered = allNumeric
+      ? [...numbers].sort((x, y) => Number(x) - Number(y))
+      : numbers;
+
+    return { first: ordered[0], last: ordered[ordered.length - 1] };
   }
 
-  const firstName = words[0]
-    .replace(/[^A-Za-zÀ-ÿ]/g, "");
+  // Ex.: Cardoso2020-2052 (sobrenome do coletor + menor-maior número de coleta)
+  function collectionFileBaseName() {
+    const surname = collectorSurname(mainCollector()) || "Coleta";
+    const range = collectionNumberRange();
 
-  const surname = words[words.length - 1]
-    .replace(/[^A-Za-zÀ-ÿ'-]/g, "");
+    if (!range) {
+      return surname;
+    }
 
-  const firstInitial = firstName
-    .charAt(0)
-    .toUpperCase();
-
-  return `${firstInitial}${surname}`;
-}
-
-  const collectorName = formatCollectorName(collector);
-
-  const numbers = rows
-    .map(row => String(row.number ?? "").trim())
-    .filter(Boolean);
-
-  if (!numbers.length) {
-    return collectorName;
+    return range.first === range.last
+      ? `${surname}${range.first}`
+      : `${surname}${range.first}-${range.last}`;
   }
-
-  const firstNumber = numbers[0];
-  const lastNumber = numbers[numbers.length - 1];
-
-  if (firstNumber === lastNumber) {
-    return `${collectorName}${firstNumber}`;
-  }
-
-  return `${collectorName}${firstNumber}-${lastNumber}`;
-}
 
   function validateRows(rows) {
     const warnings = [];
@@ -1549,7 +1530,7 @@ function formatCollectorName(value) {
     XLSX.utils.book_append_sheet(wb, ws, "Plan1");
     XLSX.writeFile(
   wb,
-  `${collectionFileBaseName()}.xlsx`
+  `jabotsheet_${collectionFileBaseName()}.xlsx`
 );
 
     autosave();
@@ -1573,7 +1554,6 @@ function formatCollectorName(value) {
 
     if (language === "en") {
       return {
-        collectionEvent: "Collection event",
         dateMissing: "Collection date not entered",
         localityMissing: "Locality not entered",
         collector: "Collector",
@@ -1590,7 +1570,6 @@ function formatCollectorName(value) {
     }
 
     return {
-      collectionEvent: "Collection event",
       dateMissing: "Data da coleta não preenchida",
       localityMissing: "Localidade não preenchida",
       collector: "Coletor",
@@ -1645,16 +1624,19 @@ function formatCollectorName(value) {
   }
 
 function fieldbookLocation(header, locale) {
+  const clean = value => String(value ?? "").trim();
+
+  const country = clean(header.country);
+
   const parts = [
-    header.uc,
-    header.gazetteer,
-    header.locnotes,
-    header.habitat,
-    header.minorarea,
     header.majorarea,
-    header.country
+    header.minorarea,
+    header.gazetteer,
+    header.uc,
+    header.locnotes,
+    header.habitat
   ]
-    .map(value => String(value ?? "").trim())
+    .map(clean)
     .filter(Boolean);
 
   const unique = parts.filter(
@@ -1666,10 +1648,19 @@ function fieldbookLocation(header, locale) {
       ) === index
   );
 
-  return unique.length
-    ? unique.join(", ")
-    : locale.localityMissing;
+  const body = unique.join(", ");
+
+  if (country && body) {
+    return `${country.toLocaleUpperCase()}: ${body}`;
+  }
+
+  if (country) {
+    return country.toLocaleUpperCase();
+  }
+
+  return body || locale.localityMissing;
 }
+
   function scientificNameHTML(specimen) {
     const pieces = [];
 
@@ -1789,9 +1780,12 @@ function fieldbookEventHTML(eventItem, eventIndex, locale) {
     specimen => !isSpecimenEmpty(specimen)
   );
 
-  const collector =
-    String(eventItem.header.collector ?? "").trim() ||
-    locale.noCollector;
+  // O coletor principal já aparece no título; só repete se for diferente.
+  const collector = String(eventItem.header.collector ?? "").trim();
+  const showCollector =
+    collector &&
+    collector.toLocaleLowerCase() !==
+      mainCollector().toLocaleLowerCase();
 
   const additionalCollectors =
     String(eventItem.header.addcoll ?? "").trim();
@@ -1810,13 +1804,18 @@ function fieldbookEventHTML(eventItem, eventIndex, locale) {
       ? `${location}, ${latitude}, ${longitude}`
       : location;
 
+  const collectorLines = [
+    showCollector
+      ? `<div><strong>${escapeHtml(locale.collector)}:</strong> ${escapeHtml(collector)}</div>`
+      : "",
+    additionalCollectors
+      ? `<div><strong>${escapeHtml(locale.additionalCollectors)}:</strong> ${escapeHtml(additionalCollectors)}</div>`
+      : ""
+  ].join("");
+
   return `
     <section class="fb-event">
       <header class="fb-event-header">
-        <div class="fb-event-number">
-          ${escapeHtml(locale.collectionEvent)} ${eventIndex + 1}
-        </div>
-
         <div class="fb-date">
           ${escapeHtml(formatFieldbookDate(eventItem.header, locale))}
         </div>
@@ -1825,23 +1824,7 @@ function fieldbookEventHTML(eventItem, eventIndex, locale) {
           ${escapeHtml(locationWithCoordinates)}
         </div>
 
-        <div class="fb-collectors">
-          <div>
-            <strong>${escapeHtml(locale.collector)} —</strong>
-            ${escapeHtml(collector)}
-          </div>
-
-          ${
-            additionalCollectors
-              ? `
-                  <div>
-                    <strong>${escapeHtml(locale.additionalCollectors)} —</strong>
-                    ${escapeHtml(additionalCollectors)}
-                  </div>
-                `
-              : ""
-          }
-        </div>
+        ${collectorLines ? `<div class="fb-collectors">${collectorLines}</div>` : ""}
       </header>
 
       <div class="fb-specimen-list">
@@ -1877,6 +1860,14 @@ function fieldbookEventHTML(eventItem, eventIndex, locale) {
       )
       .join("");
 
+    const documentTitle = mainCollector() || locale.printTitle;
+    const range = collectionNumberRange();
+    const sequenceText = !range
+      ? ""
+      : range.first === range.last
+        ? range.first
+        : `${range.first}–${range.last}`;
+
     const language =
       window.JabotI18n &&
       typeof window.JabotI18n.getLanguage === "function"
@@ -1887,7 +1878,7 @@ function fieldbookEventHTML(eventItem, eventIndex, locale) {
 <html lang="${language === "en" ? "en" : "pt-BR"}">
 <head>
   <meta charset="UTF-8">
-  <title>${escapeHtml(collectionFileBaseName())}</title>
+  <title>${escapeHtml(`fieldbook_${collectionFileBaseName()}`)}</title>
 
   <style>
     /*
@@ -2014,11 +2005,29 @@ function fieldbookEventHTML(eventItem, eventIndex, locale) {
     */
     .fb-document-brand {
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
       align-items: flex-start;
+      gap: 6mm;
 
       min-height: 17mm;
-      margin: 0 0 1.5mm;
+      margin: 0 0 6mm;
+    }
+
+    .fb-title {
+      margin: 0;
+
+      font-size: 26pt;
+      font-weight: 700;
+      line-height: 1.1;
+      color: #111111;
+    }
+
+    .fb-sequence {
+      margin: 1.5mm 0 0;
+
+      font-size: 14pt;
+      font-weight: 700;
+      color: #4f7648;
     }
 
     .fb-document-logo {
@@ -2054,19 +2063,10 @@ function fieldbookEventHTML(eventItem, eventIndex, locale) {
       page-break-after: avoid;
     }
 
-    .fb-event-number {
-      margin: 0 0 1mm;
-
-      color: #4f7648;
-      font-size: 9.5pt;
-      font-weight: 700;
-      letter-spacing: 0.045em;
-      text-transform: uppercase;
-    }
-
     .fb-date {
       margin: 0 0 0.7mm;
 
+      color: #4f7648;
       font-size: 12pt;
       font-weight: 700;
     }
@@ -2103,7 +2103,7 @@ function fieldbookEventHTML(eventItem, eventIndex, locale) {
 
     .fb-specimen {
       display: grid;
-      grid-template-columns: 10mm minmax(0, 1fr);
+      grid-template-columns: 11mm minmax(0, 1fr);
       gap: 2mm;
       align-items: start;
 
@@ -2167,6 +2167,11 @@ function fieldbookEventHTML(eventItem, eventIndex, locale) {
 
   <main class="fb-content">
     <div class="fb-document-brand">
+      <div class="fb-title-block">
+        <h1 class="fb-title">${escapeHtml(documentTitle)}</h1>
+        ${sequenceText ? `<div class="fb-sequence">${escapeHtml(sequenceText)}</div>` : ""}
+      </div>
+
       <img
         class="fb-document-logo"
         src="${stickerUrl}"
@@ -2208,7 +2213,14 @@ function fieldbookEventHTML(eventItem, eventIndex, locale) {
       return;
     }
 
+    // Browsers suggest the PDF file name from the page title; use the
+    // collector/number-range name (e.g. Cardoso2020-2052) while printing.
+    const originalTitle = document.title;
+    document.title = `fieldbook_${collectionFileBaseName()}`;
+
     const cleanup = () => {
+      document.title = originalTitle;
+
       window.setTimeout(() => {
         iframe.remove();
       }, 300);
@@ -2234,6 +2246,7 @@ function fieldbookEventHTML(eventItem, eventIndex, locale) {
       printWindow.print();
     } catch (error) {
       console.error("jabotR Field Book PDF:", error);
+      document.title = originalTitle;
       iframe.remove();
       toast("Não foi possível abrir a impressão do caderno de campo.");
     }
