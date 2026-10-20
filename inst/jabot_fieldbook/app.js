@@ -1565,7 +1565,11 @@
         height: "Height",
         flowers: "Flowers",
         fruits: "Fruits",
-        stem: "Stem"
+        stem: "Stem",
+        vernacular: "Vernacular name",
+        uses: "Uses",
+        specificUse: "Specific use",
+        typeStatus: "Type status"
       };
     }
 
@@ -1581,7 +1585,11 @@
       height: "Altura",
       flowers: "Flores",
       fruits: "Frutos",
-      stem: "Fuste"
+      stem: "Fuste",
+      vernacular: "Nome vernacular",
+      uses: "Usos",
+      specificUse: "Uso específico",
+      typeStatus: "Status de tipo"
     };
   }
 
@@ -1700,44 +1708,33 @@ function fieldbookLocation(header, locale) {
       );
     }
 
-    const structured = [];
-
-    if (isFilled(specimen.habito)) {
-      structured.push(
-        `${locale.habit}: ${escapeHtml(specimen.habito)}`
+    const labeled = [
+      [locale.vernacular, specimen.vernacular],
+      [locale.uses, specimen.usos],
+      [locale.specificUse, specimen.uso_especifico],
+      [locale.typeStatus, specimen.typestat],
+      [locale.habit, specimen.habito],
+      [
+        locale.height,
+        isFilled(specimen.altura)
+          ? `${String(specimen.altura).trim()}${
+              isFilled(specimen.unidmedaltura)
+                ? ` ${String(specimen.unidmedaltura).trim()}`
+                : ""
+            }`
+          : ""
+      ],
+      [locale.flowers, specimen.flor],
+      [locale.fruits, specimen.fruto],
+      [locale.stem, specimen.fuste]
+    ]
+      .filter(([, value]) => isFilled(value))
+      .map(([label, value]) =>
+        `${escapeHtml(label)}: ${escapeHtml(String(value).trim())}`
       );
-    }
 
-    if (isFilled(specimen.altura)) {
-      structured.push(
-        `${locale.height}: ${escapeHtml(specimen.altura)}${
-          isFilled(specimen.unidmedaltura)
-            ? ` ${escapeHtml(specimen.unidmedaltura)}`
-            : ""
-        }`
-      );
-    }
-
-    if (isFilled(specimen.flor)) {
-      structured.push(
-        `${locale.flowers}: ${escapeHtml(specimen.flor)}`
-      );
-    }
-
-    if (isFilled(specimen.fruto)) {
-      structured.push(
-        `${locale.fruits}: ${escapeHtml(specimen.fruto)}`
-      );
-    }
-
-    if (isFilled(specimen.fuste)) {
-      structured.push(
-        `${locale.stem}: ${escapeHtml(specimen.fuste)}`
-      );
-    }
-
-    if (structured.length) {
-      parts.push(structured.join("; "));
+    if (labeled.length) {
+      parts.push(`${labeled.join("; ")}.`);
     }
 
     return parts.join(" ");
