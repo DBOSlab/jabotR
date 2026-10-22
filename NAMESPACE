@@ -4,6 +4,7 @@ export(jabot_coverage)
 export(jabot_download)
 export(jabot_fieldbook)
 export(jabot_gaps)
+export(jabot_identify)
 export(jabot_indets)
 export(jabot_missing)
 export(jabot_parse)
@@ -14,6 +15,7 @@ importFrom(DT,
   formatStyle,
   styleColorBar
 )
+importFrom(barRoso,barroso_std)
 importFrom(dplyr,
   across,
   anti_join,
@@ -78,8 +80,12 @@ importFrom(leaflet,
   markerClusterOptions
 )
 importFrom(magrittr,"%>%")
-importFrom(plotly,ggplotly)
 importFrom(purrr,pmap_chr)
+importFrom(refloraR,
+  reflora_download,
+  reflora_parse,
+  reflora_summary
+)
 importFrom(rmarkdown,render)
 importFrom(scales,comma)
 importFrom(sf,st_as_sf)

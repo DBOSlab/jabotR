@@ -81,7 +81,6 @@
 #' @importFrom floraR flora_search
 #' @importFrom geobr read_state
 #' @importFrom ggplot2 ggplot aes geom_col coord_flip labs scale_fill_manual scale_fill_gradient geom_text scale_y_continuous expansion theme_void element_text element_rect margin unit
-#' @importFrom plotly ggplotly
 #' @importFrom DT datatable formatStyle styleColorBar
 #' @importFrom leaflet leaflet addProviderTiles addPolygons addLegend colorNumeric
 #' @importFrom sf st_as_sf
@@ -112,6 +111,7 @@ jabot_coverage <- function(herbarium = NULL,
   }
 
   if (is.null(dir)) dir <- paste0(herbarium, "_representativeness")
+  .check_report_pkgs()
   dir <- .arg_check_dir(dir)
   if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
 

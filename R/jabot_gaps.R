@@ -111,7 +111,6 @@
 #' @importFrom floraR flora_search
 #' @importFrom geobr read_state read_municipality
 #' @importFrom ggplot2 ggplot aes geom_col geom_sf coord_flip labs scale_fill_manual scale_fill_gradient scale_fill_gradientn geom_text scale_y_continuous expansion theme_void element_text element_rect margin unit
-#' @importFrom plotly ggplotly
 #' @importFrom DT datatable
 #' @importFrom leaflet leaflet addProviderTiles addPolygons addLegend colorNumeric
 #' @importFrom sf st_as_sf
@@ -150,6 +149,7 @@ jabot_gaps <- function(herbarium = NULL,
   }
 
   if (is.null(dir)) dir <- paste0(herbarium, "_gap_analysis")
+  .check_report_pkgs()
   dir <- .arg_check_dir(dir)
   if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
 

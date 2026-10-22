@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 910" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2F6D3B"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1180" height="910" fill="#F5F9F3"/>
+  <text x="40" y="42" font-size="24" font-weight="700" fill="#1F4D2B">jabotR workflow</text>
+  <text x="40" y="64" font-size="13" fill="#4A6B50">From the JABOT network to better herbarium collections: access, filter, assess and improve specimen data</text>
+
+  <text x="40" y="137" font-size="14" font-weight="700" fill="#2F6D3B">1. ACCESS &amp; PARSE</text>
+  <g font-size="13.5">
+    <rect x="265" y="114" width="190" height="52" rx="10" fill="#EEF6EC" stroke="#6FA876" stroke-width="1.5"/>
+    <text x="360.0" y="145.0" text-anchor="middle" fill="#1F4D2B" font-weight="600">jabot_summary()</text>
+    <rect x="495" y="114" width="190" height="52" rx="10" fill="#EEF6EC" stroke="#6FA876" stroke-width="1.5"/>
+    <text x="590.0" y="145.0" text-anchor="middle" fill="#1F4D2B" font-weight="600">jabot_download()</text>
+    <rect x="725" y="114" width="190" height="52" rx="10" fill="#EEF6EC" stroke="#6FA876" stroke-width="1.5"/>
+    <text x="820.0" y="145.0" text-anchor="middle" fill="#1F4D2B" font-weight="600">jabot_parse()</text>
+  </g>
+  <line x1="455" y1="140" x2="491" y2="140" stroke="#2F6D3B" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="685" y1="140" x2="721" y2="140" stroke="#2F6D3B" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M820,166 L820,222 L380,222 L380,224" fill="none" stroke="#2F6D3B" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M820,166 L820,222 L660,222 L660,224" fill="none" stroke="#2F6D3B" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <text font-size="14" font-weight="700" fill="#2F6D3B">
+    <tspan x="40" y="252">2. FILTER SPECIMEN</tspan>
+    <tspan x="40" y="270">RECORDS</tspan>
+  </text>
+  <g font-size="13.5">
+    <rect x="265" y="228" width="230" height="58" rx="10" fill="#EEF6EC" stroke="#6FA876" stroke-width="1.5"/>
+    <text x="380.0" y="254" text-anchor="middle" fill="#1F4D2B" font-weight="600">jabot_records()</text>
+    <text x="380.0" y="272" text-anchor="middle" fill="#5E7F63" font-size="11">taxon / herbarium / state / year</text>
+    <rect x="535" y="228" width="250" height="58" rx="10" fill="#EEF6EC" stroke="#6FA876" stroke-width="1.5"/>
+    <text x="660.0" y="254" text-anchor="middle" fill="#1F4D2B" font-weight="600">jabot_indets()</text>
+    <text x="660.0" y="272" text-anchor="middle" fill="#5E7F63" font-size="11">family- and genus-level indeterminates</text>
+  </g>
+  <path d="M660,286 L660,344 L380,344 L380,346" fill="none" stroke="#2F6D3B" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+
+  <text font-size="14" font-weight="700" fill="#2F6D3B">
+    <tspan x="40" y="378">3. ASSESS A HERBARIUM</tspan>
+    <tspan x="40" y="396">AGAINST THE FFB</tspan>
+  </text>
+  <g font-size="13.5">
+    <rect x="265" y="350" width="230" height="58" rx="10" fill="#EEF6EC" stroke="#6FA876" stroke-width="1.5"/>
+    <text x="380.0" y="376" text-anchor="middle" fill="#1F4D2B" font-weight="600">jabot_gaps()</text>
+    <text x="380.0" y="394" text-anchor="middle" fill="#5E7F63" font-size="11">species missing from the herbarium</text>
+    <rect x="535" y="350" width="230" height="58" rx="10" fill="#EEF6EC" stroke="#6FA876" stroke-width="1.5"/>
+    <text x="650.0" y="376" text-anchor="middle" fill="#1F4D2B" font-weight="600">jabot_coverage()</text>
+    <text x="650.0" y="394" text-anchor="middle" fill="#5E7F63" font-size="11">representativeness of the FFB</text>
+    <rect x="805" y="350" width="300" height="58" rx="10" fill="#EEF6EC" stroke="#6FA876" stroke-width="1.5"/>
+    <text x="955.0" y="376" text-anchor="middle" fill="#1F4D2B" font-weight="600">jabot_missing()</text>
+    <text x="955.0" y="394" text-anchor="middle" fill="#5E7F63" font-size="11">regional gaps &amp; collecting priorities</text>
+  </g>
+  <text x="1105" y="424" text-anchor="end" font-size="11" fill="#5E7F63">HTML reports</text>
+
+  <rect x="40" y="440" width="1100" height="350" rx="16" fill="#DCEFD8" stroke="#2F6D3B" stroke-width="2.5"/>
+  <text x="60" y="470" font-size="14" font-weight="700" fill="#1F4D2B">4. IMPROVE THE COLLECTION</text>
+  <text x="60" y="488" font-size="11" fill="#1F4D2B">takes a herbarium acronym or runs offline &#8212; no previous step required</text>
+  <g font-size="12" font-weight="700" fill="#1F4D2B">
+    <text x="320" y="522" text-anchor="middle">FIND IDENTIFICATIONS</text>
+    <text x="860" y="522" text-anchor="middle">ORGANIZE NEW FIELD DATA</text>
+  </g>
+  <rect x="60" y="534" width="520" height="150" rx="10" fill="#FFFFFF" stroke="#2F6D3B" stroke-width="1.5"/>
+  <text x="320.0" y="566" text-anchor="middle" fill="#1F4D2B" font-weight="600" font-size="13">jabot_identify()</text>
+  <text x="320.0" y="590" text-anchor="middle" fill="#4A6B50" font-size="10.5">Finds, across the JABOT network and REFLORA</text>
+  <text x="320.0" y="606" text-anchor="middle" fill="#4A6B50" font-size="10.5">(refloraR), the duplicates of the</text>
+  <text x="320.0" y="622" text-anchor="middle" fill="#4A6B50" font-size="10.5">indeterminate specimens of a herbarium</text>
+  <text x="320.0" y="638" text-anchor="middle" fill="#4A6B50" font-size="10.5">(barRoso) and suggests identifications</text>
+  <text x="320.0" y="654" text-anchor="middle" fill="#4A6B50" font-size="10.5">from the ones already identified elsewhere</text>
+  <text x="320.0" y="670" text-anchor="middle" fill="#4A6B50" font-size="10.5" font-style="italic">optional taxon: restrict to a family or genus</text>
+  <rect x="600" y="534" width="520" height="150" rx="10" fill="#FFFFFF" stroke="#2F6D3B" stroke-width="1.5"/>
+  <text x="860.0" y="566" text-anchor="middle" fill="#1F4D2B" font-weight="600" font-size="13">jabot_fieldbook()</text>
+  <text x="860.0" y="590" text-anchor="middle" fill="#4A6B50" font-size="10.5">Offline field notebook (opens in the</text>
+  <text x="860.0" y="606" text-anchor="middle" fill="#4A6B50" font-size="10.5">browser): organize collection events and</text>
+  <text x="860.0" y="622" text-anchor="middle" fill="#4A6B50" font-size="10.5">specimens, then export the JABOT</text>
+  <text x="860.0" y="638" text-anchor="middle" fill="#4A6B50" font-size="10.5">spreadsheet and a printable field book</text>
+  <text x="860.0" y="654" text-anchor="middle" fill="#4A6B50" font-size="10.5">in PDF format</text>
+  <rect x="470" y="710" width="240" height="58" rx="10" fill="#2F6D3B"/>
+  <text x="590" y="735" text-anchor="middle" fill="#F2FAF0" font-weight="700" font-size="13">Curator review</text>
+  <text x="590" y="752" text-anchor="middle" fill="#F2FAF0" font-size="11">&#8594; better identified collections</text>
+  <path d="M320,684 L320,696 L530,696 L530,706" fill="none" stroke="#2F6D3B" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M860,684 L860,696 L650,696 L650,706" fill="none" stroke="#2F6D3B" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <g font-size="11.5" fill="#4A6B50">
+    <rect x="40" y="816" width="14" height="14" fill="#EEF6EC" stroke="#6FA876"/>
+    <text x="60" y="827">Access, filter and assess herbarium data (Steps 1-3)</text>
+    <rect x="560" y="816" width="14" height="14" fill="#DCEFD8" stroke="#2F6D3B"/>
+    <text x="580" y="827">Tools to improve the collection (Step 4)</text>
+  </g>
+  <text x="40" y="860" font-size="12" fill="#5E7F63">Functions download and parse the JABOT DwC-A files automatically and reuse them from jabot_path (REFLORA: reflora_path),</text>
+  <text x="40" y="878" font-size="12" fill="#5E7F63">so jabot_download()/jabot_parse() rarely need to be called directly.</text>
+</svg>

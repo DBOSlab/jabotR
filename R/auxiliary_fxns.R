@@ -1737,3 +1737,19 @@
   muni_sf$muni_key <- toupper(stringi::stri_trans_general(muni_sf$name_muni, "Latin-ASCII"))
   muni_sf
 }
+
+
+#' Check that the packages needed to render the HTML reports are installed
+#'
+#' plotly is only used inside the report templates, so it is not imported
+#' (loading it together with finch triggers an S3 registration message).
+#'
+#' @keywords internal
+#' @noRd
+.check_report_pkgs <- function() {
+  if (!requireNamespace("plotly", quietly = TRUE)) {
+    stop("The package 'plotly' is required to build the HTML report. ",
+         "Install it with install.packages('plotly').", call. = FALSE)
+  }
+  invisible(TRUE)
+}

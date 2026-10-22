@@ -27,13 +27,19 @@ Description: Provides tools to access and analyze plant specimen records from
     Flora e Funga do Brasil and produce self-contained HTML reports with
     interactive figures and tables. jabot_missing() further narrows the
     comparison to a target Brazilian state/municipality and maps candidate
-    collecting localities drawn from the pooled JABOT network.
+    collecting localities drawn from the pooled JABOT network. jabot_identify()
+    searches the whole JABOT network and REFLORA for duplicates of the
+    indeterminate specimens of a herbarium (using barRoso and refloraR) to
+    suggest identifications, and jabot_fieldbook() opens an offline field
+    notebook that organizes new collection data and exports a JABOT
+    spreadsheet.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Depends:
     R (>= 4.1.0)
 Imports:
+    barRoso,
     dplyr,
     DT,
     finch,
@@ -43,8 +49,8 @@ Imports:
     htmltools,
     leaflet,
     magrittr,
-    plotly,
     purrr,
+    refloraR,
     rmarkdown,
     scales,
     sf,
@@ -55,10 +61,13 @@ Imports:
     tidyselect,
     utils
 Suggests:
+    plotly,
     quarto,
     testthat (>= 3.0.0)
 Remotes:
-    DBOSlab/floraR
+    DBOSlab/barRoso,
+    DBOSlab/floraR,
+    DBOSlab/refloraR
 URL:
     https://dboslab.github.io/jabotR-website/,
     https://github.com/dboslab/jabotR

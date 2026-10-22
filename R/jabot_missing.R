@@ -115,7 +115,6 @@
 #' @importFrom floraR flora_search
 #' @importFrom geobr read_municipality
 #' @importFrom ggplot2 ggplot aes geom_col geom_sf coord_flip labs scale_fill_manual scale_fill_gradient theme theme_void element_text
-#' @importFrom plotly ggplotly
 #' @importFrom DT datatable
 #' @importFrom leaflet leaflet addProviderTiles addCircleMarkers addLegend markerClusterOptions
 #' @importFrom stringi stri_trans_general
@@ -171,6 +170,7 @@ jabot_missing <- function(herbarium = NULL,
   region_label <- gsub("^_|_$", "", region_label)
 
   if (is.null(dir)) dir <- paste0(herbarium, "_missing_", region_label)
+  .check_report_pkgs()
   dir <- .arg_check_dir(dir)
   if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
 
