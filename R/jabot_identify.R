@@ -1029,7 +1029,7 @@ jabot_identify <- function(herbarium = NULL,
     ggplot2::coord_flip() +
     ggplot2::scale_fill_manual(values = pal) +
     ggplot2::labs(
-      title = paste0("Outcome for the indeterminate specimens — ", herbarium),
+      title = paste0("Outcome for the indeterminate specimens \u2014 ", herbarium),
       subtitle = paste0("Total: ", scales::comma(n_indets), " (", taxon_label, ")"),
       x = NULL, y = "Number of specimens") +
     .jabot_theme(plot_title_color = col_main)
@@ -1046,7 +1046,7 @@ jabot_identify <- function(herbarium = NULL,
       ggplot2::geom_col(fill = "#2E7D32", width = 0.7) +
       ggplot2::coord_flip() +
       ggplot2::labs(
-        title = paste0("Herbaria holding identified duplicates — ", herbarium),
+        title = paste0("Herbaria holding identified duplicates \u2014 ", herbarium),
         x = NULL, y = "Specimens with a candidate identification") +
       .jabot_theme(plot_title_color = col_main)
   }
@@ -1071,7 +1071,7 @@ jabot_identify <- function(herbarium = NULL,
         "With candidate identification" = "#2E7D32",
         "Without candidate identification" = "#B0BEC5")) +
       ggplot2::labs(
-        title = paste0("Families of the indeterminate specimens — ", herbarium),
+        title = paste0("Families of the indeterminate specimens \u2014 ", herbarium),
         subtitle = "Top 20 (specimens without family are grouped as 'Unknown family')",
         x = NULL, y = "Number of specimens", fill = NULL) +
       .jabot_theme(plot_title_color = col_main)

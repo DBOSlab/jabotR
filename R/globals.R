@@ -23,5 +23,7 @@ utils::globalVariables(c(
   "muni_key", "municipality",
   "n_missing_species", "status", "occurrenceID",
   "collectionCode", "n_records", "n_municipalities",
-  "herbaria"
+  "herbaria",
+  # jabot_identify
+  "outcome", "n_specimens"
 ))
