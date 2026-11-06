@@ -27,6 +27,37 @@ Read Darwin Core Archive (DwC-A) files from any downloaded dwca
 folder at \href{https://ipt.jbrj.gov.br/jabot}{JABOT} hosted by the
 \href{https://www.gov.br/jbrj/pt-br}{Rio de Janeiro Botanical Garden}.
 }
+\details{
+Besides reading the files, the occurrence records are standardized so that
+the herbaria can be compared and combined:
+\itemize{
+  \item \code{taxonRank}, \code{family}, \code{genus},
+  \code{specificEpithet} and related taxonomic columns are cleaned. Family
+  names with a single equivalent in the current classification are
+  unified (e.g. Leguminosae to Fabaceae, Compositae to Asteraceae). The
+  specific epithet never repeats the genus: \code{"Ormosia"} as the epithet
+  of a record of genus Ormosia is removed (records of genus, family and
+  higher ranks have no epithet), and \code{"ormosia monosperma"} becomes
+  \code{"monosperma"}.
+  \item \code{country} is always in English (e.g. \code{"Brasil"} and
+  \code{"Brazil"} become \code{"Brazil"}), typos and non-countries are
+  removed, and \code{countryCode} is the ISO 3166 alpha-2 code of the
+  country. A missing country is taken from the records with the same state.
+  \item \code{stateProvince}: Brazilian states have their full official
+  spelling (typos such as \code{"Pernanbuco"}, forms such as
+  \code{"Estado do Rio de Janeiro"} or \code{"Minas Gerais, MG"}, and
+  abbreviations are corrected). A municipality found in the state column is
+  moved to \code{municipality}.
+  \item \code{typeStatus} is standardized to English terms (Holotype,
+  Isotype, Paratype...) and values that are not a type are removed.
+  \item \code{eventDate} and \code{dateIdentified} are in the ISO format
+  (\code{yyyy-mm-dd}, \code{yyyy-mm} or \code{yyyy}); \code{year},
+  \code{month} and \code{day} outside their range (e.g. 0) are \code{NA}.
+  \item Elevation placeholders (e.g. \code{-9999}) and impossible values,
+  and coordinates \code{0, 0}, are \code{NA}. Collector numbers such as
+  \code{"s/n"}, \code{"S/N"} or \code{"sn"} are \code{"s.n."}.
+}
+}
 \examples{
 \dontrun{
 

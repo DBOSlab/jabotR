@@ -151,6 +151,13 @@ dwca_some <- jabot_parse(path = "jabot_download",
 The function returns a named list containing parsed DwC-A data and
 associated metadata for each collection.\
 \
+`jabot_parse()` also standardizes the records so that the herbaria can
+be compared and combined: `country` is always an English name
+(e.g. `"Brasil"` and `"Brazil"` become `"Brazil"`) with its ISO code in
+`countryCode`, Brazilian states have their full official spelling,
+`typeStatus` uses English terms (Holotype, Isotype…), dates are in the
+ISO format, and placeholders such as `-9999` in the elevation are `NA`.\
+\
 
 #### *4. `jabot_records`: Retrieving and filtering specimen records*
 

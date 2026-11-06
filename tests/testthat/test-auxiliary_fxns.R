@@ -417,3 +417,83 @@ test_that(".std_inside_columns() downgrads taxon rank SUBFAMILY to GENUS when ge
   expect_equal(df_clean$taxonRank[2], "SUBFAMILY")
 })
 
+
+
+test_that(".rm_genus_from_epithet() removes the genus repeated in the epithet", {
+  df <- data.frame(
+    genus = c("Ormosia", "Ormosia", "Ormosia", "Piper", "Inga", "Inga", NA),
+    specificEpithet = c("Ormosia", "ormosia monosperma", "Ormosia Arborea",
+                        "piper solmsianum", "edulis", "inga", "x"),
+    infraspecificEpithet = c(NA, NA, NA, NA, NA, "vera", NA),
+    taxonRank = c("GENUS", "SPECIES", "SPECIES", "SPECIES", "SPECIES",
+                  "VARIETAS", "SPECIES"),
+    stringsAsFactors = FALSE
+  )
+  out <- .rm_genus_from_epithet(df)
+
+  # the genus as the epithet: a genus, with no epithet
+  expect_true(is.na(out$specificEpithet[1]))
+  expect_equal(out$taxonRank[1], "GENUS")
+  # the genus before the epithet
+  expect_equal(out$specificEpithet[2:4], c("monosperma", "arborea", "solmsianum"))
+  expect_equal(out$taxonRank[2:4], rep("SPECIES", 3))
+  # nothing to do
+  expect_equal(out$specificEpithet[c(5, 7)], c("edulis", "x"))
+  # a record of species that has the genus as its epithet becomes a genus
+  expect_true(is.na(out$specificEpithet[6]))
+  expect_true(is.na(out$infraspecificEpithet[6]))
+  expect_equal(out$taxonRank[6], "GENUS")
+})
+
+
+test_that(".rm_epithet_of_higher_ranks() leaves no epithet in records above the species", {
+  df <- data.frame(
+    taxonRank = c("GENUS", "GENUS", "FAMILY", "ORDER", "FAMILY", "FAMILY",
+                  "GENUS", "SPECIES", "FAMILY"),
+    family = c("Fabaceae", "Rhodomelaceae", "Lauraceae", NA, "Apiaceae",
+               "Rubiaceae", NA, "Fabaceae", "Fern"),
+    order = c(NA, NA, NA, "Agaricales", NA, NA, NA, NA, NA),
+    genus = c("Ormosia", "S", NA, NA, "Apium", "Declieuxia", NA, "Inga", "T"),
+    specificEpithet = c("Ormosia", "Sporolithon", "LAURACEAE", "AGARICALES",
+                        "graveolens", "x fruticosa", "Ormosia", "edulis",
+                        "FERN THALLUS"),
+    infraspecificEpithet = NA_character_,
+    stringsAsFactors = FALSE
+  )
+  out <- .rm_epithet_of_higher_ranks(df)
+
+  # repeated names, and the genus rank, never have an epithet
+  expect_true(all(is.na(out$specificEpithet[c(1, 2, 3, 4, 6, 7, 9)])))
+  # a genus cut short is completed
+  expect_equal(out$genus[2], "Sporolithon")
+  # a species with the rank filled as family
+  expect_equal(out$taxonRank[5], "SPECIES")
+  expect_equal(out$specificEpithet[5], "graveolens")
+  # species are not touched
+  expect_equal(out$taxonRank[8], "SPECIES")
+  expect_equal(out$specificEpithet[8], "edulis")
+})
+
+
+test_that(".std_inside_columns() does not repeat the genus or the family as the epithet", {
+  df <- data.frame(
+    taxonRank = c("GENUS", "SPECIES", "FAMILY", "SPECIES"),
+    family = c("Fabaceae", "Fabaceae", "Lauraceae", "Fabaceae"),
+    genus = c("Ormosia", "Ormosia", NA, "Ormosia"),
+    specificEpithet = c("Ormosia", "ormosia monosperma", "LAURACEAE", "arborea"),
+    species = NA_character_,
+    infraspecificEpithet = NA_character_,
+    scientificNameAuthorship = NA_character_,
+    scientificName = NA_character_,
+    taxonName = NA_character_,
+    occurrenceID = 1:4,
+    stringsAsFactors = FALSE
+  )
+  out <- .std_inside_columns(df, verbose = FALSE)
+
+  expect_true(all(is.na(out$specificEpithet[c(1, 3)])))
+  expect_equal(out$taxonName, c("Ormosia", "Ormosia monosperma", "Lauraceae",
+                                "Ormosia arborea"))
+  expect_equal(out$species, c(NA, "Ormosia monosperma", NA, "Ormosia arborea"))
+  expect_equal(out$scientificName[1], "Ormosia")
+})

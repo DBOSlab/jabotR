@@ -8,7 +8,7 @@ The first official release of the `jabotR` R package, designed to streamline acc
 
 - `jabot_summary()`: Retrieve metadata and summary info from all or specific JABOT herbaria.
 - `jabot_download()`: Download original specimen data in Darwin Core Archive (DwC-A) format.
-- `jabot_parse()`: Read and parse downloaded Darwin Core Archive files into R.
+- `jabot_parse()`: Read and parse downloaded Darwin Core Archive files into R, standardizing the columns so that the herbaria can be combined: English country names with ISO codes, full Brazilian state names, English type status terms, ISO dates and cleaned placeholders.
 - `jabot_records()`: Retrieve, filter, and organize JABOT specimen records by taxon, herbarium, region, and year.
 - `jabot_indets()`: Retrieve indeterminate specimens (e.g., identified only to family or genus rank).
 - `jabot_gaps()`: Identify taxa missing from a herbarium relative to the Flora e Funga do Brasil, with an optional nationwide, municipality-level collecting-priority heat map (`priority_map`).

@@ -15,7 +15,11 @@ importFrom(DT,
   formatStyle,
   styleColorBar
 )
-importFrom(barRoso,barroso_std)
+importFrom(barRoso,
+  barroso_std,
+  std_place
+)
+importFrom(countrycode,countrycode)
 importFrom(dplyr,
   across,
   anti_join,

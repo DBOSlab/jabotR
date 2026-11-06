@@ -670,6 +670,9 @@
 
   #_____________________________________________________________________________
   # $specificEpithet cleaning ####
+  # The genus repeated inside the epithet
+  df <- .rm_genus_from_epithet(df)
+
   pattern <- c("^Sp$|^sp$|^sp[.]$|^Sp[.]$|^sp[.]\\snov[.]|^Sp[.]\\sNov[.]")
   tf <- tidyr::replace_na(stringi::stri_detect_regex(df$specificEpithet, pattern), FALSE)
   if (any(tf)) {
@@ -748,14 +751,14 @@
   tf <- tidyr::replace_na(stringi::stri_detect_regex(df$genus, pattern), FALSE)
   if (any(tf)) {
     df$genus[tf] <- NA
-    df$division[tf] <- "Pterydophyta"
+    df$division[tf] <- "Pteridophyta"
     df$taxonRank[tf] <- "DIVISION"
   }
 
   tf <- grepl("Pterid.*ta$|Pterid.*phyta$|Samambaia|Pteridophyte", df$family) & df$taxonRank %in% "FAMILY"
   if (any(tf)) {
     df$family[tf] <- NA
-    df$division[tf] <- "Pterydophyta"
+    df$division[tf] <- "Pteridophyta"
     df$taxonRank[tf] <- "DIVISION"
   }
 
@@ -992,11 +995,94 @@
     df$basisOfRecord[tf] <- "FOSSIL_SPECIMEN"
   }
 
+  # Records above the species have no epithet
+  df <- .rm_epithet_of_higher_ranks(df)
+
   df <- .fill_species_name(df)
   df <- .fill_taxon_name(df)
   df <- .fill_scientific_name(df)
 
   return(df)
+}
+
+#' The genus repeated inside the specific epithet
+#'
+#' A record identified only to genus may come with the genus as the epithet
+#' ("Ormosia" for the genus Ormosia), and the genus may come before the epithet
+#' ("ormosia monosperma" for the genus Ormosia). In the first case there is no
+#' epithet and the record is a genus; in the second the genus is removed.
+#'
+#' @keywords internal
+#' @noRd
+.rm_genus_from_epithet <- function(df) {
+  genus <- tolower(trimws(df$genus))
+  epithet <- trimws(df$specificEpithet)
+  low <- tolower(epithet)
+  ok <- !is.na(genus) & nzchar(genus) & !is.na(epithet) & nzchar(epithet)
+
+  # Genus followed by the epithet
+  prefixed <- ok & startsWith(low, paste0(genus, " "))
+  if (any(prefixed)) {
+    rest <- trimws(sub("^\\S+\\s+", "", epithet[prefixed]))
+    rest[!nzchar(rest)] <- NA_character_
+    df$specificEpithet[prefixed] <- .firstLower(rest)
+  }
+
+  # The genus as the epithet: no epithet, and so a record of genus
+  same <- ok & low == genus
+  if (any(same)) {
+    df$specificEpithet[same] <- NA
+    df$infraspecificEpithet[same] <- NA
+    species_ranks <- c("SPECIES", "SUBSPECIES", "VARIETAS", "FORMA")
+    df$taxonRank[same & df$taxonRank %in% species_ranks] <- "GENUS"
+  }
+  df
+}
+
+#' Records above the species have no specific epithet
+#'
+#' The database may repeat the name of the taxon in the epithet column
+#' ("Ormosia" for the genus Ormosia, "LAURACEAE" for the family Lauraceae). A
+#' record of genus (or of any higher rank) has no epithet, so it is removed.
+#' When the rank is missing in a record that has a genus and a proper epithet
+#' (the rank was filled with "FAMILY"), the record is a species.
+#'
+#' @keywords internal
+#' @noRd
+.rm_epithet_of_higher_ranks <- function(df) {
+  high <- c("GENUS", "TRIBE", "SUBFAMILY", "FAMILY", "ORDER", "CLASS",
+            "DIVISION", "KINGDOM")
+  has <- df$taxonRank %in% high & !is.na(df$specificEpithet)
+  if (!any(has)) return(df)
+
+  epithet <- tolower(trimws(df$specificEpithet))
+  col <- function(nm) if (nm %in% names(df)) tolower(trimws(df[[nm]])) else
+    rep(NA_character_, nrow(df))
+  repeated <- Reduce(`|`, lapply(
+    c("genus", "family", "order", "class", "division", "kingdom"),
+    function(nm) {
+      x <- col(nm)
+      !is.na(x) & epithet == x
+    }))
+
+  # A species whose rank was lost
+  proper <- grepl("^[A-Z][a-z]+$", df$genus) &
+    grepl("^[a-z][a-z-]{2,}$", df$specificEpithet)
+  species <- has & !repeated & proper &
+    df$taxonRank %in% c("FAMILY", "ORDER", "CLASS", "DIVISION", "KINGDOM")
+  df$taxonRank[species] <- "SPECIES"
+
+  # A genus cut short, with the whole name as the epithet ("S", "Sporolithon")
+  genus <- tolower(trimws(df$genus))
+  short <- has & !species & df$taxonRank %in% "GENUS" & !is.na(genus) &
+    nchar(genus) < nchar(epithet) & startsWith(epithet, genus) &
+    !grepl("\\s", epithet)
+  df$genus[short] <- trimws(df$specificEpithet[short])
+
+  clear <- has & !species
+  df$specificEpithet[clear] <- NA
+  df$infraspecificEpithet[clear] <- NA
+  df
 }
 
 .firstUp <- function(x) {
