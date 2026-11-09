@@ -121,6 +121,7 @@ jabot_download <- function(herbarium = NULL,
       utils::download.file(url = dwca_file,
                            destfile = destdirfile,
                            method = "libcurl",
+                           mode = "wb",
                            headers = .ipt_http_headers())
 
       utils::unzip(destdirfile, exdir = ex_dwca_folder)
