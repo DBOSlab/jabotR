@@ -12,7 +12,7 @@ jabot_gaps(
   format = NULL,
   fig_width = 10,
   fig_height = 6,
-  open_report = TRUE,
+  open_report = FALSE,
   verbose = TRUE,
   dir = NULL
 )
@@ -44,8 +44,9 @@ report is always generated regardless of this argument.}
 
 \item{fig_height}{Numeric. Height of saved figures in inches. Default \code{6}.}
 
-\item{open_report}{Logical. If \code{TRUE} (default), the HTML report is opened
-in the default browser after rendering.}
+\item{open_report}{Logical. If \code{TRUE}, the HTML report is opened in the
+default browser after rendering (interactive sessions only). Default
+\code{FALSE}: the report is only saved to \code{dir}.}
 
 \item{verbose}{Logical. If \code{TRUE} (default), progress messages are printed.}
 

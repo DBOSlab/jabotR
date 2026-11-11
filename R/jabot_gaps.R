@@ -43,8 +43,9 @@
 #'   report is always generated regardless of this argument.
 #' @param fig_width Numeric. Width of saved figures in inches. Default \code{10}.
 #' @param fig_height Numeric. Height of saved figures in inches. Default \code{6}.
-#' @param open_report Logical. If \code{TRUE} (default), the HTML report is opened
-#'   in the default browser after rendering.
+#' @param open_report Logical. If \code{TRUE}, the HTML report is opened in the
+#'   default browser after rendering (interactive sessions only). Default
+#'   \code{FALSE}: the report is only saved to \code{dir}.
 #' @param verbose Logical. If \code{TRUE} (default), progress messages are printed.
 #' @param dir Character. Output directory. Defaults to \code{"<herbarium>_gap_analysis"}.
 #'
@@ -126,7 +127,7 @@ jabot_gaps <- function(herbarium = NULL,
                        format = NULL,
                        fig_width = 10,
                        fig_height = 6,
-                       open_report = TRUE,
+                       open_report = FALSE,
                        verbose = TRUE,
                        dir = NULL) {
 

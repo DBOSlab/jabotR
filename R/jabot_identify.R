@@ -89,7 +89,7 @@
 #'                format = NULL,
 #'                fig_width = 10,
 #'                fig_height = 6,
-#'                open_report = TRUE,
+#'                open_report = FALSE,
 #'                verbose = TRUE,
 #'                dir = NULL)
 #'
@@ -130,8 +130,9 @@
 #'
 #' @param fig_width,fig_height Numeric. Dimensions (in inches) of saved figures.
 #'
-#' @param open_report Logical. If \code{TRUE} (default), opens the HTML report
-#' in the default browser after rendering (interactive sessions only).
+#' @param open_report Logical. If \code{TRUE}, opens the HTML report in the
+#' default browser after rendering (interactive sessions only). Default
+#' \code{FALSE}: the report is only saved to \code{dir}.
 #'
 #' @param verbose Logical. If \code{TRUE} (default), prints progress messages.
 #'
@@ -198,7 +199,7 @@ jabot_identify <- function(herbarium = NULL,
                            format = NULL,
                            fig_width = 10,
                            fig_height = 6,
-                           open_report = TRUE,
+                           open_report = FALSE,
                            verbose = TRUE,
                            dir = NULL) {
 

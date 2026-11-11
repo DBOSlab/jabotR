@@ -30,8 +30,9 @@
 #'   \code{"pdf"}, \code{"png"}, or both. The HTML report is always generated.
 #' @param fig_width Numeric. Width of saved figures in inches. Default \code{10}.
 #' @param fig_height Numeric. Height of saved figures in inches. Default \code{6}.
-#' @param open_report Logical. If \code{TRUE} (default), opens the HTML report in
-#'   the default browser after rendering.
+#' @param open_report Logical. If \code{TRUE}, opens the HTML report in the
+#'   default browser after rendering (interactive sessions only). Default
+#'   \code{FALSE}: the report is only saved to \code{dir}.
 #' @param verbose Logical. If \code{TRUE} (default), progress messages are printed.
 #' @param dir Character. Output directory. Defaults to \code{"<herbarium>_representativeness"}.
 #'
@@ -93,7 +94,7 @@ jabot_coverage <- function(herbarium = NULL,
                            format = NULL,
                            fig_width = 10,
                            fig_height = 6,
-                           open_report = TRUE,
+                           open_report = FALSE,
                            verbose = TRUE,
                            dir = NULL) {
 
