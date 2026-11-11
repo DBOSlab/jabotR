@@ -232,7 +232,7 @@ A gap analysis can be performed with:\
 ```r
 gap_analysis <- jabot_gaps(herbarium = "RB",
                            verbose = TRUE,
-                           open_report = TRUE,
+                           open_report = FALSE,
                            dir = "RB_gap_analysis")
 ```
 \
@@ -242,7 +242,7 @@ Individual figures can additionally be exported as PDF, PNG, or both.\
 gap_analysis <- jabot_gaps(herbarium = "RB",
                            format = c("pdf", "png"),
                            verbose = TRUE,
-                           open_report = TRUE,
+                           open_report = FALSE,
                            dir = "RB_gap_analysis")
 ```
 \
@@ -253,7 +253,7 @@ gap_analysis <- jabot_gaps(herbarium = "RB",
                            jabot_path = "jabot_download",
                            format = "pdf",
                            verbose = TRUE,
-                           open_report = TRUE,
+                           open_report = FALSE,
                            dir = "RB_gap_analysis")
 ```
 \
@@ -263,7 +263,7 @@ Setting `priority_map = TRUE` additionally downloads pooled JABOT network record
 gap_analysis <- jabot_gaps(herbarium = "RB",
                            priority_map = TRUE,
                            verbose = TRUE,
-                           open_report = TRUE,
+                           open_report = FALSE,
                            dir = "RB_gap_analysis")
 ```
 \
@@ -283,7 +283,7 @@ A representativeness analysis can be performed with:\
 ```r
 coverage_analysis <- jabot_coverage(herbarium = "RB",
                                     verbose = TRUE,
-                                    open_report = TRUE,
+                                    open_report = FALSE,
                                     dir = "RB_representativeness")
 ```
 \
@@ -293,7 +293,7 @@ Individual figures can additionally be exported as PDF, PNG, or both.\
 coverage_analysis <- jabot_coverage(herbarium = "RB",
                                     format = c("pdf", "png"),
                                     verbose = TRUE,
-                                    open_report = TRUE,
+                                    open_report = FALSE,
                                     dir = "RB_representativeness")
 ```
 \
@@ -304,7 +304,7 @@ coverage_analysis <- jabot_coverage(herbarium = "RB",
                                     jabot_path = "jabot_download",
                                     format = "pdf",
                                     verbose = TRUE,
-                                    open_report = TRUE,
+                                    open_report = FALSE,
                                     dir = "RB_representativeness")
 ```
 \
@@ -323,7 +323,7 @@ A missing-species analysis for Bahia state can be performed with:\
 missing_analysis <- jabot_missing(herbarium = "RB",
                                   geo = "Bahia",
                                   verbose = TRUE,
-                                  open_report = TRUE,
+                                  open_report = FALSE,
                                   dir = "RB_missing_Bahia")
 ```
 \
@@ -333,7 +333,7 @@ The search can instead be narrowed to one or more municipalities; FFB's state-le
 missing_analysis <- jabot_missing(herbarium = "RB",
                                   geo = c("Feira de Santana", "Ilhéus"),
                                   verbose = TRUE,
-                                  open_report = TRUE)
+                                  open_report = FALSE)
 ```
 \
 By default, the pooled network sample includes all JABOT-hosted herbaria. `network_herbaria` restricts the candidate collecting-locality search to a specific subset, individual figures can additionally be exported as PDF, PNG, or both, and previously downloaded JABOT DwC-A files can be reused with `jabot_path`.\
@@ -345,7 +345,7 @@ missing_analysis <- jabot_missing(herbarium = "RB",
                                   jabot_path = "jabot_download",
                                   format = "pdf",
                                   verbose = TRUE,
-                                  open_report = TRUE)
+                                  open_report = FALSE)
 ```
 \
 The HTML report is always generated. When `format` is specified, individual figures are additionally saved in the requested static format.\
@@ -360,7 +360,7 @@ The analysis can be performed with:\
 ```r
 identify_analysis <- jabot_identify(herbarium = "RB",
                                     verbose = TRUE,
-                                    open_report = TRUE,
+                                    open_report = FALSE,
                                     dir = "RB_identify")
 ```
 \
@@ -369,7 +369,7 @@ The search can be restricted to indeterminate specimens of a family or genus wit
 ```r
 identify_analysis <- jabot_identify(herbarium = "RB",
                                     taxon = c("Fabaceae", "Inga"),
-                                    open_report = TRUE)
+                                    open_report = FALSE)
 ```
 \
 Herbaria hosted only in REFLORA can be analysed as well, for example against the international herbaria of REFLORA, without searching JABOT (`jabot = FALSE`).\
@@ -378,7 +378,7 @@ Herbaria hosted only in REFLORA can be analysed as well, for example against the
 identify_analysis <- jabot_identify(herbarium = "HUEFS",
                                     jabot = FALSE,
                                     reflora_herbaria = c("NY", "K", "P", "US"),
-                                    open_report = TRUE)
+                                    open_report = FALSE)
 ```
 \
 By default, duplicates are searched in all herbaria of JABOT and REFLORA. `network_herbaria` and `reflora_herbaria` restrict the search to subsets, `reflora = FALSE` skips REFLORA, individual figures can additionally be exported as PDF, PNG, or both, and previously downloaded DwC-A files can be reused with `jabot_path` and `reflora_path`.\
@@ -390,7 +390,7 @@ identify_analysis <- jabot_identify(herbarium = "RB",
                                     jabot_path = "jabot_download",
                                     reflora_path = "reflora_download",
                                     format = "pdf",
-                                    open_report = TRUE)
+                                    open_report = FALSE)
 ```
 \
 The HTML report is always generated, together with two CSV files (the indeterminate specimens with their outcome, and every duplicate found). The suggested identifications come from other herbaria and should be checked, preferably against the specimen images, before being adopted.\
