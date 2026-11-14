@@ -111,10 +111,12 @@ jabot_parse <- function(path = NULL,
 
   # Order and clean specific columns within dwca_files
   fields <- c(
+    "id",
     "occurrenceID",
     "institutionCode",
     "collectionCode",
     "catalogNumber",
+    "otherCatalogNumbers",
     "taxonRank",
     "kingdom",
     "division",
@@ -166,11 +168,9 @@ jabot_parse <- function(path = NULL,
 
     temp <- dwca_files[[i]][["data"]][["occurrence.txt"]]
 
-    fields <- fields[fields %in% names(temp)]
-    pos <- match("specificEpithet", fields)
-    fields <- append(fields, "species", after = pos)
-    pos <- match("infraspecificEpithet", fields)
-    fields <- append(fields, "taxonName", after = pos)
+    # columns present in this archive (recomputed per herbarium, so a column
+    # missing from one archive does not drop it from the next ones)
+    fields_i <- fields[fields %in% c(names(temp), "species", "taxonName")]
 
     temp <- temp %>%
       dplyr::mutate(
@@ -179,7 +179,7 @@ jabot_parse <- function(path = NULL,
         species = NA_character_,
         taxonName = NA_character_
       ) %>%
-      dplyr::select(all_of(fields)) %>%
+      dplyr::select(all_of(fields_i)) %>%
       dplyr::mutate(taxonRank = tidyr::replace_na(taxonRank, "FAMILY")) %>%
       dplyr::mutate(kingdom = if (!"kingdom" %in% names(.)) NA else kingdom,
                     .after = taxonRank) %>%

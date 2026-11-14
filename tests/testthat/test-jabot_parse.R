@@ -24,10 +24,12 @@
   collection <- if (grepl("JBRJ", input)) "RB" else "AFR"
 
   occurrence <- data.frame(
+    otherCatalogNumbers = "old-1",
     occurrenceID = paste0(collection, "-1"),
     institutionCode = "JBRJ",
     collectionCode = collection,
     catalogNumber = "1",
+    id = paste0("urn:catalog:", collection, ":1"),
     taxonRank = NA_character_,
     family = "fabaceae",
     genus = "inga",
@@ -155,4 +157,29 @@ test_that("jabot_parse prints progress messages when verbose = TRUE", {
   )
 
   unlink(tmp, recursive = TRUE)
+})
+
+
+test_that("jabot_parse keeps id first and otherCatalogNumbers after catalogNumber", {
+  tmp <- tempfile("jabot_parse_cols_")
+  dir.create(tmp)
+  .parse_test_fixture(tmp)
+
+  testthat::local_mocked_bindings(
+    .arg_check_path = function(...) invisible(TRUE),
+    .std_inside_columns = function(df, herbarium = NULL, i = NULL, verbose = TRUE) df,
+    .package = "jabotR"
+  )
+  testthat::local_mocked_bindings(
+    dwca_read = .mock_jabot_dwca_read,
+    .package = "finch"
+  )
+
+  out <- jabot_parse(path = tmp, verbose = FALSE)
+  df <- out[[1]]$data[["occurrence.txt"]]
+
+  expect_equal(names(df)[1], "id")
+  expect_equal(names(df)[match("catalogNumber", names(df)) + 1],
+               "otherCatalogNumbers")
+  expect_equal(df$otherCatalogNumbers[1], "old-1")
 })
