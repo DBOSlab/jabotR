@@ -269,7 +269,7 @@ jabot_fieldbook <- function(browser = TRUE,
     text <- gsub("\\s+", "", paste(text, collapse = ""))
     # Some PDF producers turn "-" into typographic dashes or minus signs;
     # base64 never contains dashes, so normalizing them is safe.
-    text <- gsub("[‐-―−]", "-", text)
+    text <- gsub("[\u2010-\u2015\u2212]", "-", text)
     regmatches(text, regexec(pattern, text, perl = TRUE))[[1]]
   }
 
