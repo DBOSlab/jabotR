@@ -67,7 +67,7 @@ test_that(".read_ipt_dcat reads every line of the DCAT feed", {
   expect_equal(sum(grepl("a dcat:Dataset ;", lines, fixed = TRUE)), 2)
   expect_true(any(grepl("archive.do?r=jbrj_rb", lines, fixed = TRUE)))
   # UTF-8 content survives
-  expect_true(any(grepl("Jardim Botânico", lines)))
+  expect_true(any(grepl("Jardim Bot\u00e2nico", lines)))
 })
 
 test_that(".read_ipt_dcat turns a connection warning into an informative error", {
@@ -151,7 +151,7 @@ test_that(".get_ipt_info_rb keeps only the RB collection of the jbrj IPT", {
   meta <- rb[[1]][[1]]
   expect_equal(meta[1], "a dcat:Dataset ;")
   expect_equal(meta[2],
-               "dct:title \"RB - Coleção do Herbário do Jardim Botânico do Rio de Janeiro\" ;")
+               "dct:title \"RB - Cole\u00e7\u00e3o do Herb\u00e1rio do Jardim Bot\u00e2nico do Rio de Janeiro\" ;")
   expect_equal(meta[length(meta)], "dcat:mediaType \"application/zip\" ;")
   expect_true(any(grepl("mailto:rafaela@jbrj.gov.br", meta, fixed = TRUE)))
 })
@@ -268,7 +268,7 @@ test_that(".get_herb_info parses version, contact and rights holder of a JABOT c
   # only the first contact point is used
   expect_equal(herb[[2]], "Daniela Santana Nunes")
   expect_equal(herb[[3]], "hatm@ufpa.br")
-  expect_equal(herb[[4]], "Herbário Padre José Maria de Albuquerque")
+  expect_equal(herb[[4]], "Herb\u00e1rio Padre Jos\u00e9 Maria de Albuquerque")
   expect_equal(herb[[5]], "https://ipt.jbrj.gov.br/jabot/resource?r=hatm")
 })
 
@@ -278,13 +278,13 @@ test_that(".get_herb_info strips institution suffixes from the rights holder", {
   .mock_resource_page()
 
   palm <- .get_herb_info(info[[2]], info[[1]], 2)
-  expect_equal(palm[[2]], "Patrícia Jungbluth")
+  expect_equal(palm[[2]], "Patr\u00edcia Jungbluth")
   expect_equal(palm[[3]], "herbario_palm@ufsm.br")
-  expect_equal(palm[[4]], "Herbário do Campus Palmeira das Missões da UFSM")
+  expect_equal(palm[[4]], "Herb\u00e1rio do Campus Palmeira das Miss\u00f5es da UFSM")
 
   hdjf <- .get_herb_info(info[[2]], info[[1]], 3)
-  expect_equal(hdjf[[2]], "Evandro Luiz Mendonça Machado")
-  expect_equal(hdjf[[4]], "Herbário Dendrológico Jeanine Felfili")
+  expect_equal(hdjf[[2]], "Evandro Luiz Mendon\u00e7a Machado")
+  expect_equal(hdjf[[4]], "Herb\u00e1rio Dendrol\u00f3gico Jeanine Felfili")
 })
 
 test_that(".get_herb_info uses the jbrj IPT resource URL for RB", {
@@ -299,31 +299,31 @@ test_that(".get_herb_info uses the jbrj IPT resource URL for RB", {
   expect_equal(rb[[2]], "Rafaela Forzza")
   expect_equal(rb[[3]], "rafaela@jbrj.gov.br")
   expect_equal(rb[[4]],
-               "Coleção do Herbário do Jardim Botânico do Rio de Janeiro")
+               "Cole\u00e7\u00e3o do Herb\u00e1rio do Jardim Bot\u00e2nico do Rio de Janeiro")
 })
 
 test_that(".get_herb_info removes a 'Flores - ' prefix from the rights holder", {
   meta <- list(c("a dcat:Dataset ;",
-                 "dct:title \"XYZ - Flores -  Herbário Teste. Jabot - Banco de Dados da Flora Brasileira\" ;",
+                 "dct:title \"XYZ - Flores -  Herb\u00e1rio Teste. Jabot - Banco de Dados da Flora Brasileira\" ;",
                  "dcat:contactPoint [ a vcard:Individual ; vcard:fn \"Ana Teste\"; vcard:hasEmail <mailto:ana@example.org> ] ;",
                  "dcat:mediaType \"application/zip\" ;"))
   .mock_resource_page()
   herb <- .get_herb_info("xyz", meta, 1)
-  expect_equal(herb[[4]], "Herbário Teste")
+  expect_equal(herb[[4]], "Herb\u00e1rio Teste")
   expect_equal(herb[[2]], "Ana Teste")
   expect_equal(herb[[3]], "ana@example.org")
 })
 
 test_that(".get_herb_info returns empty contact fields when no contact point exists", {
   meta <- list(c("a dcat:Dataset ;",
-                 "dct:title \"XYZ - Herbário Sem Contato. Jabot - Banco de Dados\" ;",
+                 "dct:title \"XYZ - Herb\u00e1rio Sem Contato. Jabot - Banco de Dados\" ;",
                  "dcat:mediaType \"application/zip\" ;"))
   .mock_resource_page()
   herb <- .get_herb_info("xyz", meta, 1)
   expect_equal(herb[[1]], c("1.69", "2026-11-01 12:04:45", "3,665"))
   expect_length(herb[[2]], 0)
   expect_length(herb[[3]], 0)
-  expect_equal(herb[[4]], "Herbário Sem Contato")
+  expect_equal(herb[[4]], "Herb\u00e1rio Sem Contato")
 })
 
 test_that(".get_herb_info errors on a resource page without a version table", {

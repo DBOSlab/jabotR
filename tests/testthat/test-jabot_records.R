@@ -670,7 +670,7 @@ test_that("offline: jabot_records filters states given as acronyms or names", {
 
   suppressMessages(expect_message(
     jabot_records(state = c("Bahia", "SP"), save = FALSE, verbose = TRUE),
-    "states were not found: São Paulo"
+    "states were not found: S\u00e3o Paulo"
   ))
 
   expect_error(

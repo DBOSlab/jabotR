@@ -327,7 +327,7 @@ fixture_payload <- function() {
       list(
         header = list(
           colldd = "3", collmm = "5", collyy = "2025",
-          country = "Brasil", majorarea = "Bahia", minorarea = "Ilhéus",
+          country = "Brasil", majorarea = "Bahia", minorarea = "Ilh\u00e9us",
           collector = "Domingos Cardoso"
         ),
         specimens = list(
@@ -401,7 +401,7 @@ test_that("embedded data is read back from a field notebook PDF", {
   expect_length(found$payload$events, 2L)
   expect_equal(
     found$payload$events[[1]]$header$minorarea,
-    "Ilhéus"
+    "Ilh\u00e9us"
   )
 
   info <- .fieldbook_summary(found$payload)

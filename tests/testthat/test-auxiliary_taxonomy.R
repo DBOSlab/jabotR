@@ -77,8 +77,8 @@ test_that(".std_inside_columns() gives a missing rank GENUS when a genus exists"
 # .std_inside_columns(): invisible characters -----------------------------------
 
 test_that(".std_inside_columns() trims Unicode spaces around names", {
-  out <- .std(taxonRank = "SUBSPECIES", family = " Fabaceae ",
-              genus = " Inga ", specificEpithet = " edulis",
+  out <- .std(taxonRank = "SUBSPECIES", family = " Fabaceae\u00a0",
+              genus = "\u2003Inga ", specificEpithet = " edulis",
               infraspecificEpithet = "vera  ")
   expect_equal(out$family, "Fabaceae")
   expect_equal(out$genus, "Inga")
@@ -103,8 +103,8 @@ test_that(".std_inside_columns() repairs misspelled family names", {
 
 test_that(".std_inside_columns() blanks placeholders and negated families", {
   out <- .std(taxonRank = "FAMILY",
-              family = c("Indet.", "Sem Informação", "Not Fabaceae",
-                         "Não é Myrtaceae", "Fabaceae"))
+              family = c("Indet.", "Sem Informa\u00e7\u00e3o", "Not Fabaceae",
+                         "N\u00e3o \u00e9 Myrtaceae", "Fabaceae"))
   expect_true(all(is.na(out$family[1:4])))
   expect_true(all(is.na(out$taxonRank[1:4])))
   expect_equal(out$family[5], "Fabaceae")
@@ -207,7 +207,7 @@ test_that(".std_inside_columns() handles old family names in genus", {
 test_that(".std_inside_columns() moves non-vascular groups out of genus", {
   out <- .std(taxonRank = "GENUS",
               family = c(NA, NA, "Parmeliaceae"),
-              genus = c("Briófita", "Fungos", "Lichenes"))
+              genus = c("Bri\u00f3fita", "Fungos", "Lichenes"))
   expect_true(all(is.na(out$genus)))
   expect_equal(out$division, c("Bryophyta", NA, "Ascomycota"))
   expect_equal(out$kingdom, c(NA, "Fungi", "Fungi"))
@@ -510,15 +510,15 @@ test_that(".load_herb_data() and .load_pool_data() call jabot_records()", {
     distribution.txt = data.frame(
       id = c("1", "2"),
       occurrenceRemarks = c(
-        '{"endemism":"Endemica","phytogeographicDomain":["Amazônia","Cerrado"]}',
-        '{"endemism":"Não endemica","phytogeographicDomain":["Pampa"]}'
+        '{"endemism":"Endemica","phytogeographicDomain":["Amaz\u00f4nia","Cerrado"]}',
+        '{"endemism":"N\u00e3o endemica","phytogeographicDomain":["Pampa"]}'
       ),
       stringsAsFactors = FALSE
     ),
     speciesprofile.txt = data.frame(
       id = c("1", "2"),
       lifeForm = c(
-        '{"lifeForm":["Árvore","Arbusto"],"habitat":["Terrícola"],"vegetationType":["Cerrado"]}',
+        '{"lifeForm":["\u00c1rvore","Arbusto"],"habitat":["Terr\u00edcola"],"vegetationType":["Cerrado"]}',
         NA
       ),
       stringsAsFactors = FALSE
@@ -555,16 +555,16 @@ test_that(".flora_parse() reads only the latest version and reshapes it", {
   distribution <- out[[1]]$data$distribution.txt
   expect_equal(distribution$id, c("1", "1", "2"))
   expect_equal(distribution$phytogeographicDomain,
-               c("Amazônia", "Cerrado", "Pampa"))
+               c("Amaz\u00f4nia", "Cerrado", "Pampa"))
   expect_equal(distribution$endemism,
-               c("Endemica", "Endemica", "Não endemica"))
+               c("Endemica", "Endemica", "N\u00e3o endemica"))
 
   profile <- out[[1]]$data$speciesprofile.txt
   expect_equal(names(profile),
                c("id", "lifeForm", "habitat", "vegetationType", "lifeForm_json"))
   expect_equal(profile$id, c("1", "1"))
-  expect_equal(profile$lifeForm, c("Árvore", "Arbusto"))
-  expect_equal(profile$habitat, c("Terrícola", "Terrícola"))
+  expect_equal(profile$lifeForm, c("\u00c1rvore", "Arbusto"))
+  expect_equal(profile$habitat, c("Terr\u00edcola", "Terr\u00edcola"))
   expect_equal(profile$vegetationType, c("Cerrado", "Cerrado"))
 })
 

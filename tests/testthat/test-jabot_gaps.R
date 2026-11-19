@@ -264,7 +264,7 @@ test_that(".save_gap_figures saves requested formats and skips NULL plots", {
     taxonName = c("Inga edulis", "Aster alba", "Inga edulis", "Mimosa pudica",
                   NA),
     collectionCode = c("ALCB", "HUEFS", "RB", "ALCB", "ALCB"),
-    municipality = c("Salvador", "Manaus", "Ilhéus", "Salvador", "Recife"),
+    municipality = c("Salvador", "Manaus", "Ilh\u00e9us", "Salvador", "Recife"),
     stateProvince = c("Bahia", "Amazonas", "Bahia", "Bahia", "Pernambuco"),
     stringsAsFactors = FALSE
   )
@@ -404,8 +404,8 @@ test_that("jabot_gaps skips the priority map when polygons fail and opens the re
     result <- suppressWarnings(testthat::with_mocked_bindings(
       jabot_gaps(herbarium = "RB", priority_map = TRUE, open_report = TRUE,
                  verbose = TRUE, dir = tmp),
-      interactive = function() TRUE,
-      .package = "base"
+      .is_interactive = function() TRUE,
+      .package = "jabotR"
     ))
   )
 
@@ -413,9 +413,6 @@ test_that("jabot_gaps skips the priority map when polygons fail and opens the re
                "municipality polygons could not be loaded.*no polygons")
   expect_null(result$muni_sf)
   expect_s3_class(result$municipality_priority, "data.frame")
-  # Byte-compiled (installed) package code inlines interactive(), so the
-  # mock above only reaches it under devtools::load_all()
-  if (is.null(opened$url)) skip("interactive() cannot be mocked in byte-compiled code")
   expect_equal(normalizePath(opened$url),
                normalizePath(file.path(tmp, "RB_gap_analysis.html")))
 })
