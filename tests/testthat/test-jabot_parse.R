@@ -183,3 +183,40 @@ test_that("jabot_parse keeps id first and otherCatalogNumbers after catalogNumbe
                "otherCatalogNumbers")
   expect_equal(df$otherCatalogNumbers[1], "old-1")
 })
+
+
+test_that("jabot_parse keeps kingdom, division, class and order when present", {
+  tmp <- tempfile("jabot_parse_higher_")
+  dir.create(tmp)
+  .parse_test_fixture(tmp)
+
+  mock_read <- function(input, read, encoding, na.strings) {
+    out <- .mock_jabot_dwca_read(input, read, encoding, na.strings)
+    occ <- out$data[["occurrence.txt"]]
+    occ$kingdom <- "Plantae"
+    occ$division <- "Tracheophyta"
+    occ$class <- "Magnoliopsida"
+    occ$order <- "Fabales"
+    out$data[["occurrence.txt"]] <- occ
+    out
+  }
+
+  testthat::local_mocked_bindings(
+    .arg_check_path = function(...) invisible(TRUE),
+    .std_inside_columns = function(df, herbarium = NULL, i = NULL, verbose = TRUE) df,
+    .package = "jabotR"
+  )
+  testthat::local_mocked_bindings(
+    dwca_read = mock_read,
+    .package = "finch"
+  )
+
+  result <- jabot_parse(path = tmp, herbarium = "AFR", verbose = FALSE)
+  occ <- result[["dwca_AFR_001"]]$data[["occurrence.txt"]]
+
+  expect_equal(unlist(occ[1, c("kingdom", "division", "class", "order")],
+                      use.names = FALSE),
+               c("Plantae", "Tracheophyta", "Magnoliopsida", "Fabales"))
+
+  unlink(tmp, recursive = TRUE)
+})
