@@ -110,6 +110,8 @@ body[data-bs-theme="dark"] #jabot-specimen-app {
 .jb-summary-chip { min-width:128px; padding:10px 13px; border-radius:16px; background:var(--surface-3); border:1px solid var(--border); }
 .jb-summary-chip span { display:block; color:var(--muted); font-size:.7rem; font-weight:800; letter-spacing:.05em; text-transform:uppercase; }
 .jb-summary-chip strong { display:block; margin-top:4px; color:var(--heading); font-size:.96rem; line-height:1.25; max-width:210px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.jb-summary-chip--imported { background:var(--accent-2); border-color:var(--primary); }
+.jb-summary-chip--imported strong { color:var(--primary-2); }
 .jb-event-actions { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
 .jb-section-header { display:flex; align-items:center; gap:8px; margin:0 0 14px; }
 .jb-section-header h3 { margin:0; color:var(--heading); font-size:1.08rem; font-weight:800; }
