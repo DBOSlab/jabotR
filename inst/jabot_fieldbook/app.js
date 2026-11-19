@@ -291,6 +291,9 @@
     return {
       id: seed.id || uid("event"),
       collapsed: Boolean(seed.collapsed),
+      // Evento vindo de um caderno anterior (merge): entra no PDF,
+      // mas não na planilha Jabot, que já foi gerada para ele.
+      imported: Boolean(seed.imported),
       header: createHeader(seed.header || seed),
       specimens:
         Array.isArray(seed.specimens) && seed.specimens.length
@@ -474,6 +477,15 @@
           </div>
 
           <div class="jb-event-summary">
+            ${
+              eventItem.imported
+                ? `<div class="jb-summary-chip jb-summary-chip--imported" title="Este evento veio do caderno anterior: aparece no PDF, mas não é exportado na planilha Jabot.">
+              <span>Caderno anterior</span>
+              <strong>Fora da planilha</strong>
+            </div>`
+                : ""
+            }
+
             <div class="jb-summary-chip">
               <span>Espécimes</span>
               <strong>${eventItem.specimens.length}</strong>
@@ -952,7 +964,7 @@
     if (metricHeaders) metricHeaders.textContent = `${headerPct}%`;
   }
 
-  function toast(message) {
+  function toast(message, duration = 2200) {
     if (!toastEl) return;
 
     toastEl.textContent = message;
@@ -962,7 +974,7 @@
 
     toastEl._timer = setTimeout(
       () => toastEl.classList.remove("is-visible"),
-      2200
+      duration
     );
   }
 
@@ -1255,10 +1267,16 @@
     autosave();
   }
 
-  function flattenRows() {
+  // Eventos que vão para a planilha Jabot: só os novos, nunca os
+  // importados de um caderno anterior (evita duplicatas no Jabot).
+  function spreadsheetEvents() {
+    return state.events.filter(eventItem => !eventItem.imported);
+  }
+
+  function flattenRows(events = state.events) {
     const rows = [];
 
-    state.events.forEach(eventItem => {
+    events.forEach(eventItem => {
       eventItem.specimens
         .filter(specimen => !isSpecimenEmpty(specimen))
         .forEach(specimen => {
@@ -1314,8 +1332,8 @@
   }
 
   // Menor e maior número de coleta preenchidos (numérico quando possível).
-  function collectionNumberRange() {
-    const numbers = flattenRows()
+  function collectionNumberRange(events = state.events) {
+    const numbers = flattenRows(events)
       .map(row => String(row.number ?? "").trim())
       .filter(Boolean);
 
@@ -1332,9 +1350,9 @@
   }
 
   // Ex.: Cardoso2020-2052 (sobrenome do coletor + menor-maior número de coleta)
-  function collectionFileBaseName() {
+  function collectionFileBaseName(events = state.events) {
     const surname = collectorSurname(mainCollector()) || "Coleta";
-    const range = collectionNumberRange();
+    const range = collectionNumberRange(events);
 
     if (!range) {
       return surname;
@@ -1359,6 +1377,11 @@
     }
 
     state.events.forEach((eventItem, eventIndex) => {
+      // Eventos do caderno anterior não são exportados nem validados.
+      if (eventItem.imported) {
+        return;
+      }
+
       const label = t(
         "validation.eventLabel",
         { n: eventIndex + 1 },
@@ -1494,7 +1517,10 @@
   function exportFilledWorkbook() {
     if (!ensureSheetJS()) return;
 
-    const rows = flattenRows();
+    // Só os eventos novos; os do caderno anterior (merge) ficam de fora.
+    const events = spreadsheetEvents();
+    const importedCount = state.events.length - events.length;
+    const rows = flattenRows(events);
     const warnings = validateRows(rows);
 
     if (warnings.length) {
@@ -1528,12 +1554,25 @@
     setWorksheetWidths(ws);
 
     XLSX.utils.book_append_sheet(wb, ws, "Plan1");
+    // O nome reflete apenas a faixa exportada (ex.: Cardoso2026-2030).
     XLSX.writeFile(
-  wb,
-  `jabotsheet_${collectionFileBaseName()}.xlsx`
-);
+      wb,
+      `jabotsheet_${collectionFileBaseName(events)}.xlsx`
+    );
 
     autosave();
+
+    if (importedCount) {
+      toast(
+        t(
+          "toast.exportedNewOnly",
+          { n: rows.length, m: importedCount },
+          "Planilha gerada com {n} linha(s), só dos eventos novos; {m} evento(s) do caderno anterior ficaram de fora."
+        ),
+        6000
+      );
+      return;
+    }
 
     toast(
       t(
@@ -1837,6 +1876,194 @@ function fieldbookEventHTML(eventItem, eventIndex, locale) {
   `;
 }
 
+  /*
+    Dados do caderno embutidos no PDF.
+
+    Todo PDF gerado leva, ao final, um bloco de texto branco com os dados
+    do caderno em JSON (UTF-8 -> base64), delimitado por marcadores:
+
+      JABOTR-FIELDBOOK-DATA-BEGIN:<n>:<base64>:JABOTR-FIELDBOOK-DATA-END
+
+    onde <n> é o número de caracteres base64 (verificação de integridade).
+    jabot_fieldbook(merge = TRUE) lê esse bloco no R e devolve os dados ao
+    aplicativo por window.JABOTR_FIELDBOOK_MERGE.
+  */
+  const FIELDBOOK_DATA_FORMAT = "jabotR-fieldbook";
+  const FIELDBOOK_DATA_VERSION = 1;
+  const FIELDBOOK_DATA_BEGIN = "JABOTR-FIELDBOOK-DATA-BEGIN";
+  const FIELDBOOK_DATA_END = "JABOTR-FIELDBOOK-DATA-END";
+
+  const HEADER_FIELD_NAMES = [...DAY_MAIN_FIELDS, ...DAY_EXTRA_FIELDS]
+    .map(field => field.name);
+
+  const SPECIMEN_FIELD_NAMES = ALL_SPECIMEN_FIELDS.map(field => field.name);
+
+  function compactRecord(record, names) {
+    const out = {};
+
+    names.forEach(name => {
+      if (isFilled(record?.[name])) {
+        out[name] = String(record[name]).trim();
+      }
+    });
+
+    return out;
+  }
+
+  function fieldbookPayload() {
+    const events = state.events
+      .map(eventItem => ({
+        header: compactRecord(eventItem.header, HEADER_FIELD_NAMES),
+        specimens: eventItem.specimens
+          .filter(specimen => !isSpecimenEmpty(specimen))
+          .map(specimen => ({
+            ...compactRecord(specimen, SPECIMEN_FIELD_NAMES),
+            ...(specimen.done ? { done: true } : {})
+          }))
+      }))
+      .filter(eventItem =>
+        eventItem.specimens.length ||
+        Object.keys(eventItem.header).some(name => name !== "country")
+      );
+
+    return {
+      format: FIELDBOOK_DATA_FORMAT,
+      version: FIELDBOOK_DATA_VERSION,
+      created: new Date().toISOString(),
+      events
+    };
+  }
+
+  function utf8ToBase64(text) {
+    const bytes = new TextEncoder().encode(text);
+    let binary = "";
+
+    for (let i = 0; i < bytes.length; i += 8192) {
+      binary += String.fromCharCode.apply(
+        null,
+        bytes.subarray(i, i + 8192)
+      );
+    }
+
+    return window.btoa(binary);
+  }
+
+  function base64ToUtf8(base64) {
+    const binary = window.atob(String(base64).replace(/\s+/g, ""));
+    const bytes = new Uint8Array(binary.length);
+
+    for (let i = 0; i < binary.length; i += 1) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+
+    return new TextDecoder("utf-8").decode(bytes);
+  }
+
+  function fieldbookDataText() {
+    const encoded = utf8ToBase64(JSON.stringify(fieldbookPayload()));
+
+    return `${FIELDBOOK_DATA_BEGIN}:${encoded.length}:${encoded}:${FIELDBOOK_DATA_END}`;
+  }
+
+  function highestCollectionNumber(events) {
+    let highest = null;
+
+    events.forEach(eventItem => {
+      eventItem.specimens.forEach(specimen => {
+        const value = String(specimen.number ?? "").trim();
+
+        if (/^\d+$/.test(value)) {
+          const n = Number(value);
+
+          if (highest === null || n > highest) {
+            highest = n;
+          }
+        }
+      });
+    });
+
+    return highest;
+  }
+
+  /*
+    Quando jabot_fieldbook(merge = TRUE) encontra um caderno anterior,
+    os eventos dele entram no início (recolhidos e editáveis) e um novo
+    evento é aberto já com o próximo número da sequência de coleta.
+    O novo PDF passa a ser uma versão mais completa do anterior.
+  */
+  function applyMergeData() {
+    const merge = window.JABOTR_FIELDBOOK_MERGE;
+
+    if (!merge || typeof merge.data !== "string" || !merge.data) {
+      return;
+    }
+
+    let payload = null;
+
+    try {
+      payload = JSON.parse(base64ToUtf8(merge.data));
+    } catch (error) {
+      console.error("jabotR Field Book merge:", error);
+    }
+
+    if (
+      !payload ||
+      payload.format !== FIELDBOOK_DATA_FORMAT ||
+      !Array.isArray(payload.events) ||
+      !payload.events.length
+    ) {
+      toast(
+        t(
+          "toast.mergeError",
+          {},
+          "Não foi possível mesclar o caderno de campo anterior."
+        )
+      );
+      return;
+    }
+
+    const previous = payload.events.map(eventItem =>
+      createEvent({
+        header: eventItem.header || {},
+        specimens: eventItem.specimens || [],
+        collapsed: true,
+        imported: true
+      })
+    );
+
+    const last = previous[previous.length - 1].header;
+    const highest = highestCollectionNumber(previous);
+    const next = highest === null ? "" : String(highest + 1);
+
+    const fresh = createEvent({
+      header: {
+        country: last.country || "Brasil",
+        collector: last.collector || "",
+        addcoll: last.addcoll || ""
+      },
+      specimens: [{ number: next }]
+    });
+
+    state.events = [...previous, fresh];
+
+    const specimens = previous.reduce(
+      (sum, eventItem) =>
+        sum + eventItem.specimens.filter(s => !isSpecimenEmpty(s)).length,
+      0
+    );
+
+    window.setTimeout(() => {
+      toast(
+        t(
+          "toast.mergeLoaded",
+          { events: previous.length, specimens, next: next || "—" },
+          "Caderno anterior mesclado: {events} evento(s), {specimens} espécime(s). Próximo número de coleta: {next}."
+        ),
+        6000
+      );
+    }, 0);
+  }
+
   function buildFieldbookPrintHTML() {
     const locale = fieldbookPdfLocale();
 
@@ -1995,6 +2222,13 @@ function fieldbookEventHTML(eventItem, eventIndex, locale) {
         15mm
         14mm
         15mm;
+
+      /*
+        Repete o recuo em cada página impressa; sem isso, a partir da
+        segunda página o texto começa sobre a moldura verde.
+      */
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
     }
 
     /*
@@ -2058,6 +2292,8 @@ function fieldbookEventHTML(eventItem, eventIndex, locale) {
 
       break-after: avoid;
       page-break-after: avoid;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
 
     .fb-date {
@@ -2139,6 +2375,38 @@ function fieldbookEventHTML(eventItem, eventIndex, locale) {
     }
 
     /*
+      Bloco de dados legível por máquina (invisível na folha impressa).
+      Permite que jabot_fieldbook(merge = TRUE) reconstrua este caderno
+      a partir do PDF.
+
+      - Posicionado por trás do conteúdo (fora do fluxo): não acrescenta
+        altura ao documento, logo nunca cria uma página extra. Em fonte
+        4pt ele ocupa bem menos altura que o próprio texto do caderno.
+      - Quase transparente: não aparece nem sobre a moldura verde quando
+        atravessa a quebra de página.
+      - Fonte monoespaçada (Courier New) exclusiva deste bloco: o R separa
+        estas linhas do restante do texto pelo nome da fonte.
+    */
+    .fb-data {
+      position: absolute;
+      z-index: -1;
+      top: 14mm;
+      left: 15mm;
+      right: 15mm;
+      margin: 0;
+      color: rgba(255, 255, 255, 0.01);
+      font-family: "Courier New", Courier, monospace;
+      font-size: 4pt;
+      line-height: 1.8;
+      white-space: normal;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+      hyphens: none;
+      -webkit-user-select: text;
+      user-select: text;
+    }
+
+    /*
       Na pré-visualização HTML mantemos a mesma proporção visual.
     */
     @media screen {
@@ -2178,6 +2446,8 @@ function fieldbookEventHTML(eventItem, eventIndex, locale) {
     </div>
 
     ${content}
+
+    <div class="fb-data" aria-hidden="true">${escapeHtml(fieldbookDataText())}</div>
   </main>
 </body>
 </html>`;
@@ -2501,5 +2771,6 @@ function fieldbookEventHTML(eventItem, eventIndex, locale) {
   window.addEventListener("resize", hideTooltip);
   window.addEventListener("scroll", hideTooltip, true);
 
+  applyMergeData();
   render();
 })();
