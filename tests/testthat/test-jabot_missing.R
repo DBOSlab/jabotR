@@ -809,3 +809,50 @@ test_that("jabot_missing errors when the Rmd template is missing", {
   )
   expect_false(file.exists(file.path(tmp, "RB_missing_Bahia.html")))
 })
+
+
+test_that("jabot_missing reads specimen links from a user-given jabot_path", {
+  fixture <- .missing_test_fixture()
+  tmp <- tempfile("jabot_missing_")
+  parse_calls <- new.env(parent = emptyenv())
+
+  testthat::local_mocked_bindings(
+    .arg_check_herbarium = function(x, verbose) invisible(TRUE),
+    .load_ffb_data = function(verbose) fixture$ffb,
+    .load_herb_data = function(herbarium, jabot_path, verbose) fixture$herb,
+    .load_pool_data = function(network_herbaria, jabot_path, verbose) fixture$pool,
+    .load_municipality_sf = function(state_abbrevs, verbose) stop("offline fixture"),
+    .make_missing_plots = function(...) list(mock_plot = TRUE),
+    jabot_parse = function(path, herbarium, verbose) {
+      parse_calls$path <- path
+      list()
+    },
+    .package = "jabotR"
+  )
+  testthat::local_mocked_bindings(
+    flora_search = function(x, progress_bar, rm_flora_database) {
+      data.frame(Search = x, Accepted.taxon.Name = rep("Inga vera", length(x)),
+                 family = rep("Fabaceae", length(x)), stringsAsFactors = FALSE)
+    },
+    .package = "floraR"
+  )
+  testthat::local_mocked_bindings(
+    render = function(input, output_file, params, envir, quiet) {
+      .mock_missing_report_render(input, output_file, params, envir, quiet)
+    },
+    .package = "rmarkdown"
+  )
+
+  suppressWarnings(jabot_missing(
+    herbarium = "RB",
+    geo = "Bahia",
+    jabot_path = "my_dwca_folder",
+    open_report = FALSE,
+    verbose = FALSE,
+    dir = tmp
+  ))
+
+  expect_equal(parse_calls$path, "my_dwca_folder")
+
+  unlink(tmp, recursive = TRUE)
+})

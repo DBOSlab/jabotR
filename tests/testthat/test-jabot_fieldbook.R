@@ -817,3 +817,23 @@ test_that(".fieldbook_merged_app injects the merge data before app.js", {
   # The original application is left untouched
   expect_length(readLines(file.path(src, "index.html")), 5L)
 })
+
+
+test_that("jabot_fieldbook(browser = TRUE) uses file:/// on Windows", {
+  opened <- new.env(parent = emptyenv())
+  testthat::local_mocked_bindings(
+    browseURL = function(url, ...) opened$url <- url,
+    .package = "utils"
+  )
+  platform <- .Platform
+  platform$OS.type <- "windows"
+
+  app <- testthat::with_mocked_bindings(
+    jabot_fieldbook(),
+    .Platform = platform,
+    .package = "base"
+  )
+
+  expect_equal(opened$url,
+               paste0("file:///", utils::URLencode(app, reserved = FALSE)))
+})
