@@ -277,3 +277,13 @@ test_that("jabot_parse returns the standardized columns", {
   expect_equal(occ$minimumElevationInMeters, c(NA, "100", NA))
   expect_equal(occ$dateIdentified, c("2020-04-28", NA, NA))
 })
+
+
+test_that(".std_eventDate returns NA when no value is an ISO-like date", {
+  expect_identical(
+    .std_eventDate(c(NA, "", "12/05/2010", "May 2010")),
+    rep(NA_character_, 4)
+  )
+  expect_identical(.std_eventDate(character(0)), character(0))
+  expect_identical(.std_eventDate(NA), NA_character_)
+})

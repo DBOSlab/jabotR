@@ -327,7 +327,7 @@ fixture_payload <- function() {
       list(
         header = list(
           colldd = "3", collmm = "5", collyy = "2025",
-          country = "Brasil", majorarea = "Bahia", minorarea = "Ilhéus",
+          country = "Brasil", majorarea = "Bahia", minorarea = "Ilh\u00e9us",
           collector = "Domingos Cardoso"
         ),
         specimens = list(
@@ -401,7 +401,7 @@ test_that("embedded data is read back from a field notebook PDF", {
   expect_length(found$payload$events, 2L)
   expect_equal(
     found$payload$events[[1]]$header$minorarea,
-    "Ilhéus"
+    "Ilh\u00e9us"
   )
 
   info <- .fieldbook_summary(found$payload)
@@ -527,4 +527,293 @@ test_that("merged events are kept out of the JABOT spreadsheet", {
   expect_match(app, "function spreadsheetEvents(", fixed = TRUE)
   expect_match(app, "flattenRows(events)", fixed = TRUE)
   expect_match(app, "collectionFileBaseName(events)", fixed = TRUE)
+})
+
+
+# ---- Additional coverage ---------------------------------------------------
+
+# Writes a PDF with an arbitrary data block (in a monospaced font), optionally
+# preceded by an empty page.
+write_fieldbook_block <- function(file, block, blank_first_page = FALSE,
+                                  wrap = 60L) {
+  starts <- seq(1L, nchar(block), by = wrap)
+  lines <- substring(block, starts, pmin(starts + wrap - 1L, nchar(block)))
+
+  grDevices::pdf(file, width = 8.27, height = 11.69)
+  graphics::par(mar = c(0, 0, 0, 0))
+  if (blank_first_page) graphics::plot.new()
+  graphics::plot.new()
+  graphics::text(0.02, 0.98, "Domingos Cardoso 2020-2022", adj = c(0, 1))
+  y <- 0.9 - (seq_along(lines) - 1) * 0.02
+  graphics::text(0.02, y, lines, adj = c(0, 1), cex = 0.6, family = "mono")
+  grDevices::dev.off()
+
+  invisible(file)
+}
+
+
+fieldbook_block <- function(payload, declared_length = NULL) {
+  json <- jsonlite::toJSON(payload, auto_unbox = TRUE)
+  b64 <- jsonlite::base64_enc(charToRaw(enc2utf8(as.character(json))))
+  b64 <- gsub("[[:space:]]+", "", b64)
+  if (is.null(declared_length)) declared_length <- nchar(b64)
+  paste0("JABOTR-FIELDBOOK-DATA-BEGIN:", declared_length, ":", b64,
+         ":JABOTR-FIELDBOOK-DATA-END")
+}
+
+
+# Mocks base::system.file (or the pkgload shim under devtools::load_all()).
+local_fieldbook_system_file <- function(fake, env = parent.frame()) {
+  imports <- parent.env(asNamespace("jabotR"))
+  if (exists("system.file", envir = imports, inherits = FALSE)) {
+    testthat::local_mocked_bindings(system.file = fake, .package = "jabotR",
+                                    .env = env)
+  } else {
+    testthat::local_mocked_bindings(system.file = fake, .package = "base",
+                                    .env = env)
+  }
+}
+
+
+test_that("jabot_fieldbook(browser = TRUE) opens the app as a file URL", {
+  opened <- new.env(parent = emptyenv())
+  testthat::local_mocked_bindings(
+    browseURL = function(url, ...) opened$url <- c(opened$url, url),
+    .package = "utils"
+  )
+
+  app <- jabot_fieldbook()
+
+  prefix <- if (.Platform$OS.type == "windows") "file:///" else "file://"
+  expect_equal(opened$url, paste0(prefix, utils::URLencode(app, reserved = FALSE)))
+  expect_identical(app, jabot_fieldbook(browser = FALSE))
+  expect_length(opened$url, 1L)
+})
+
+
+test_that("jabot_fieldbook(browser = TRUE) uses file:// outside Windows", {
+  opened <- new.env(parent = emptyenv())
+  testthat::local_mocked_bindings(
+    browseURL = function(url, ...) opened$url <- url,
+    .package = "utils"
+  )
+  platform <- .Platform
+  platform$OS.type <- "unix"
+
+  app <- testthat::with_mocked_bindings(
+    jabot_fieldbook(),
+    .Platform = platform,
+    .package = "base"
+  )
+
+  expect_equal(opened$url,
+               paste0("file://", utils::URLencode(app, reserved = FALSE)))
+  expect_false(startsWith(opened$url, "file:///C:"))
+})
+
+
+test_that("jabot_fieldbook errors when the application is not installed", {
+  local_fieldbook_system_file(function(...) "")
+
+  expect_error(
+    jabot_fieldbook(browser = FALSE),
+    "field notebook could not be found.*Reinstall jabotR"
+  )
+})
+
+
+test_that(".fieldbook_require_merge_pkgs reports the missing packages", {
+  real <- base::requireNamespace
+  missing_mock <- function(gone) {
+    function(package, ..., quietly = TRUE) {
+      if (package %in% gone) FALSE else real(package, ..., quietly = quietly)
+    }
+  }
+
+  expect_error(
+    testthat::with_mocked_bindings(
+      .fieldbook_require_merge_pkgs(),
+      requireNamespace = missing_mock("pdftools"),
+      .package = "base"
+    ),
+    "requires the package\\(s\\): pdftools\\.\nInstall with install\\.packages\\(c\\(\"pdftools\"\\)\\)"
+  )
+
+  expect_error(
+    testthat::with_mocked_bindings(
+      .fieldbook_require_merge_pkgs(),
+      requireNamespace = missing_mock(c("pdftools", "jsonlite")),
+      .package = "base"
+    ),
+    "pdftools, jsonlite.*\"pdftools\", \"jsonlite\"",
+    fixed = FALSE
+  )
+
+  skip_if_not_installed("pdftools")
+  skip_if_not_installed("jsonlite")
+  expect_true(.fieldbook_require_merge_pkgs())
+})
+
+
+test_that(".fieldbook_downloads_dir points to the user's Downloads folder", {
+  home <- withr::local_tempdir()
+  withr::local_envvar(USERPROFILE = home)
+
+  expected <- if (.Platform$OS.type == "windows") {
+    file.path(home, "Downloads")
+  } else {
+    file.path(path.expand("~"), "Downloads")
+  }
+  expect_equal(.fieldbook_downloads_dir(), expected)
+
+  platform <- .Platform
+  platform$OS.type <- "unix"
+  unix_dir <- testthat::with_mocked_bindings(
+    .fieldbook_downloads_dir(),
+    .Platform = platform,
+    .package = "base"
+  )
+  expect_equal(unix_dir, file.path(path.expand("~"), "Downloads"))
+
+  platform$OS.type <- "windows"
+  win_dir <- testthat::with_mocked_bindings(
+    .fieldbook_downloads_dir(),
+    .Platform = platform,
+    .package = "base"
+  )
+  expect_equal(win_dir, file.path(home, "Downloads"))
+})
+
+
+test_that("merge = TRUE searches the working directory and Downloads by default", {
+  skip_if_not_installed("pdftools")
+  skip_if_not_installed("jsonlite")
+
+  wd <- withr::local_tempdir()
+  home <- withr::local_tempdir()
+  downloads <- file.path(home, "Downloads")
+  dir.create(downloads)
+  testthat::local_mocked_bindings(
+    .fieldbook_downloads_dir = function() downloads,
+    .package = "jabotR"
+  )
+  withr::local_dir(wd)
+
+  # Nothing found anywhere: warning naming both locations
+  expect_warning(
+    app <- jabot_fieldbook(browser = FALSE, merge = TRUE),
+    paste0("found in: .*", basename(wd), ".*", "Downloads",
+           ".*Opening an empty field notebook")
+  )
+  expect_identical(app, jabot_fieldbook(browser = FALSE))
+  expect_equal(.fieldbook_candidate_pdfs(), character(0))
+
+  # A notebook in Downloads is picked up
+  pdf <- file.path(downloads, "fieldbook_Cardoso2020-2022.pdf")
+  write_fieldbook_fixture(pdf, fixture_payload())
+
+  expect_equal(basename(.fieldbook_candidate_pdfs()), basename(pdf))
+  expect_message(
+    found <- .fieldbook_find_previous(),
+    "3 specimen\\(s\\); collection numbers continue from 2023"
+  )
+  expect_equal(normalizePath(found$file), normalizePath(pdf))
+})
+
+
+test_that(".fieldbook_read_pdf skips empty pages and rejects bad data", {
+  skip_if_not_installed("pdftools")
+  skip_if_not_installed("jsonlite")
+
+  dir <- withr::local_tempdir()
+
+  # An empty first page does not prevent reading the data block
+  two_pages <- file.path(dir, "fieldbook_two_pages.pdf")
+  write_fieldbook_block(two_pages, fieldbook_block(fixture_payload()),
+                        blank_first_page = TRUE)
+  expect_equal(pdftools::pdf_info(two_pages)$pages, 2L)
+  found <- .fieldbook_read_pdf(two_pages)
+  expect_false(is.null(found))
+  expect_length(found$payload$events, 2L)
+
+  # Declared length does not match the data: warning and NULL
+  truncated <- file.path(dir, "fieldbook_truncated.pdf")
+  block <- fieldbook_block(fixture_payload())
+  real_len <- nchar(sub("^[^:]*:[0-9]+:([^:]+):.*$", "\\1", block))
+  write_fieldbook_block(truncated,
+                        fieldbook_block(fixture_payload(), real_len + 4L))
+  expect_warning(
+    expect_null(.fieldbook_read_pdf(truncated)),
+    "fieldbook_truncated.pdf is incomplete and was ignored"
+  )
+
+  # Valid block but not a jabotR field notebook payload
+  other <- file.path(dir, "fieldbook_other.pdf")
+  write_fieldbook_fixture(other, list(format = "something-else",
+                                      events = list(list(header = list()))))
+  expect_null(.fieldbook_read_pdf(other))
+
+  no_events <- file.path(dir, "fieldbook_no_events.pdf")
+  payload <- fixture_payload()
+  payload$events <- list()
+  write_fieldbook_fixture(no_events, payload)
+  expect_null(.fieldbook_read_pdf(no_events))
+
+  # A file that is not a PDF at all
+  junk <- file.path(dir, "fieldbook_junk.pdf")
+  writeLines("not a pdf", junk)
+  expect_null(suppressMessages(suppressWarnings(.fieldbook_read_pdf(junk))))
+})
+
+
+test_that(".fieldbook_merged_app errors when the app copy cannot be prepared", {
+  skip_if_not_installed("jsonlite")
+
+  previous <- list(file = "fieldbook_x.pdf", data = "QUJD")
+
+  # index.html without the app.js script tag
+  src <- withr::local_tempdir()
+  writeLines(c("<html>", "<body>no script</body>", "</html>"),
+             file.path(src, "index.html"))
+  expect_error(
+    .fieldbook_merged_app(file.path(src, "index.html"), previous),
+    "Could not prepare the field notebook for merging"
+  )
+
+  # Copy of the application fails
+  app <- jabot_fieldbook(browser = FALSE)
+  expect_error(
+    testthat::with_mocked_bindings(
+      .fieldbook_merged_app(app, previous),
+      file.copy = function(...) FALSE,
+      .package = "base"
+    ),
+    "Could not prepare a copy of the field notebook for merging"
+  )
+})
+
+
+test_that(".fieldbook_merged_app injects the merge data before app.js", {
+  skip_if_not_installed("jsonlite")
+
+  src <- withr::local_tempdir()
+  writeLines(c("<html>", "<body>", '  <script src="app.js" defer></script>',
+               "</body>", "</html>"),
+             file.path(src, "index.html"))
+  writeLines("// app", file.path(src, "app.js"))
+
+  out <- .fieldbook_merged_app(
+    file.path(src, "index.html"),
+    list(file = file.path(src, "fieldbook_A1-2.pdf"), data = "QUJD")
+  )
+
+  index <- readLines(out)
+  expect_equal(index[3], '  <script src="jabot-merge-data.js" defer></script>')
+  expect_equal(index[4], '  <script src="app.js" defer></script>')
+  expect_equal(
+    readLines(file.path(dirname(out), "jabot-merge-data.js"))[1],
+    'window.JABOTR_FIELDBOOK_MERGE = {"source":"fieldbook_A1-2.pdf","data":"QUJD"};'
+  )
+  # The original application is left untouched
+  expect_length(readLines(file.path(src, "index.html")), 5L)
 })

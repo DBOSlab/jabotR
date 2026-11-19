@@ -1839,3 +1839,9 @@
   }
   invisible(TRUE)
 }
+
+# Wrapper around interactive() so tests can mock it (base::interactive() is
+# inlined in byte-compiled package code and cannot be mocked directly)
+.is_interactive <- function() {
+  interactive()
+}
