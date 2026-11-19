@@ -62,6 +62,8 @@ Imports:
     tidyselect,
     utils
 Suggests:
+    jsonlite,
+    pdftools,
     plotly,
     quarto,
     testthat (>= 3.0.0)
@@ -74,4 +76,4 @@ URL:
     https://github.com/dboslab/jabotR
 BugReports: https://github.com/DBOSlab/jabotR/issues
 Config/testthat/edition: 3
-Config/roxygen2/version: 8.1.0
+Config/roxygen2/version: 8.1.1
