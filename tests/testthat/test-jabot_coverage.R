@@ -257,3 +257,189 @@ test_that(".save_rep_figures saves requested formats and skips NULL plots", {
 
   unlink(tmp, recursive = TRUE)
 })
+
+
+# ---- Additional coverage: verbose run, report options, state map -----------
+
+# Mocks base::system.file (or the pkgload shim under devtools::load_all()) so
+# that the bundled Rmd template appears to be missing.
+.coverage_local_missing_template <- function(env = parent.frame()) {
+  real <- base::system.file
+  fake <- function(..., package = "base", lib.loc = NULL, mustWork = FALSE) {
+    if (any(grepl("^rmd/", c(...)))) return("")
+    real(..., package = package, lib.loc = lib.loc, mustWork = mustWork)
+  }
+  imports <- parent.env(asNamespace("jabotR"))
+  if (exists("system.file", envir = imports, inherits = FALSE)) {
+    testthat::local_mocked_bindings(system.file = fake, .package = "jabotR",
+                                    .env = env)
+  } else {
+    testthat::local_mocked_bindings(system.file = fake, .package = "base",
+                                    .env = env)
+  }
+}
+
+
+.coverage_local_mocks <- function(fixture, env = parent.frame()) {
+  testthat::local_mocked_bindings(
+    .load_ffb_data = function(verbose) fixture$ffb,
+    .load_herb_data = function(herbarium, jabot_path, verbose) fixture$herb,
+    .make_rep_plots = function(...) list(mock_plot = TRUE),
+    .package = "jabotR",
+    .env = env
+  )
+  testthat::local_mocked_bindings(
+    flora_search = function(x, progress_bar, rm_flora_database) {
+      data.frame(Search = x, Accepted.taxon.Name = rep("Inga vera", length(x)),
+                 family = rep("Fabaceae", length(x)), stringsAsFactors = FALSE)
+    },
+    .package = "floraR",
+    .env = env
+  )
+}
+
+
+test_that("jabot_coverage verbose run writes to the default directory and opens the report", {
+  fixture <- .coverage_test_fixture()
+  wd <- withr::local_tempdir()
+  withr::local_dir(wd)
+  calls <- new.env(parent = emptyenv())
+
+  .coverage_local_mocks(fixture)
+  testthat::local_mocked_bindings(
+    render = function(input, output_file, params, envir, quiet) {
+      calls$quiet <- quiet
+      calls$params <- params
+      .mock_coverage_report_render(input, output_file, params, envir, quiet)
+    },
+    .package = "rmarkdown"
+  )
+  testthat::local_mocked_bindings(
+    browseURL = function(url, ...) calls$url <- url,
+    .package = "utils"
+  )
+
+  msgs <- testthat::capture_messages(
+    result <- suppressWarnings(testthat::with_mocked_bindings(
+      jabot_coverage(herbarium = "rb", open_report = TRUE, verbose = TRUE),
+      interactive = function() TRUE,
+      .package = "base"
+    ))
+  )
+  msgs <- paste(msgs, collapse = "")
+
+  for (step in c("[1/5] Loading Flora",
+                 "[2/5] Loading JABOT records for herbarium 'RB'",
+                 "[3/5] Resolving synonyms",
+                 "[4/5] Computing representativeness metrics",
+                 "[5/5] Building figures", "Rendering HTML report",
+                 "Report saved:")) {
+    expect_match(msgs, step, fixed = TRUE)
+  }
+
+  html <- file.path(wd, "RB_representativeness", "RB_representativeness.html")
+  expect_true(file.exists(html))
+  expect_true(file.exists(file.path(wd, "RB_representativeness", "figures",
+                                    "jabotr_hex_sticker.png")))
+  expect_false(calls$quiet)
+  expect_equal(calls$params$herbarium, "RB")
+  # The temporary data file handed to the template is removed after rendering
+  expect_false(file.exists(calls$params$data_path))
+  expect_equal(result$coverage_pct, 40)
+
+  # Byte-compiled (installed) package code inlines interactive(), so the
+  # mock above only reaches it under devtools::load_all()
+  if (is.null(calls$url)) skip("interactive() cannot be mocked in byte-compiled code")
+  expect_equal(normalizePath(calls$url), normalizePath(html))
+})
+
+
+test_that("jabot_coverage does not open the report when open_report = FALSE", {
+  fixture <- .coverage_test_fixture()
+  tmp <- withr::local_tempdir()
+  opened <- new.env(parent = emptyenv())
+  opened$n <- 0L
+
+  .coverage_local_mocks(fixture)
+  testthat::local_mocked_bindings(render = .mock_coverage_report_render,
+                                  .package = "rmarkdown")
+  testthat::local_mocked_bindings(
+    browseURL = function(url, ...) opened$n <- opened$n + 1L,
+    .package = "utils"
+  )
+
+  suppressWarnings(testthat::with_mocked_bindings(
+    jabot_coverage(herbarium = "RB", open_report = FALSE, verbose = FALSE,
+                   dir = tmp),
+    interactive = function() TRUE,
+    .package = "base"
+  ))
+  expect_equal(opened$n, 0L)
+})
+
+
+test_that("jabot_coverage errors when the Rmd template is missing", {
+  fixture <- .coverage_test_fixture()
+  tmp <- withr::local_tempdir()
+
+  .coverage_local_mocks(fixture)
+  .coverage_local_missing_template()
+
+  expect_error(
+    suppressWarnings(jabot_coverage(herbarium = "RB", verbose = FALSE,
+                                    dir = tmp)),
+    "Rmd template not found"
+  )
+  expect_false(file.exists(file.path(tmp, "RB_representativeness.html")))
+})
+
+
+test_that(".make_rep_plots builds the state coverage choropleth", {
+  square <- function(x0) {
+    sf::st_polygon(list(rbind(c(x0, 0), c(x0 + 1, 0), c(x0 + 1, 1),
+                              c(x0, 1), c(x0, 0))))
+  }
+  states <- sf::st_sf(
+    abbrev_state = c("BA", "AM", "PE"),
+    name_state = c("Bahia", "Amazonas", "Pernambuco"),
+    geometry = sf::st_sfc(square(0), square(2), square(4))
+  )
+  testthat::local_mocked_bindings(
+    read_state = function(year, showProgress) states,
+    .package = "geobr"
+  )
+
+  # geom_sf() warns that the plotly "text" aesthetic is unknown to ggplot2
+  plots <- suppressWarnings(.make_rep_plots(
+    herbarium = "RB",
+    group_rep = data.frame(group = "Angiosperms", n_in = 8, n_ffb = 10,
+                           coverage_pct = 80),
+    family_rep = data.frame(family = c("Fabaceae", "Asteraceae"),
+                            n_in = c(8, 2), n_ffb = c(10, 20),
+                            coverage_pct = c(80, 10)),
+    domain_rep = data.frame(phytogeographicDomain = "Caatinga", n_in = 5,
+                            n_ffb = 10, coverage_pct = 50),
+    state_rep = data.frame(abbrev_state = c("BA", "AM"), n_in = c(1500, 2),
+                           n_ffb = c(3000, 10), coverage_pct = c(50, 20)),
+    type_group_rep = data.frame(group = "Angiosperms", n_species = 10,
+                                n_type_species = 2, pct_type_species = 20),
+    type_family_rep = data.frame(family = "Fabaceae", n_type_taxa = 4),
+    endemic_coverage_pct = 50,
+    non_endemic_coverage_pct = 40,
+    coverage_pct = 45,
+    n_ffb_total = 100,
+    n_in_herb = 45
+  ))
+
+  expect_s3_class(plots$state, "ggplot")
+  sd <- plots$state$data
+  expect_equal(sd$coverage_pct[sd$abbrev_state == "BA"], 50)
+  # States absent from state_rep get 0% coverage instead of NA
+  expect_equal(sd$coverage_pct[sd$abbrev_state == "PE"], 0)
+  expect_equal(
+    sd$tooltip[sd$abbrev_state == "BA"],
+    "<b>Bahia</b><br>Coverage: 50%<br>Species represented: 1,500<br>FFB total: 3,000"
+  )
+  expect_match(plots$state$labels$title,
+               "Herbarium coverage by Brazilian state .* RB")
+})

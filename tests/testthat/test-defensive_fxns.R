@@ -74,3 +74,110 @@ test_that(".arg_check_state handles case-insensitive acronyms", {
   expect_equal(result, c("Rio de Janeiro", "Minas Gerais", "São Paulo"))
 })
 
+
+
+test_that(".arg_check_path reports several empty dwca folders in the plural", {
+  temp <- withr::local_tempdir()
+  expect_error(
+    .arg_check_path(temp, c("dwca_a", "dwca_b", "dwca_c"),
+                    list(character(), list("occurrence.txt"), character())),
+    "The dwca folders 'dwca_a', 'dwca_c' within the directory .* are fully empty"
+  )
+  expect_error(
+    .arg_check_path(temp, c("dwca_a", "dwca_b"), list(character(), character())),
+    "download such dwca folders again or exclude them", fixed = TRUE
+  )
+})
+
+
+test_that(".arg_check_path passes silently for complete dwca folders", {
+  temp <- withr::local_tempdir()
+  expect_silent(
+    res <- .arg_check_path(temp, c("dwca_a", "dwca_b"),
+                           list(c("identification.txt", "occurrence.txt"),
+                                c("occurrence.txt", "meta.xml")))
+  )
+  expect_null(res)
+})
+
+
+test_that(".arg_check_path names only the dwca folders lacking key files", {
+  temp <- withr::local_tempdir()
+  expect_error(
+    .arg_check_path(temp, c("dwca_ok", "dwca_bad"),
+                    list("occurrence.txt", c("meta.xml", "eml.xml"))),
+    "missing in the dwca folders 'dwca_bad'.", fixed = TRUE
+  )
+})
+
+
+.mock_ipt_codes <- function(codes = c("HATM", "PALM", "RB"), env = parent.frame()) {
+  calls <- new.env(parent = emptyenv())
+  calls$n <- 0
+  calls$herbarium <- "unset"
+  testthat::local_mocked_bindings(
+    .get_ipt_info = function(herbarium) {
+      calls$n <- calls$n + 1
+      calls$herbarium <- herbarium
+      list(as.list(tolower(codes)), tolower(codes), codes)
+    },
+    .package = "jabotR",
+    .env = env
+  )
+  calls
+}
+
+
+test_that(".arg_check_herbarium returns early for NULL or empty input", {
+  calls <- .mock_ipt_codes()
+  expect_invisible(.arg_check_herbarium(NULL, verbose = TRUE))
+  expect_true(.arg_check_herbarium(character(), verbose = TRUE))
+  # no message and no IPT lookup
+  expect_silent(.arg_check_herbarium(NULL, verbose = TRUE))
+  expect_equal(calls$n, 0)
+})
+
+
+test_that(".arg_check_herbarium accepts valid acronyms using the full IPT list", {
+  calls <- .mock_ipt_codes()
+  expect_silent(res <- .arg_check_herbarium(c("RB", "PALM"), verbose = FALSE))
+  expect_true(res)
+  expect_equal(calls$n, 1)
+  expect_null(calls$herbarium)
+})
+
+
+test_that(".arg_check_herbarium informs when verbose", {
+  .mock_ipt_codes()
+  expect_message(.arg_check_herbarium("HATM", verbose = TRUE),
+                 "Checking whether the input herbarium code exists in the JABOT...",
+                 fixed = TRUE)
+})
+
+
+test_that(".arg_check_herbarium lists every unrecognised acronym", {
+  .mock_ipt_codes()
+  err <- tryCatch(.arg_check_herbarium(c("RB", "XX", "rb"), verbose = FALSE),
+                  error = function(e) e)
+  expect_s3_class(err, "error")
+  expect_null(err$call)
+  msg <- conditionMessage(err)
+  # shQuote() quoting differs by platform
+  expect_match(msg, "not recognized by JABOT: [\"']XX[\"'], [\"']rb[\"']")
+  expect_match(msg, "Use `jabot_summary()` to view available collections.", fixed = TRUE)
+})
+
+
+test_that(".arg_check_level normalises case and whitespace", {
+  expect_equal(.arg_check_level(" family "), "FAMILY")
+  expect_equal(.arg_check_level(c("genus", "Family")), c("GENUS", "FAMILY"))
+})
+
+
+test_that(".arg_check_level rejects unsupported levels", {
+  err <- tryCatch(.arg_check_level(c("species", "genus", "order")),
+                  error = function(e) conditionMessage(e))
+  # shQuote() quoting differs by platform
+  expect_match(err, "invalid: [\"']SPECIES[\"'], [\"']ORDER[\"']")
+  expect_match(err, "Accepted values are: [\"']FAMILY[\"'], [\"']GENUS[\"']")
+})

@@ -588,3 +588,227 @@ test_that(".save_missing_figures saves requested formats and skips NULL plots", 
 
   unlink(tmp, recursive = TRUE)
 })
+
+
+# ---- Additional coverage: verbose run, error branches, report options ------
+
+# Mocks base::system.file (or the pkgload shim under devtools::load_all()) so
+# that the bundled Rmd template appears to be missing.
+.missing_local_missing_template <- function(env = parent.frame()) {
+  real <- base::system.file
+  fake <- function(..., package = "base", lib.loc = NULL, mustWork = FALSE) {
+    if (any(grepl("^rmd/", c(...)))) return("")
+    real(..., package = package, lib.loc = lib.loc, mustWork = mustWork)
+  }
+  imports <- parent.env(asNamespace("jabotR"))
+  if (exists("system.file", envir = imports, inherits = FALSE)) {
+    testthat::local_mocked_bindings(system.file = fake, .package = "jabotR",
+                                    .env = env)
+  } else {
+    testthat::local_mocked_bindings(system.file = fake, .package = "base",
+                                    .env = env)
+  }
+}
+
+
+# Synonym lookup used by the mocked floraR::flora_search()
+.missing_synonyms <- c("Inga synonym" = "Inga vera",
+                       "Mimosa oldname" = "Mimosa sensitiva")
+
+.missing_mock_flora_search <- function(x, progress_bar, rm_flora_database) {
+  data.frame(Search = x, Accepted.taxon.Name = unname(.missing_synonyms[x]),
+             family = rep("Fabaceae", length(x)), stringsAsFactors = FALSE)
+}
+
+
+.missing_local_mocks <- function(fixture, env = parent.frame(), ...) {
+  overrides <- list(...)
+  mocks <- list(
+    .arg_check_herbarium = function(x, verbose) invisible(TRUE),
+    .load_ffb_data = function(verbose) fixture$ffb,
+    .load_herb_data = function(herbarium, jabot_path, verbose) fixture$herb,
+    .load_pool_data = function(network_herbaria, jabot_path, verbose) fixture$pool,
+    .load_municipality_sf = function(state_abbrevs, verbose) stop("offline fixture"),
+    .make_missing_plots = function(...) list(mock_plot = TRUE),
+    jabot_parse = function(path, herbarium, verbose) list()
+  )
+  mocks[names(overrides)] <- overrides
+  do.call(testthat::local_mocked_bindings,
+          c(mocks, list(.package = "jabotR", .env = env)))
+  testthat::local_mocked_bindings(flora_search = .missing_mock_flora_search,
+                                  .package = "floraR", .env = env)
+  testthat::local_mocked_bindings(render = .mock_missing_report_render,
+                                  .package = "rmarkdown", .env = env)
+}
+
+
+test_that("jabot_missing errors when 'geo' cannot be interpreted", {
+  testthat::local_mocked_bindings(
+    .arg_check_herbarium = function(x, verbose) invisible(TRUE),
+    .classify_geo = function(geo) {
+      list(state_full = character(0), state_abbrev = character(0),
+           municipalities = character(0))
+    },
+    .package = "jabotR"
+  )
+
+  expect_error(
+    jabot_missing(herbarium = "RB", geo = "???"),
+    "Could not interpret 'geo'"
+  )
+})
+
+
+test_that("jabot_missing verbose run resolves pool synonyms and builds the municipality map", {
+  fixture <- .missing_test_fixture()
+  # A second synonym, used only by the pooled network records
+  fixture$ffb$taxon <- rbind(
+    fixture$ffb$taxon,
+    data.frame(id = "8", taxonomicStatus = "SINONIMO", taxonRank = "ESPECIE",
+               group = "Angiosperms", kingdom = "Plantae",
+               phylum = "Tracheophyta", class = "Magnoliopsida",
+               order = "Fabales", family = "Fabaceae", genus = "Mimosa",
+               taxonName = "Mimosa oldname", scientificNameAuthorship = "Old.",
+               references = "ref8", stringsAsFactors = FALSE)
+  )
+  fixture$pool <- rbind(
+    fixture$pool,
+    data.frame(occurrenceID = "occ-5", genus = "Mimosa", species = "oldname",
+               taxonName = "Mimosa oldname", family = "Fabaceae",
+               collectionCode = "HUEFS", stateProvince = "Bahia",
+               municipality = "Feira de Santana", decimalLatitude = NA,
+               decimalLongitude = NA, recordedBy = "Lima, A.",
+               recordNumber = "500", eventDate = "2023-01-01",
+               stringsAsFactors = FALSE)
+  )
+
+  wd <- withr::local_tempdir()
+  withr::local_dir(wd)
+  calls <- new.env(parent = emptyenv())
+
+  square <- function(x0) {
+    sf::st_polygon(list(rbind(c(x0, 0), c(x0 + 1, 0), c(x0 + 1, 1),
+                              c(x0, 1), c(x0, 0))))
+  }
+  muni <- sf::st_sf(
+    muni_key = c("FEIRA DE SANTANA", "SALVADOR", "ILHEUS"),
+    abbrev_state = "BA",
+    geometry = sf::st_sfc(square(0), square(2), square(4))
+  )
+
+  .missing_local_mocks(
+    fixture,
+    .load_municipality_sf = function(state_abbrevs, verbose) {
+      calls$state_abbrevs <- state_abbrevs
+      muni
+    },
+    jabot_parse = function(path, herbarium, verbose) {
+      calls$parse_path <- path
+      stop("dwca folder not found")
+    }
+  )
+  testthat::local_mocked_bindings(
+    browseURL = function(url, ...) calls$url <- url,
+    .package = "utils"
+  )
+
+  msgs <- testthat::capture_messages(
+    result <- suppressWarnings(testthat::with_mocked_bindings(
+      jabot_missing(herbarium = "rb", geo = c("Bahia", "Feira de Santana"),
+                    open_report = TRUE, verbose = TRUE),
+      interactive = function() TRUE,
+      .package = "base"
+    ))
+  )
+  msgs <- paste(msgs, collapse = "")
+
+  for (step in c("[1/7] Loading Flora",
+                 "[2/7] Loading JABOT records for herbarium 'RB'",
+                 "[3/7] Loading pooled JABOT network records",
+                 "Note: specimen links could not be loaded. dwca folder not found",
+                 "[4/7] Resolving synonyms", "[5/7] Computing missing species",
+                 "[6/7] Computing municipality collecting priority",
+                 "[7/7] Building figures", "Rendering HTML report",
+                 "Report saved:")) {
+    expect_match(msgs, step, fixed = TRUE)
+  }
+
+  # Default directory named after the herbarium and the region
+  html <- file.path(wd, "RB_missing_Bahia_Feira_de_Santana",
+                    "RB_missing_Bahia_Feira_de_Santana.html")
+  expect_true(file.exists(html))
+  expect_equal(calls$parse_path, "jabot_download")
+  expect_equal(result$region_label, "Bahia, Feira de Santana")
+
+  # The pooled synonym is resolved, making Mimosa sensitiva locatable
+  tm <- result$taxon_missing
+  expect_equal(tm$n_records[tm$taxonName == "Mimosa sensitiva"], 1)
+  expect_true(tm$locatable[tm$taxonName == "Mimosa sensitiva"])
+  expect_equal(tm$herbaria[tm$taxonName == "Mimosa sensitiva"], "HUEFS")
+  expect_equal(result$n_missing_locatable, 3)
+  expect_false("Mimosa oldname" %in% result$missing_pool_records$taxonName)
+
+  # Without specimen links, the specimenLink column is all NA
+  expect_true(all(is.na(result$missing_pool_records$specimenLink)))
+
+  # Municipality polygons are joined with the priority table; polygons
+  # without vouchers of missing species get zero counts
+  expect_equal(calls$state_abbrevs, "BA")
+  ms <- result$muni_sf
+  expect_s3_class(ms, "sf")
+  expect_equal(ms$n_missing_species[ms$muni_key == "FEIRA DE SANTANA"], 2)
+  expect_equal(ms$n_records[ms$muni_key == "FEIRA DE SANTANA"], 2)
+  expect_equal(ms$n_missing_species[ms$muni_key == "ILHEUS"], 0)
+  expect_equal(ms$n_records[ms$muni_key == "ILHEUS"], 0)
+
+  # Byte-compiled (installed) package code inlines interactive(), so the
+  # mock above only reaches it under devtools::load_all()
+  if (is.null(calls$url)) skip("interactive() cannot be mocked in byte-compiled code")
+  expect_equal(normalizePath(calls$url), normalizePath(html))
+})
+
+
+test_that("jabot_missing errors when the state of the matched records is unknown", {
+  fixture <- .missing_test_fixture()
+  fixture$pool$stateProvince[fixture$pool$municipality == "Feira de Santana"] <- NA
+  tmp <- withr::local_tempdir()
+
+  .missing_local_mocks(fixture)
+
+  expect_error(
+    suppressWarnings(jabot_missing(herbarium = "RB", geo = "Feira de Santana",
+                                   verbose = FALSE, dir = tmp)),
+    "Could not determine the Brazilian state\\(s\\) associated with 'geo'"
+  )
+})
+
+
+test_that("jabot_missing errors when FFB lists no species for the region", {
+  fixture <- .missing_test_fixture()
+  fixture$pool$stateProvince[fixture$pool$municipality == "Salvador"] <- "Sergipe"
+  tmp <- withr::local_tempdir()
+
+  .missing_local_mocks(fixture)
+
+  expect_error(
+    suppressWarnings(jabot_missing(herbarium = "RB", geo = "SE",
+                                   verbose = FALSE, dir = tmp)),
+    "No FFB species are recorded for the Brazilian state\\(s\\)"
+  )
+})
+
+
+test_that("jabot_missing errors when the Rmd template is missing", {
+  fixture <- .missing_test_fixture()
+  tmp <- withr::local_tempdir()
+
+  .missing_local_mocks(fixture)
+  .missing_local_missing_template()
+
+  expect_error(
+    suppressWarnings(jabot_missing(herbarium = "RB", geo = "Bahia",
+                                   verbose = FALSE, dir = tmp)),
+    "Rmd template not found"
+  )
+  expect_false(file.exists(file.path(tmp, "RB_missing_Bahia.html")))
+})

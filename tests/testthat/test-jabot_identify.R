@@ -616,3 +616,458 @@ test_that("jabot_identify restricts the indeterminate specimens by taxon", {
     "belongs to the given 'taxon'"
   )
 })
+
+
+# ---- Additional coverage ---------------------------------------------------
+
+# Mocks base::system.file (or the pkgload shim under devtools::load_all()) so
+# that the bundled Rmd template appears to be missing.
+.identify_local_missing_template <- function(env = parent.frame()) {
+  real <- base::system.file
+  fake <- function(..., package = "base", lib.loc = NULL, mustWork = FALSE) {
+    if (any(grepl("^rmd/", c(...)))) return("")
+    real(..., package = package, lib.loc = lib.loc, mustWork = mustWork)
+  }
+  imports <- parent.env(asNamespace("jabotR"))
+  if (exists("system.file", envir = imports, inherits = FALSE)) {
+    testthat::local_mocked_bindings(system.file = fake, .package = "jabotR",
+                                    .env = env)
+  } else {
+    testthat::local_mocked_bindings(system.file = fake, .package = "base",
+                                    .env = env)
+  }
+}
+
+
+# Mocks the database layer of jabot_identify() with the identify fixture.
+.identify_local_db_mocks <- function(occ, env = parent.frame(), ...) {
+  mocks <- list(
+    .arg_check_herbarium = function(x, verbose) invisible(TRUE),
+    .jabot_codes = function() c("RB", "ALCB", "HUEFS", "SP"),
+    .reflora_codes = function() c("RB", "NY", "K"),
+    .prepare_identify_databases = function(...) {
+      list(jabot_dir = "jp", reflora_dir = "rp",
+           jabot_codes = c("ALCB", "HUEFS", "SP"), reflora_codes = c("NY", "K"))
+    },
+    .load_identify_target = function(herbarium, source, jabot_dir, reflora_dir) {
+      occ[occ$collectionCode %in% herbarium, , drop = FALSE]
+    },
+    .load_identify_candidates = function(target, ...) {
+      occ[!occ$collectionCode %in% "RB", , drop = FALSE]
+    },
+    .load_identify_links = function(herbaria, jabot_path, verbose) {
+      data.frame(occurrenceID = character(0), specimenLink = character(0))
+    }
+  )
+  overrides <- list(...)
+  mocks[names(overrides)] <- overrides
+  do.call(testthat::local_mocked_bindings,
+          c(mocks, list(.package = "jabotR", .env = env)))
+}
+
+
+test_that("jabot_identify requires barRoso and refloraR", {
+  real <- base::requireNamespace
+  for (pkg in c("barRoso", "refloraR")) {
+    expect_error(
+      testthat::with_mocked_bindings(
+        jabot_identify(herbarium = "RB", verbose = FALSE),
+        requireNamespace = function(package, ..., quietly = TRUE) {
+          if (identical(package, pkg)) FALSE else real(package, ..., quietly = quietly)
+        },
+        .package = "base"
+      ),
+      paste0("The package '", pkg, "' is required.*",
+             "remotes::install_github\\('DBOSlab/", pkg, "'\\)")
+    )
+  }
+})
+
+
+test_that("jabot_identify errors when the herbarium has no (indeterminate) records", {
+  occ <- .identify_test_fixture()
+  tmp <- withr::local_tempdir()
+
+  .identify_local_db_mocks(
+    occ,
+    .load_identify_target = function(...) occ[0, , drop = FALSE]
+  )
+  expect_error(
+    jabot_identify(herbarium = "RB", verbose = FALSE, dir = tmp),
+    "No records were found for herbarium 'RB'"
+  )
+
+  .identify_local_db_mocks(
+    occ,
+    .load_identify_target = function(...) occ[occ$catalogNumber == "RB8", ]
+  )
+  expect_error(
+    jabot_identify(herbarium = "RB", verbose = FALSE, dir = tmp),
+    "Herbarium 'RB' has no indeterminate specimens"
+  )
+})
+
+
+test_that("jabot_identify verbose run, default directory, blank taxon and report opening", {
+  skip_if_not_installed("barRoso")
+
+  occ <- .identify_test_fixture()
+  wd <- withr::local_tempdir()
+  withr::local_dir(wd)
+  calls <- new.env(parent = emptyenv())
+
+  .identify_local_db_mocks(occ)
+  testthat::local_mocked_bindings(
+    render = function(input, output_file, params, envir, quiet) {
+      calls$quiet <- quiet
+      .mock_identify_render(input, output_file, params, envir, quiet)
+    },
+    .package = "rmarkdown"
+  )
+  testthat::local_mocked_bindings(
+    browseURL = function(url, ...) calls$url <- url,
+    .package = "utils"
+  )
+
+  msgs <- testthat::capture_messages(
+    result <- suppressWarnings(testthat::with_mocked_bindings(
+      jabot_identify(herbarium = "rb", taxon = c(" ", NA, ""),
+                     open_report = TRUE, verbose = TRUE),
+      interactive = function() TRUE,
+      .package = "base"
+    ))
+  )
+  msgs <- paste(msgs, collapse = "")
+
+  for (step in c("[1/6] Checking the JABOT and REFLORA databases",
+                 "[2/6] Reading the records of 'RB' (JABOT)",
+                 "[3/6] Reading the other herbaria of JABOT and REFLORA",
+                 "[4/6] Standardizing records", "[5/6] Comparing",
+                 "[6/6] Building figures and report", "Rendering HTML report",
+                 "Report saved:")) {
+    expect_match(msgs, step, fixed = TRUE)
+  }
+
+  # Blank taxon values are dropped: all indeterminate specimens are used
+  expect_null(result$taxon)
+  expect_equal(result$taxon_label, "all indeterminate specimens")
+  expect_equal(result$n_indets, 7)
+
+  html <- file.path(wd, "RB_identify", "RB_identify.html")
+  expect_true(file.exists(html))
+  expect_true(file.exists(file.path(wd, "RB_identify", "RB_identify_indets.csv")))
+  expect_false(calls$quiet)
+
+  # Byte-compiled (installed) package code inlines interactive(), so the
+  # mock above only reaches it under devtools::load_all()
+  if (is.null(calls$url)) skip("interactive() cannot be mocked in byte-compiled code")
+  expect_equal(normalizePath(calls$url), normalizePath(html))
+})
+
+
+test_that("jabot_identify errors when the Rmd template is missing", {
+  skip_if_not_installed("barRoso")
+
+  occ <- .identify_test_fixture()
+  tmp <- withr::local_tempdir()
+  .identify_local_db_mocks(occ)
+  .identify_local_missing_template()
+
+  expect_error(
+    suppressWarnings(jabot_identify(herbarium = "RB", verbose = FALSE,
+                                    dir = tmp)),
+    "Rmd template not found"
+  )
+  # The CSV tables are written before the report is rendered
+  expect_true(file.exists(file.path(tmp, "RB_identify_suggestions.csv")))
+  expect_false(file.exists(file.path(tmp, "RB_identify.html")))
+})
+
+
+test_that(".jabot_codes and .reflora_codes list the collection codes", {
+  args <- new.env(parent = emptyenv())
+  testthat::local_mocked_bindings(
+    jabot_summary = function(herbarium, verbose, save) {
+      args$jabot <- list(herbarium = herbarium, verbose = verbose, save = save)
+      data.frame(collectionCode = c("RB", "MBM"), n = 1:2)
+    },
+    .package = "jabotR"
+  )
+  testthat::local_mocked_bindings(
+    reflora_summary = function(herbarium, verbose, save) {
+      args$reflora <- list(herbarium = herbarium, verbose = verbose, save = save)
+      data.frame(collectionCode = c("NY", "K", "HUEFS"))
+    },
+    .package = "refloraR"
+  )
+
+  expect_equal(.jabot_codes(), c("RB", "MBM"))
+  expect_equal(.reflora_codes(), c("NY", "K", "HUEFS"))
+  expect_equal(args$jabot, list(herbarium = NULL, verbose = FALSE, save = FALSE))
+  expect_equal(args$reflora, list(herbarium = NULL, verbose = FALSE, save = FALSE))
+})
+
+
+test_that(".read_jabot_herb, .read_reflora_herb and .load_identify_target parse one herbarium", {
+  occ <- data.frame(occurrenceID = c("a", "b"), recordNumber = c(1, 2),
+                    associatedMedia = c("see https://img.org/a.jpg", NA),
+                    stringsAsFactors = FALSE)
+  dwca <- list(x = list(data = list(occurrence.txt = occ)))
+  args <- new.env(parent = emptyenv())
+
+  testthat::local_mocked_bindings(
+    jabot_parse = function(path, herbarium, verbose) {
+      args$jabot <- list(path = path, herbarium = herbarium, verbose = verbose)
+      dwca
+    },
+    .package = "jabotR"
+  )
+  testthat::local_mocked_bindings(
+    reflora_parse = function(path, herbarium, verbose) {
+      args$reflora <- list(path = path, herbarium = herbarium, verbose = verbose)
+      dwca
+    },
+    .package = "refloraR"
+  )
+
+  jab <- .read_jabot_herb("jp", "RB")
+  expect_equal(args$jabot, list(path = "jp", herbarium = "RB", verbose = FALSE))
+  expect_equal(jab$.jabot_source, c("JABOT", "JABOT"))
+  # JABOT links come from the multimedia extension, not associatedMedia
+  expect_equal(jab$.jabot_link, c(NA_character_, NA_character_))
+  expect_type(jab$recordNumber, "character")
+
+  ref <- .read_reflora_herb("rp", "NY")
+  expect_equal(args$reflora, list(path = "rp", herbarium = "NY", verbose = FALSE))
+  expect_equal(ref$.jabot_source, c("REFLORA", "REFLORA"))
+  expect_equal(ref$.jabot_link, c("https://img.org/a.jpg", NA))
+
+  args$jabot <- NULL
+  args$reflora <- NULL
+  expect_equal(.load_identify_target("RB", "JABOT", "jp", "rp")$.jabot_source[1],
+               "JABOT")
+  expect_null(args$reflora)
+  expect_equal(.load_identify_target("NY", "REFLORA", "jp", "rp")$.jabot_source[1],
+               "REFLORA")
+  expect_equal(args$reflora$path, "rp")
+})
+
+
+test_that(".prepare_identify_databases tells which REFLORA herbaria are taken from JABOT", {
+  testthat::local_mocked_bindings(
+    .dwca_codes = function(path, jabot = FALSE) {
+      if (jabot) c("MBM", "RB", "FURB") else c("NY", "FURB")
+    },
+    .package = "jabotR"
+  )
+
+  expect_message(
+    db <- .prepare_identify_databases(
+      "RB", "JABOT", jabot = TRUE, network_herbaria = NULL, reflora = TRUE,
+      reflora_herbaria = c("NY", "MBM", "FURB", "RB"), jabot_path = "jp",
+      reflora_path = "rp", verbose = TRUE),
+    "REFLORA herbaria already in JABOT, not used from REFLORA: MBM, FURB"
+  )
+  expect_equal(db$reflora_codes, "NY")
+  expect_equal(db$jabot_codes, c("MBM", "FURB"))
+
+  # Only the herbarium itself overlaps: nothing to report
+  expect_silent(
+    .prepare_identify_databases(
+      "RB", "JABOT", jabot = TRUE, network_herbaria = NULL, reflora = TRUE,
+      reflora_herbaria = c("NY", "RB"), jabot_path = "jp",
+      reflora_path = "rp", verbose = TRUE)
+  )
+})
+
+
+test_that(".scan_herbaria reports progress and skips unreadable or empty herbaria", {
+  target <- .identify_record("t1", "RB", "RB1", "Fabaceae", "Inga", NA,
+                             "Silva, J.", "100")
+  good <- .identify_record("m1", "MBM", "MBM1", "Fabaceae", "Inga", "edulis",
+                           "Silva, J.", "100")
+  read_fun <- function(code) {
+    switch(code,
+           MBM = good,
+           BAD = stop("corrupted archive"),
+           EMPTY = good[0, ],
+           NULL)
+  }
+
+  msgs <- testthat::capture_messages(
+    out <- .scan_herbaria(c("BAD", "EMPTY", "MBM", "NONE"), read_fun, target,
+                          "JABOT", verbose = TRUE)
+  )
+
+  expect_equal(out$occurrenceID, "m1")
+  expect_equal(
+    msgs,
+    c("  [JABOT] BAD (1/4)\n",
+      "  Note: BAD could not be read. corrupted archive\n",
+      "  [JABOT] EMPTY (2/4)\n", "  [JABOT] MBM (3/4)\n",
+      "  [JABOT] NONE (4/4)\n")
+  )
+
+  expect_silent(
+    quiet <- .scan_herbaria(c("BAD", "MBM"), read_fun, target, "REFLORA",
+                            verbose = FALSE)
+  )
+  expect_equal(quiet$occurrenceID, "m1")
+})
+
+
+test_that(".load_identify_links reads the multimedia links of the JABOT herbaria", {
+  path <- withr::local_tempdir()
+  for (f in c("dwca_alcb_v1_10", "dwca_jbrj_rb_v84_280"))
+    dir.create(file.path(path, f))
+  args <- new.env(parent = emptyenv())
+
+  testthat::local_mocked_bindings(
+    jabot_parse = function(path, herbarium, verbose) {
+      args$herbarium <- herbarium
+      args$verbose <- verbose
+      list(ALCB = list(data = list(multimedia.txt = data.frame(
+        id = "alcb1", references = "https://example.org/alcb1",
+        stringsAsFactors = FALSE))))
+    },
+    .package = "jabotR"
+  )
+
+  links <- .load_identify_links(c("RB", NA, "ALCB", "ZZZ"), path, verbose = FALSE)
+  expect_setequal(args$herbarium, c("RB", "ALCB"))
+  expect_false(args$verbose)
+  expect_equal(links$occurrenceID, "alcb1")
+  expect_equal(links$specimenLink, "https://example.org/alcb1")
+
+  # No herbarium with a DwC-A folder: empty table, nothing parsed
+  args$herbarium <- "unset"
+  none <- .load_identify_links(c("ZZZ", NA), path, verbose = TRUE)
+  expect_equal(args$herbarium, "unset")
+  expect_equal(nrow(none), 0)
+  expect_named(none, c("occurrenceID", "specimenLink"))
+
+  # Default folder 'jabot_download' in the working directory
+  wd <- withr::local_tempdir()
+  withr::local_dir(wd)
+  expect_equal(nrow(.load_identify_links("RB", NULL, verbose = TRUE)), 0)
+  dir.create(file.path("jabot_download", "dwca_jbrj_rb_v1"), recursive = TRUE)
+  expect_equal(.load_identify_links("RB", NULL, verbose = FALSE)$occurrenceID,
+               "alcb1")
+  expect_equal(args$herbarium, "RB")
+})
+
+
+test_that(".load_identify_links returns no links when parsing fails", {
+  path <- withr::local_tempdir()
+  dir.create(file.path(path, "dwca_alcb_v1_10"))
+  testthat::local_mocked_bindings(
+    jabot_parse = function(path, herbarium, verbose) stop("bad archive"),
+    .package = "jabotR"
+  )
+
+  expect_message(
+    links <- .load_identify_links("ALCB", path, verbose = TRUE),
+    "Note: specimen links could not be loaded. bad archive"
+  )
+  expect_equal(nrow(links), 0)
+  expect_named(links, c("occurrenceID", "specimenLink"))
+
+  expect_silent(quiet <- .load_identify_links("ALCB", path, verbose = FALSE))
+  expect_equal(nrow(quiet), 0)
+})
+
+
+test_that(".select_candidate_duplicates needs a number or date to compare", {
+  pool <- .identify_record("p1", "ALCB", "A1", "Fabaceae", "Inga", "edulis",
+                           "J. Silva", "100")
+
+  # Target without number and without a complete date
+  no_base <- .identify_record("t1", "RB", "RB1", "Fabaceae", "Inga", NA,
+                              "Silva, J.", NA)
+  no_base$year <- NA
+  res <- .select_candidate_duplicates(no_base, pool)
+  expect_equal(nrow(res), 0)
+  expect_named(res, names(pool))
+
+  # Target with a number that no pool record shares
+  other_number <- .identify_record("t2", "RB", "RB2", "Fabaceae", "Inga", NA,
+                                   "Silva, J.", "999")
+  res <- .select_candidate_duplicates(other_number, pool)
+  expect_equal(nrow(res), 0)
+  expect_named(res, names(pool))
+
+  # Without a number, the collecting date is used when the genus is known
+  by_date <- .identify_record("t3", "RB", "RB3", "Fabaceae", "Inga", NA,
+                              "Silva, J.", NA)
+  pool_date <- .identify_record("p2", "ALCB", "A2", "Fabaceae", "Inga", "vera",
+                                "Silva, J.", NA)
+  expect_equal(.select_candidate_duplicates(by_date, pool_date)$occurrenceID,
+               "p2")
+})
+
+
+test_that(".compute_identify handles specimens without any duplicate group", {
+  std <- data.frame(
+    .jabot_row = 1:3,
+    .jabot_target = c(TRUE, TRUE, FALSE),
+    occurrenceID = c("a", "b", "c"),
+    collectionCode = c("RB", "RB", "ALCB"),
+    catalogNumber = c("RB1", "RB2", "ALCB1"),
+    family = c("Fabaceae", NA, "Fabaceae"),
+    genus = c("Inga", NA, "Inga"),
+    specificEpithet = c(NA, NA, "edulis"),
+    recordedBy = c("J. Silva", "Unknown", "M. Costa"),
+    recordNumber = c("1", NA, "9"),
+    year = "2010", month = "5", day = "12",
+    duplicateGroup = c(NA_integer_, NA_integer_, 3L),
+    stringsAsFactors = FALSE
+  )
+
+  res <- .compute_identify(std)
+  oc <- .identify_outcomes()
+
+  expect_equal(nrow(res$indets), 2)
+  expect_equal(res$indets$n_duplicates, c(0L, 0L))
+  expect_equal(res$indets$n_useful, c(0L, 0L))
+  expect_setequal(res$indets$outcome, c(oc[["no_dups"]], oc[["unmatchable"]]))
+  expect_true(all(is.na(res$indets$suggestedIdentification)))
+  # Columns absent from the input are filled with NA
+  expect_true(all(is.na(res$indets$identifiedBy)))
+  expect_true(all(is.na(res$indets$source)))
+
+  expect_equal(nrow(res$suggestions), 0)
+  expect_named(
+    res$suggestions,
+    c("herbarium", "occurrenceID", "catalogNumber", "currentIdentification",
+      "recordedBy", "recordNumber", "identifiedBy", "dateIdentified",
+      "dup_herbarium", "dup_source", "dup_catalogNumber", "dup_identification",
+      "dup_family", "dup_identifiedBy", "dup_dateIdentified",
+      "fills_missing_rank", "compatible", "dup_occurrenceID", "specimenLink",
+      "dup_specimenLink")
+  )
+  expect_type(res$suggestions$fills_missing_rank, "logical")
+  expect_equal(nrow(.identify_source_summary(res$suggestions)), 0)
+})
+
+
+test_that(".save_identify_figures saves requested formats and skips NULL plots", {
+  tmp <- withr::local_tempdir()
+  p <- ggplot2::ggplot(data.frame(x = 1, y = 1), ggplot2::aes(x, y)) +
+    ggplot2::geom_point()
+
+  msgs <- testthat::capture_messages(
+    .save_identify_figures(list(outcome = p, source = NULL, family = p),
+                           tmp, c("pdf", "png"), 4, 3, verbose = TRUE)
+  )
+
+  expect_length(msgs, 4L)
+  expect_match(msgs[1], "Saved: .*01_identify_outcome\\.pdf")
+  expect_setequal(
+    list.files(tmp),
+    c("01_identify_outcome.pdf", "01_identify_outcome.png",
+      "03_identify_families.pdf", "03_identify_families.png")
+  )
+
+  expect_silent(.save_identify_figures(list(outcome = p), tmp, "pdf", 4, 3,
+                                       verbose = FALSE))
+})

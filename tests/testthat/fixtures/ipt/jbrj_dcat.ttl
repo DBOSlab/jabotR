@@ -1,0 +1,70 @@
+@prefix schema: <http://schema.org/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix adms: <http://www.w3.org/ns/adms#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix locn: <http://www.w3.org/ns/locn#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+<https://ipt.jbrj.gov.br/jbrj#Catalog>
+ a dcat:Catalog ;
+dct:title "JBRJ IPT" .
+
+<https://ipt.jbrj.gov.br/jbrj/resource?r=rbspirit#Dataset>
+a dcat:Dataset ;
+dct:title "RBspirit - Exemplares preservados em álcool do Jardim Botânico do Rio de Janeiro." ;
+dct:description "<para>Descrição resumida para o teste.</para>" ;
+dcat:keyword "Occurrence" , "Specimen" ;
+dcat:theme <http://eurovoc.europa.eu/5463> ;
+dcat:contactPoint [ a vcard:Individual ; vcard:fn "Rafaela Forzza"; vcard:hasEmail <mailto:rafaela@jbrj.gov.br> ] ;
+dct:modified "2026-10-23T09:08-03:00" ;
+dct:spatial [ a dct:Location ; locn:geometry "{ \"type\": \"Point\", \"coordinates\": [ -43.2,-22.9 ] }" ] ;
+dcat:landingPage <https://ipt.jbrj.gov.br/jbrj/resource?r=rbspirit> ;
+foaf:homepage <http://www.jbrj.gov.br/jabot/> ;
+dct:identifier "https://www.gbif.org/dataset/91fa0308-8901-45f2-a9df-b42f64b53c0e" ;
+dct:publisher <https://www.gbif.org/publisher/838537fc-4aeb-4980-8b58-97fbdcd1d91a#Organization> ;
+dcat:distribution <https://ipt.jbrj.gov.br/jbrj/archive.do?r=rbspirit> ;
+dct:language <http://id.loc.gov/vocabulary/iso639-1/pt> .
+
+<https://ipt.jbrj.gov.br/jbrj/archive.do?r=rbspirit>
+a dcat:Distribution ;
+dct:title "Darwin Core Archive of RBspirit - Exemplares preservados em álcool do Jardim Botânico do Rio de Janeiro." ;
+dct:description "Darwin Core Archive" ;
+dct:license <http://creativecommons.org/licenses/by/4.0/legalcode> ;
+dct:format "dwc-a" ;
+dcat:mediaType "application/zip" ;
+dcat:downloadURL <https://ipt.jbrj.gov.br/jbrj/archive.do?r=rbspirit> ;
+dcat:accessURL <https://ipt.jbrj.gov.br/jbrj/resource?r=rbspirit> .
+<https://ipt.jbrj.gov.br/jbrj/resource?r=rbspirit> a rdfs:Resource .
+
+
+<https://ipt.jbrj.gov.br/jbrj/resource?r=jbrj_rb#Dataset>
+a dcat:Dataset ;
+dct:title "RB - Coleção do Herbário do Jardim Botânico do Rio de Janeiro" ;
+dct:description "<para>Descrição resumida para o teste.</para>" ;
+dcat:keyword "Specimen" , "Occurrence" ;
+dcat:theme <http://eurovoc.europa.eu/5463> ;
+dcat:contactPoint [ a vcard:Individual ; vcard:fn "Rafaela Forzza"; vcard:hasEmail <mailto:rafaela@jbrj.gov.br> ] ;
+dct:modified "2026-11-01T12:08-03:00" ;
+dct:spatial [ a dct:Location ; locn:geometry "{ \"type\": \"Point\", \"coordinates\": [ -43.2,-22.9 ] }" ] ;
+dcat:landingPage <https://ipt.jbrj.gov.br/jbrj/resource?r=jbrj_rb> ;
+foaf:homepage <http://www.jbrj.gov.br/jabot/> ;
+dct:identifier "https://www.gbif.org/dataset/4300f8d5-1ae5-49e5-a101-63894b005868" ;
+dct:publisher <https://www.gbif.org/publisher/838537fc-4aeb-4980-8b58-97fbdcd1d91a#Organization> ;
+dcat:distribution <https://ipt.jbrj.gov.br/jbrj/archive.do?r=jbrj_rb> ;
+dct:language <http://id.loc.gov/vocabulary/iso639-1/en> .
+
+<https://ipt.jbrj.gov.br/jbrj/archive.do?r=jbrj_rb>
+a dcat:Distribution ;
+dct:title "Darwin Core Archive of RB - Coleção do Herbário do Jardim Botânico do Rio de Janeiro" ;
+dct:description "Darwin Core Archive" ;
+dct:license <http://creativecommons.org/licenses/by/4.0/legalcode> ;
+dct:format "dwc-a" ;
+dcat:mediaType "application/zip" ;
+dcat:downloadURL <https://ipt.jbrj.gov.br/jbrj/archive.do?r=jbrj_rb> ;
+dcat:accessURL <https://ipt.jbrj.gov.br/jbrj/resource?r=jbrj_rb> .
+<https://ipt.jbrj.gov.br/jbrj/resource?r=jbrj_rb> a rdfs:Resource .
+

@@ -228,3 +228,280 @@ test_that(".save_gap_figures saves requested formats and skips NULL plots", {
 
   unlink(tmp, recursive = TRUE)
 })
+
+
+# ---- Additional coverage: verbose run, priority map, report options --------
+
+# Mocks base::system.file (or the pkgload shim under devtools::load_all()) so
+# that the bundled Rmd template appears to be missing.
+.gaps_local_missing_template <- function(env = parent.frame()) {
+  real <- base::system.file
+  fake <- function(..., package = "base", lib.loc = NULL, mustWork = FALSE) {
+    if (any(grepl("^rmd/", c(...)))) return("")
+    real(..., package = package, lib.loc = lib.loc, mustWork = mustWork)
+  }
+  imports <- parent.env(asNamespace("jabotR"))
+  if (exists("system.file", envir = imports, inherits = FALSE)) {
+    testthat::local_mocked_bindings(system.file = fake, .package = "jabotR",
+                                    .env = env)
+  } else {
+    testthat::local_mocked_bindings(system.file = fake, .package = "base",
+                                    .env = env)
+  }
+}
+
+
+.gaps_square <- function(x0, y0) {
+  sf::st_polygon(list(rbind(c(x0, y0), c(x0 + 1, y0), c(x0 + 1, y0 + 1),
+                            c(x0, y0 + 1), c(x0, y0))))
+}
+
+
+.gaps_pool_fixture <- function() {
+  data.frame(
+    genus = c("Inga", "Aster", "Inga", "Mimosa", NA),
+    species = c("edulis", "alba", "edulis", "pudica", "sp"),
+    taxonName = c("Inga edulis", "Aster alba", "Inga edulis", "Mimosa pudica",
+                  NA),
+    collectionCode = c("ALCB", "HUEFS", "RB", "ALCB", "ALCB"),
+    municipality = c("Salvador", "Manaus", "Ilhéus", "Salvador", "Recife"),
+    stateProvince = c("Bahia", "Amazonas", "Bahia", "Bahia", "Pernambuco"),
+    stringsAsFactors = FALSE
+  )
+}
+
+
+.gaps_mock_flora_search <- function(x, progress_bar, rm_flora_database) {
+  data.frame(Search = x, Accepted.taxon.Name = rep("Inga vera", length(x)),
+             family = rep("Fabaceae", length(x)), stringsAsFactors = FALSE)
+}
+
+
+test_that("jabot_gaps verbose run builds the nationwide priority map", {
+  fixture <- .gaps_test_fixture()
+  wd <- withr::local_tempdir()
+  withr::local_dir(wd)
+  calls <- new.env(parent = emptyenv())
+
+  muni <- sf::st_sf(
+    muni_key = c("SALVADOR", "MANAUS", "RECIFE"),
+    abbrev_state = c("BA", "AM", "PE"),
+    geometry = sf::st_sfc(.gaps_square(0, 0), .gaps_square(2, 0),
+                          .gaps_square(4, 0))
+  )
+
+  testthat::local_mocked_bindings(
+    .arg_check_herbarium = function(x, verbose) {
+      calls$checked <- x
+      invisible(TRUE)
+    },
+    .load_ffb_data = function(verbose) fixture$ffb,
+    .load_herb_data = function(herbarium, jabot_path, verbose) fixture$herb,
+    .load_pool_data = function(network_herbaria, jabot_path, verbose) {
+      calls$network_herbaria <- network_herbaria
+      .gaps_pool_fixture()
+    },
+    .load_municipality_sf = function(state_abbrevs, verbose) {
+      calls$state_abbrevs <- state_abbrevs
+      muni
+    },
+    .make_gap_plots = function(..., muni_sf = NULL) {
+      calls$muni_sf <- muni_sf
+      list(mock_plot = TRUE)
+    },
+    .package = "jabotR"
+  )
+  testthat::local_mocked_bindings(
+    flora_search = function(x, progress_bar, rm_flora_database) {
+      calls$progress_bar <- progress_bar
+      .gaps_mock_flora_search(x, progress_bar, rm_flora_database)
+    },
+    .package = "floraR"
+  )
+  testthat::local_mocked_bindings(
+    render = function(input, output_file, params, envir, quiet) {
+      calls$quiet <- quiet
+      .mock_report_render(input, output_file, params, envir, quiet)
+    },
+    .package = "rmarkdown"
+  )
+
+  msgs <- testthat::capture_messages(
+    result <- suppressWarnings(jabot_gaps(
+      herbarium = "rb",
+      priority_map = TRUE,
+      network_herbaria = c(" alcb ", "huefs"),
+      verbose = TRUE
+    ))
+  )
+  msgs <- paste(msgs, collapse = "")
+
+  for (step in c("[1/6] Loading Flora",
+                 "[2/6] Loading JABOT records for herbarium 'RB'",
+                 "[3/6] Resolving synonyms", "Resolved 1 synonym(s)",
+                 "[4/6] Computing taxonomic gaps",
+                 "[5/6] Computing municipality collecting priority",
+                 "[6/6] Building figures", "Rendering HTML report",
+                 "Report saved:")) {
+    expect_match(msgs, step, fixed = TRUE)
+  }
+
+  # Default output directory, relative to the working directory
+  out_dir <- file.path(wd, "RB_gap_analysis")
+  expect_true(file.exists(file.path(out_dir, "RB_gap_analysis.html")))
+  expect_true(file.exists(file.path(out_dir, "figures", "jabotr_hex_sticker.png")))
+
+  # network_herbaria normalised, validated and forwarded to the pool loader
+  expect_equal(calls$checked, c("ALCB", "HUEFS"))
+  expect_equal(calls$network_herbaria, c("ALCB", "HUEFS"))
+  expect_equal(calls$state_abbrevs, "all")
+  expect_true(calls$progress_bar)
+  expect_false(calls$quiet)
+
+  # Priority: vouchers of missing species held by other herbaria only;
+  # Mimosa pudica is present in RB and the undetermined record is dropped
+  mp <- result$municipality_priority
+  expect_setequal(mp$municipality, c("Salvador", "Manaus"))
+  expect_equal(mp$n_missing_species[mp$municipality == "Salvador"], 1)
+  expect_equal(mp$n_records[mp$municipality == "Salvador"], 1)
+  expect_false("ILHEUS" %in% mp$muni_key)
+
+  # Municipalities without vouchers are kept with zero counts
+  ms <- result$muni_sf
+  expect_s3_class(ms, "sf")
+  expect_identical(calls$muni_sf, ms)
+  expect_equal(ms$n_missing_species[ms$muni_key == "RECIFE"], 0)
+  expect_equal(ms$n_records[ms$muni_key == "RECIFE"], 0)
+  expect_equal(ms$n_missing_species[ms$muni_key == "MANAUS"], 1)
+})
+
+
+test_that("jabot_gaps skips the priority map when polygons fail and opens the report", {
+  fixture <- .gaps_test_fixture()
+  tmp <- withr::local_tempdir()
+  opened <- new.env(parent = emptyenv())
+
+  testthat::local_mocked_bindings(
+    .load_ffb_data = function(verbose) fixture$ffb,
+    .load_herb_data = function(herbarium, jabot_path, verbose) fixture$herb,
+    .load_pool_data = function(network_herbaria, jabot_path, verbose) {
+      .gaps_pool_fixture()
+    },
+    .load_municipality_sf = function(state_abbrevs, verbose) stop("no polygons"),
+    .make_gap_plots = function(...) list(mock_plot = TRUE),
+    .package = "jabotR"
+  )
+  testthat::local_mocked_bindings(flora_search = .gaps_mock_flora_search,
+                                  .package = "floraR")
+  testthat::local_mocked_bindings(render = .mock_report_render,
+                                  .package = "rmarkdown")
+  testthat::local_mocked_bindings(
+    browseURL = function(url, ...) opened$url <- url,
+    .package = "utils"
+  )
+
+  msgs <- testthat::capture_messages(
+    result <- suppressWarnings(testthat::with_mocked_bindings(
+      jabot_gaps(herbarium = "RB", priority_map = TRUE, open_report = TRUE,
+                 verbose = TRUE, dir = tmp),
+      interactive = function() TRUE,
+      .package = "base"
+    ))
+  )
+
+  expect_match(paste(msgs, collapse = ""),
+               "municipality polygons could not be loaded.*no polygons")
+  expect_null(result$muni_sf)
+  expect_s3_class(result$municipality_priority, "data.frame")
+  # Byte-compiled (installed) package code inlines interactive(), so the
+  # mock above only reaches it under devtools::load_all()
+  if (is.null(opened$url)) skip("interactive() cannot be mocked in byte-compiled code")
+  expect_equal(normalizePath(opened$url),
+               normalizePath(file.path(tmp, "RB_gap_analysis.html")))
+})
+
+
+test_that("jabot_gaps reports the skipped priority map and a missing template", {
+  fixture <- .gaps_test_fixture()
+  tmp <- withr::local_tempdir()
+
+  testthat::local_mocked_bindings(
+    .load_ffb_data = function(verbose) fixture$ffb,
+    .load_herb_data = function(herbarium, jabot_path, verbose) fixture$herb,
+    .make_gap_plots = function(...) list(mock_plot = TRUE),
+    .package = "jabotR"
+  )
+  testthat::local_mocked_bindings(flora_search = .gaps_mock_flora_search,
+                                  .package = "floraR")
+  .gaps_local_missing_template()
+
+  msgs <- testthat::capture_messages(
+    err <- tryCatch(
+      suppressWarnings(jabot_gaps(herbarium = "RB", verbose = TRUE, dir = tmp)),
+      error = function(e) e
+    )
+  )
+
+  expect_s3_class(err, "error")
+  expect_match(conditionMessage(err), "Rmd template not found")
+  expect_match(paste(msgs, collapse = ""),
+               "Skipping municipality collecting priority", fixed = TRUE)
+  expect_false(file.exists(file.path(tmp, "RB_gap_analysis.html")))
+})
+
+
+test_that(".make_gap_plots builds the state and priority choropleths", {
+  states <- sf::st_sf(
+    abbrev_state = c("BA", "AM", "PE"),
+    name_state = c("Bahia", "Amazonas", "Pernambuco"),
+    geometry = sf::st_sfc(.gaps_square(0, 0), .gaps_square(2, 0),
+                          .gaps_square(4, 0))
+  )
+  read_args <- new.env(parent = emptyenv())
+  testthat::local_mocked_bindings(
+    read_state = function(year, showProgress) {
+      read_args$year <- year
+      read_args$showProgress <- showProgress
+      states
+    },
+    .package = "geobr"
+  )
+
+  muni_sf <- sf::st_sf(
+    muni_key = c("SALVADOR", "MANAUS"),
+    n_missing_species = c(2, 0),
+    geometry = sf::st_sfc(.gaps_square(0, 0), .gaps_square(2, 0))
+  )
+
+  plots <- .make_gap_plots(
+    herbarium = "RB",
+    group_gap = data.frame(group = "Angiosperms", n_missing = 3),
+    family_gap = data.frame(family = "Fabaceae", n_missing = 3),
+    genus_gap = data.frame(genus = c("Aster", "Inga"),
+                           family = c("Asteraceae", "Fabaceae"),
+                           n_missing = c(2, 1), in_herb = c(FALSE, TRUE)),
+    domain_gap = data.frame(phytogeographicDomain = "Amazonia", n_missing = 2),
+    endemism_gap = data.frame(endemism_label = "Non-endemic", n_missing = 3),
+    state_gap = data.frame(abbrev_state = c("BA", "AM"), n_missing = c(1, 2)),
+    muni_sf = muni_sf,
+    n_missing = 3
+  )
+
+  expect_equal(read_args$year, 2020)
+  expect_false(read_args$showProgress)
+
+  expect_s3_class(plots$state, "ggplot")
+  sd <- plots$state$data
+  expect_equal(sd$n_missing[sd$abbrev_state == "BA"], 1)
+  expect_equal(sd$n_missing[sd$abbrev_state == "AM"], 2)
+  # States without missing taxa are filled with zero instead of NA
+  expect_equal(sd$n_missing[sd$abbrev_state == "PE"], 0)
+  expect_match(plots$state$labels$title, "Missing taxa by Brazilian state")
+
+  expect_s3_class(plots$priority_map, "ggplot")
+  expect_identical(plots$priority_map$data, muni_sf)
+  expect_match(plots$priority_map$labels$title,
+               "Priority municipalities for collecting expeditions .* RB")
+  expect_match(plots$group$labels$subtitle, "Total missing from FFB: 3",
+               fixed = TRUE)
+})

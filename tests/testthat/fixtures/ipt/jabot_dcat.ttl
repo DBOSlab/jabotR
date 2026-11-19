@@ -1,0 +1,92 @@
+@prefix schema: <http://schema.org/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix adms: <http://www.w3.org/ns/adms#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix locn: <http://www.w3.org/ns/locn#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+<https://ipt.jbrj.gov.br/jabot#Catalog>
+ a dcat:Catalog ;
+dct:title "JABOT - Banco de Dados da Flora Brasileira" .
+
+<https://ipt.jbrj.gov.br/jabot/resource?r=hatm#Dataset>
+a dcat:Dataset ;
+dct:title "HATM - Herbário Padre José Maria de Albuquerque. Jabot - Banco de Dados da Flora Brasileira" ;
+dct:description "<para>Descrição resumida para o teste.</para>" ;
+dcat:keyword "Occurrence" , "Specimen" ;
+dcat:theme <http://eurovoc.europa.eu/5463> ;
+dcat:contactPoint [ a vcard:Individual ; vcard:fn "Daniela Santana Nunes"; vcard:hasEmail <mailto:hatm@ufpa.br> ] ;
+dcat:contactPoint [ a vcard:Individual ; vcard:fn "Luís Alexandre Silva"; vcard:hasEmail <mailto:suporte@jbrj.gov.br> ] ;
+dct:modified "2026-11-01T12:04-03:00" ;
+dct:spatial [ a dct:Location ; locn:geometry "{ \"type\": \"Point\", \"coordinates\": [ -43.2,-22.9 ] }" ] ;
+dcat:landingPage <https://ipt.jbrj.gov.br/jabot/resource?r=hatm> ;
+dct:publisher <https://www.gbif.org/publisher/3d60c7dd-a518-44c2-aa38-6eb12f61bec3#Organization> ;
+dcat:distribution <https://ipt.jbrj.gov.br/jabot/archive.do?r=hatm> ;
+dct:language <http://id.loc.gov/vocabulary/iso639-1/pt> .
+
+<https://ipt.jbrj.gov.br/jabot/archive.do?r=hatm>
+a dcat:Distribution ;
+dct:title "Darwin Core Archive of HATM - Herbário Padre José Maria de Albuquerque. Jabot - Banco de Dados da Flora Brasileira" ;
+dct:description "Darwin Core Archive" ;
+dct:license <http://creativecommons.org/licenses/by/4.0/legalcode> ;
+dct:format "dwc-a" ;
+dcat:mediaType "application/zip" ;
+dcat:downloadURL <https://ipt.jbrj.gov.br/jabot/archive.do?r=hatm> ;
+dcat:accessURL <https://ipt.jbrj.gov.br/jabot/resource?r=hatm> .
+<https://ipt.jbrj.gov.br/jabot/resource?r=hatm> a rdfs:Resource .
+
+<https://ipt.jbrj.gov.br/jabot/resource?r=palm#Dataset>
+a dcat:Dataset ;
+dct:title "PALM - Herbário do Campus Palmeira das Missões da UFSM - UFSM. JABOT - Banco de Dados da Flora Brasileira." ;
+dct:description "<para>Descrição resumida para o teste.</para>" ;
+dcat:keyword "Occurrence" , "Specimen" ;
+dcat:theme <http://eurovoc.europa.eu/5463> ;
+dcat:contactPoint [ a vcard:Individual ; vcard:fn "Patrícia Jungbluth"; vcard:hasEmail <mailto:herbario_palm@ufsm.br> ] ;
+dct:modified "2026-11-01T12:04-03:00" ;
+dct:spatial [ a dct:Location ; locn:geometry "{ \"type\": \"Point\", \"coordinates\": [ -43.2,-22.9 ] }" ] ;
+dcat:landingPage <https://ipt.jbrj.gov.br/jabot/resource?r=palm> ;
+dct:publisher <https://www.gbif.org/publisher/c81b8388-574e-442d-a99d-d74b13fa59ce#Organization> ;
+dcat:distribution <https://ipt.jbrj.gov.br/jabot/archive.do?r=palm> ;
+dct:language <http://id.loc.gov/vocabulary/iso639-1/pt> .
+
+<https://ipt.jbrj.gov.br/jabot/archive.do?r=palm>
+a dcat:Distribution ;
+dct:title "Darwin Core Archive of PALM - Herbário do Campus Palmeira das Missões da UFSM - UFSM. JABOT - Banco de Dados da Flora Brasileira." ;
+dct:description "Darwin Core Archive" ;
+dct:license <http://creativecommons.org/licenses/by/4.0/legalcode> ;
+dct:format "dwc-a" ;
+dcat:mediaType "application/zip" ;
+dcat:downloadURL <https://ipt.jbrj.gov.br/jabot/archive.do?r=palm> ;
+dcat:accessURL <https://ipt.jbrj.gov.br/jabot/resource?r=palm> .
+<https://ipt.jbrj.gov.br/jabot/resource?r=palm> a rdfs:Resource .
+
+
+<https://ipt.jbrj.gov.br/jabot/resource?r=hdjf#Dataset>
+a dcat:Dataset ;
+dct:title "HDJF - Herbário Dendrológico Jeanine Felfili - Universidade Federal dos Vales do Jequitinhonha e Mucuri - UFVJM" ;
+dct:description "<para>Descrição resumida para o teste.</para>" ;
+dcat:keyword "Occurrence" , "Specimen" ;
+dcat:theme <http://eurovoc.europa.eu/5463> ;
+dcat:contactPoint [ a vcard:Individual ; vcard:fn "Evandro Luiz Mendonça Machado"; vcard:hasEmail <mailto:machadoelm@gmail.com> ] ;
+dct:modified "2026-11-01T12:04-03:00" ;
+dct:spatial [ a dct:Location ; locn:geometry "{ \"type\": \"Point\", \"coordinates\": [ -43.2,-22.9 ] }" ] ;
+dcat:landingPage <https://ipt.jbrj.gov.br/jabot/resource?r=hdjf> ;
+dct:publisher <https://www.gbif.org/publisher/60f97f47-cd0d-4ff5-b0c0-c98495bf430a#Organization> ;
+dcat:distribution <https://ipt.jbrj.gov.br/jabot/archive.do?r=hdjf> ;
+dct:language <http://id.loc.gov/vocabulary/iso639-1/pt> .
+
+<https://ipt.jbrj.gov.br/jabot/archive.do?r=hdjf>
+a dcat:Distribution ;
+dct:title "Darwin Core Archive of HDJF - Herbário Dendrológico Jeanine Felfili - Universidade Federal dos Vales do Jequitinhonha e Mucuri - UFVJM" ;
+dct:description "Darwin Core Archive" ;
+dct:license <http://creativecommons.org/licenses/by/4.0/legalcode> ;
+dct:format "dwc-a" ;
+dcat:mediaType "application/zip" ;
+dcat:downloadURL <https://ipt.jbrj.gov.br/jabot/archive.do?r=hdjf> ;
+dcat:accessURL <https://ipt.jbrj.gov.br/jabot/resource?r=hdjf> .
+<https://ipt.jbrj.gov.br/jabot/resource?r=hdjf> a rdfs:Resource .
+
