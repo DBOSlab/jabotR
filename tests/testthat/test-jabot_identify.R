@@ -1068,3 +1068,46 @@ test_that(".save_identify_figures saves requested formats and skips NULL plots",
   expect_silent(.save_identify_figures(list(outcome = p), tmp, "pdf", 4, 3,
                                        verbose = FALSE))
 })
+
+
+test_that(".fill_links creates the link column when it is absent", {
+  df <- data.frame(occurrenceID = c("a", "b"), stringsAsFactors = FALSE)
+  links <- data.frame(occurrenceID = "a", specimenLink = "https://x/a",
+                      stringsAsFactors = FALSE)
+
+  out <- .fill_links(df, links, "occurrenceID", "specimenLink")
+
+  expect_equal(out$specimenLink, c("https://x/a", NA_character_))
+})
+
+
+test_that(".is_indet treats a missing specificEpithet column as indeterminate", {
+  df <- data.frame(family = c("Fabaceae", NA), genus = c("Inga", "Inga"),
+                   stringsAsFactors = FALSE)
+
+  expect_equal(.is_indet(df), c(TRUE, TRUE))
+})
+
+
+test_that(".prepare_identify_databases downloads only the requested JABOT herbaria", {
+  downloads <- new.env(parent = emptyenv())
+
+  testthat::local_mocked_bindings(
+    jabot_download = function(herbarium, verbose, dir) {
+      downloads$jabot <- herbarium
+      invisible(NULL)
+    },
+    .dwca_codes = function(path, jabot = FALSE) c("MBM", "RB"),
+    .reflora_codes = function() character(0),
+    .package = "jabotR"
+  )
+
+  db <- .prepare_identify_databases(
+    "RB", "JABOT", jabot = TRUE, network_herbaria = "MBM", reflora = FALSE,
+    reflora_herbaria = NULL, jabot_path = NULL, reflora_path = NULL,
+    verbose = FALSE)
+
+  # the network herbaria plus the herbarium itself (the source of the indets)
+  expect_equal(downloads$jabot, c("MBM", "RB"))
+  expect_equal(db$jabot_codes, "MBM")
+})
