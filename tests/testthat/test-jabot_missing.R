@@ -716,8 +716,8 @@ test_that("jabot_missing verbose run resolves pool synonyms and builds the munic
     result <- suppressWarnings(testthat::with_mocked_bindings(
       jabot_missing(herbarium = "rb", geo = c("Bahia", "Feira de Santana"),
                     open_report = TRUE, verbose = TRUE),
-      interactive = function() TRUE,
-      .package = "base"
+      .is_interactive = function() TRUE,
+      .package = "jabotR"
     ))
   )
   msgs <- paste(msgs, collapse = "")
@@ -761,9 +761,6 @@ test_that("jabot_missing verbose run resolves pool synonyms and builds the munic
   expect_equal(ms$n_missing_species[ms$muni_key == "ILHEUS"], 0)
   expect_equal(ms$n_records[ms$muni_key == "ILHEUS"], 0)
 
-  # Byte-compiled (installed) package code inlines interactive(), so the
-  # mock above only reaches it under devtools::load_all()
-  if (is.null(calls$url)) skip("interactive() cannot be mocked in byte-compiled code")
   expect_equal(normalizePath(calls$url), normalizePath(html))
 })
 

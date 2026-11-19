@@ -497,3 +497,8 @@ test_that(".std_inside_columns() does not repeat the genus or the family as the 
   expect_equal(out$species, c(NA, "Ormosia monosperma", NA, "Ormosia arborea"))
   expect_equal(out$scientificName[1], "Ormosia")
 })
+
+
+test_that(".is_interactive() mirrors base::interactive()", {
+  expect_identical(.is_interactive(), interactive())
+})

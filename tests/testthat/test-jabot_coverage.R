@@ -322,8 +322,8 @@ test_that("jabot_coverage verbose run writes to the default directory and opens 
   msgs <- testthat::capture_messages(
     result <- suppressWarnings(testthat::with_mocked_bindings(
       jabot_coverage(herbarium = "rb", open_report = TRUE, verbose = TRUE),
-      interactive = function() TRUE,
-      .package = "base"
+      .is_interactive = function() TRUE,
+      .package = "jabotR"
     ))
   )
   msgs <- paste(msgs, collapse = "")
@@ -347,9 +347,6 @@ test_that("jabot_coverage verbose run writes to the default directory and opens 
   expect_false(file.exists(calls$params$data_path))
   expect_equal(result$coverage_pct, 40)
 
-  # Byte-compiled (installed) package code inlines interactive(), so the
-  # mock above only reaches it under devtools::load_all()
-  if (is.null(calls$url)) skip("interactive() cannot be mocked in byte-compiled code")
   expect_equal(normalizePath(calls$url), normalizePath(html))
 })
 
@@ -371,8 +368,8 @@ test_that("jabot_coverage does not open the report when open_report = FALSE", {
   suppressWarnings(testthat::with_mocked_bindings(
     jabot_coverage(herbarium = "RB", open_report = FALSE, verbose = FALSE,
                    dir = tmp),
-    interactive = function() TRUE,
-    .package = "base"
+    .is_interactive = function() TRUE,
+    .package = "jabotR"
   ))
   expect_equal(opened$n, 0L)
 })

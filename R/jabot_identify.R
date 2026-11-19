@@ -429,7 +429,7 @@ jabot_identify <- function(herbarium = NULL,
 
   if (verbose) message("Report saved: ", html_out)
 
-  if (open_report && interactive()) utils::browseURL(html_out)
+  if (open_report && .is_interactive()) utils::browseURL(html_out)
 
   invisible(analysis_list)
 }

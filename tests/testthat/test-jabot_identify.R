@@ -733,8 +733,8 @@ test_that("jabot_identify verbose run, default directory, blank taxon and report
     result <- suppressWarnings(testthat::with_mocked_bindings(
       jabot_identify(herbarium = "rb", taxon = c(" ", NA, ""),
                      open_report = TRUE, verbose = TRUE),
-      interactive = function() TRUE,
-      .package = "base"
+      .is_interactive = function() TRUE,
+      .package = "jabotR"
     ))
   )
   msgs <- paste(msgs, collapse = "")
@@ -758,9 +758,6 @@ test_that("jabot_identify verbose run, default directory, blank taxon and report
   expect_true(file.exists(file.path(wd, "RB_identify", "RB_identify_indets.csv")))
   expect_false(calls$quiet)
 
-  # Byte-compiled (installed) package code inlines interactive(), so the
-  # mock above only reaches it under devtools::load_all()
-  if (is.null(calls$url)) skip("interactive() cannot be mocked in byte-compiled code")
   expect_equal(normalizePath(calls$url), normalizePath(html))
 })
 

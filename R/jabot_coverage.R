@@ -436,7 +436,7 @@ jabot_coverage <- function(herbarium = NULL,
   unlink(tmp_rds)
 
   if (verbose) message("Report saved: ", html_out)
-  if (open_report && interactive()) utils::browseURL(html_out)
+  if (open_report && .is_interactive()) utils::browseURL(html_out)
 
   invisible(rep_list)
 }
